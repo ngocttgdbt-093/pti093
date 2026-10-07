@@ -68,6 +68,10 @@ const logoSrc=document.querySelector('.logo').src;function loadLogo(){return new
 function wrap(ctx,text,max,font){if(!text)return[];ctx.font=`400 ${font}px Arial`;const words=text.split(/\s+/),out=[];let line='';for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width<=max)line=t;else{if(line)out.push(line);line=w}}if(line)out.push(line);return out}
 let selectedGdvCache='';
 async function drawPage(group,pageItems,pageNo,groupPageNo,groupPages,groupStartIndex=0){
+  // Giữ cố định bố cục theo số ảnh/trang mà GĐV đã chọn.
+  // Trang cuối thiếu ảnh vẫn giữ nguyên số cột/hàng và đặt ảnh từ vị trí đầu tiên.
+  // Ví dụ chọn 6 ảnh/trang (A4 dọc = 2x3): trang cuối có 2 ảnh sẽ nằm ở vị trí 1,2 của lưới 2x3.
+  const numberBase=Number.isFinite(groupStartIndex)?groupStartIndex:0;
   const landscape=state.orientation==='landscape',px=pagePixels(),W=px.W,H=px.H;
   const c=makeCanvas(W,H),ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
   const m=45,footer=70,showHeader=(groupPageNo===1),header=showHeader?135:0;
@@ -78,26 +82,30 @@ async function drawPage(group,pageItems,pageNo,groupPageNo,groupPages,groupStart
     ctx.font='400 19px Arial';let sub=[$('bks').value.trim(),$('hoso').value.trim(),$('date').value].filter(Boolean).join(' · ');ctx.fillText(sub,W/2,88);
     ctx.font='400 16px Arial';ctx.fillText('TT CH&GĐ MB tại Hải Phòng (093)',W/2,116);
   }
-  // Bố cục PDF phải khớp hoàn toàn với phần minh họa trên giao diện:
-  // 6 ảnh A4 dọc = 2 cột x 3 hàng; 6 ảnh A4 ngang = 3 cột x 2 hàng.
-  const n=pageItems.length;
-  const cols=n===1?1:(n===2?2:(n===3?3:(n===4?2:(n===6?(landscape?3:2):4))));
-  const rows=Math.ceil(n/cols),gap=18;
+  // Bố cục luôn lấy theo state.per, không lấy theo số ảnh còn lại của trang cuối.
+  // 6 ảnh: ngang 3x2, dọc 2x3. 8 ảnh: ngang 4x2, dọc 2x4.
+  const layout=layoutDims();
+  const cols=layout.cols,rows=layout.rows,gap=18;
   const areaX=m,areaY=header+22,areaW=W-2*m,areaH=H-header-footer-30;
   const cellW=(areaW-gap*(cols-1))/cols,cellH=(areaH-gap*(rows-1))/rows;
-  for(let i=0;i<n;i++){
+  for(let i=0;i<pageItems.length;i++){
     const it=pageItems[i],r=Math.floor(i/cols),col=i%cols,x=areaX+col*(cellW+gap),y=areaY+r*(cellH+gap);
     const capH=it.caption?78:28,imgX=x+5,imgY=y+5,imgW=cellW-10,imgH=cellH-capH-10;
     ctx.fillStyle='#f8faf9';ctx.fillRect(x,y,cellW,cellH);ctx.strokeStyle='#cbd8d1';ctx.strokeRect(x,y,cellW,cellH);
     const img=await loadImage(it.file),sc=Math.min(imgW/img.width,imgH/img.height),dw=img.width*sc,dh=img.height*sc;
     ctx.drawImage(img,imgX+(imgW-dw)/2,imgY+(imgH-dh)/2,dw,dh);
-    ctx.fillStyle='#00854a';ctx.beginPath();ctx.arc(x+22,y+22,14,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 15px Arial';ctx.fillText(groupStartIndex+i+1,x+22,y+27);
+    ctx.fillStyle='#00854a';ctx.beginPath();ctx.arc(x+22,y+22,14,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 15px Arial';ctx.fillText(numberBase+i+1,x+22,y+27);
     ctx.textAlign='center';ctx.fillStyle='#222';ctx.font='400 19px Arial';const lines=wrap(ctx,it.caption,cellW-24,19),lineH=23,startY=y+cellH-capH+22;lines.slice(0,3).forEach((ln,k)=>ctx.fillText(ln,x+cellW/2,startY+k*lineH));ctx.textAlign='left';
   }
   ctx.fillStyle='#777';ctx.font='400 15px Arial';ctx.textAlign='left';ctx.fillText('PTI',m,H-25);ctx.textAlign='center';ctx.fillText(`GĐV: ${selectedGdvCache}`,W/2,H-25);ctx.textAlign='right';ctx.fillText(`Trang ${pageNo} · ${groupPageNo}/${groupPages}`,W-m,H-25);
   return c;
 }
-async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.display='none';$('newCase').style.display='none';const groups=getAllGroups();if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}const pages=[];let no=1;for(const gr of groups){const total=Math.ceil(gr.items.length/state.per);for(let i=0;i<gr.items.length;i+=state.per){pages.push(await drawPage(gr,gr.items.slice(i,i+state.per),no++,Math.floor(i/state.per)+1,total,i))}}state.pages=pages;$('preview').innerHTML='';pages.forEach((c,i)=>{const d=document.createElement('div');d.className='pageprev';const t=document.createElement('div');t.className='muted';t.textContent=`Trang ${i+1}`;d.append(t,c);$('preview').appendChild(d)});$('previewInfo').textContent=`Preview ${pages.length} trang A4 · ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh · tối ưu ${pagePixels().dpi} DPI / JPEG ${Math.round(jpegQuality()*100)}%`;$('pdf').disabled=false;window.scrollTo({top:$('preview').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})}
+
+async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.display='none';$('newCase').style.display='none';const groups=getAllGroups();if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}const pages=[];let no=1;for(const gr of groups){const total=Math.ceil(gr.items.length/state.per);for(let i=0;i<gr.items.length;i+=state.per){
+      const pageItems=gr.items.slice(i,i+state.per);
+      // i là vị trí tuyệt đối trong toàn bộ loại ảnh, không phải vị trí trong trang.
+      pages.push(await drawPage(gr,pageItems,no++,Math.floor(i/state.per)+1,total,i));
+    }}state.pages=pages;$('preview').innerHTML='';pages.forEach((c,i)=>{const d=document.createElement('div');d.className='pageprev';const t=document.createElement('div');t.className='muted';t.textContent=`Trang ${i+1}`;d.append(t,c);$('preview').appendChild(d)});$('previewInfo').textContent=`Preview ${pages.length} trang A4 · ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh · tối ưu ${pagePixels().dpi} DPI / JPEG ${Math.round(jpegQuality()*100)}%`;$('pdf').disabled=false;window.scrollTo({top:$('preview').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})}
 function pdfBytesFromCanvases(canvases){const enc=new TextEncoder(),chunks=[],objs=[];let off=0;const add=s=>{const b=enc.encode(s);chunks.push(b);off+=b.length};const obj=(n,body)=>{objs[n]=off;add(`${n} 0 obj\n${body}\nendobj\n`)};const streamObj=(n,dict,bytes)=>{objs[n]=off;add(`${n} 0 obj\n${dict}\nstream\n`);chunks.push(bytes);off+=bytes.length;add(`\nendstream\nendobj\n`)};add('%PDF-1.4\n%âãÏÓ\n');obj(1,'<< /Type /Catalog /Pages 2 0 R >>');const pageIds=[];for(let i=0;i<canvases.length;i++){const pid=3+i*3,imgid=4+i*3,contid=5+i*3;pageIds.push(pid);const pw=state.orientation==='landscape'?841.89:595.28,ph=state.orientation==='landscape'?595.28:841.89;obj(pid,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im${i+1} ${imgid} 0 R >> >> /Contents ${contid} 0 R >>`);const c=canvases[i],raw=atob(c.toDataURL('image/jpeg',jpegQuality()).split(',')[1]),u=new Uint8Array(raw.length);for(let j=0;j<raw.length;j++)u[j]=raw.charCodeAt(j);streamObj(imgid,`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${u.length} >>`,u);const cb=enc.encode(`q\n${pw} 0 0 ${ph} 0 0 cm\n/Im${i+1} Do\nQ\n`);streamObj(contid,`<< /Length ${cb.length} >>`,cb)}obj(2,`<< /Type /Pages /Count ${pageIds.length} /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] >>`);const xref=off;add(`xref\n0 ${objs.length}\n0000000000 65535 f \n`);for(let i=1;i<objs.length;i++)add(String(objs[i]).padStart(10,'0')+' 00000 n \n');add(`trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);const total=chunks.reduce((a,b)=>a+b.length,0),out=new Uint8Array(total);let p=0;for(const b of chunks){out.set(b,p);p+=b.length}return out}
 
 // ===== Word draft (PC only) =====
