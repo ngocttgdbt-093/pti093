@@ -358,24 +358,23 @@ window.pti093UploadAll = async function(){
   btn.disabled=true;
   let sent=0;
   const total=unique.length;
-  const batchSize=4;
+  const batchSize=1;
 
   try{
-    // Chuẩn bị tối đa 4 ảnh song song: giảm mạnh thời gian chờ do canvas/FileReader.
+    // Bản ổn định: gửi từng ảnh một để tránh nhiều request cùng chờ
+    // LockService của Apps Script và gây miss ảnh.
     for(let base=0;base<unique.length;base+=batchSize){
       const batch=unique.slice(base,base+batchSize);
-      setDriveState('Đang chuẩn bị ảnh '+(base+1)+'-'+(base+batch.length)+'/'+total+'...');
+      setDriveState('Đang chuẩn bị ảnh '+(base+1)+'/'+total+'...');
       await new Promise(resolve=>setTimeout(resolve,0));
       const prepared=await Promise.all(batch.map((x,j)=>prepareDriveItem(x.it,base+j,total)));
-      setDriveState('Đang gửi ảnh '+(base+1)+'-'+(base+batch.length)+'/'+total+'...');
-      await Promise.all(prepared.map(p=>sendDrivePayload(p.payload)));
-      for(let j=0;j<prepared.length;j++){
-        uploaded.add(prepared[j].key);
-        sent++;
-      }
+      setDriveState('Đang gửi ảnh '+(base+1)+'/'+total+'...');
+      await sendDrivePayload(prepared[0].payload);
+      uploaded.add(prepared[0].key);
+      sent++;
       saveDriveUploadedKeys(id,uploaded);
       setDriveState('Đã gửi '+sent+'/'+total+' ảnh lên Google Drive.');
-      await new Promise(resolve=>setTimeout(resolve,0));
+      await new Promise(resolve=>setTimeout(resolve,60));
     }
 
     setDriveState('Đã gửi thành công '+sent+'/'+total+' ảnh lên Google Drive.');
