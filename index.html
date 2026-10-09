@@ -32,7 +32,7 @@ const $=id=>document.getElementById(id); const drop=$('drop');
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 function msg(t,show=true){$('status').textContent=t;$('status').classList.toggle('hidden',!show)}
 function fileBaseName(name){return String(name||'').replace(/\.[^.]+$/, '');}
-function selectedGdv(){let v=$('gdv').value;if(!v)return '';if(v==='Nhập tên khác'){let x=$('gdv').dataset.custom||'';if(!x)x=prompt('Nhập tên GĐV / Thụ lý:','');if(x){v=x;$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else v=''}return v}
+function selectedGdv(){let v=$('gdv').value;if(!v)return 'NONAME';if(v==='Nhập tên khác'){let x=$('gdv').dataset.custom||'';if(!x)x=prompt('Nhập tên GĐV / Thụ lý:','');if(x){v=x;$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else v='NONAME'}return v}
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
