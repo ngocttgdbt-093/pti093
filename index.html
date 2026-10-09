@@ -311,7 +311,10 @@ async function openRecordFromDrive(recordId){
       const match=serverImages.find(x=>!usedImageIds.has(x.fileId)&&String(x.fileName||'')===String(it.fileName||''));
       if(match)fileId=match.fileId;
     }
-    if(!fileId && serverImages[fallbackIndex])fileId=serverImages[fallbackIndex].fileId;
+    if(!fileId){
+      while(fallbackIndex<serverImages.length && usedImageIds.has(serverImages[fallbackIndex].fileId))fallbackIndex++;
+      if(serverImages[fallbackIndex])fileId=serverImages[fallbackIndex].fileId;
+    }
     if(fileId){
       const matched=serverImages.find(x=>x.fileId===fileId);
       if(matched)usedImageIds.add(matched.fileId);
