@@ -539,7 +539,9 @@ window.pti093UploadAll = async function(){
   const seen=new Set();
   for(const it of items){
     const key=driveImageKey(it);
-    if(!key || uploaded.has(key) || seen.has(key))continue;
+    // Nếu ảnh đã có fileId/uploadKey từ project.pti thì chắc chắn đã được lưu.
+    // Không gửi lại ảnh chỉ vì localStorage của trình duyệt đã mất trạng thái.
+    if(!key || it.driveFileId || it.driveUploadKey || uploaded.has(key) || seen.has(key))continue;
     seen.add(key);
     unique.push({it,key});
   }
@@ -558,7 +560,7 @@ window.pti093UploadAll = async function(){
   let failures=[];
 
   try{
-    // V9: chạy song song tối đa 6 ảnh, nhưng MỖI ảnh chỉ được tính thành công
+    // V9: chạy song song tối đa 10 ảnh, nhưng MỖI ảnh chỉ được tính thành công
     // sau khi server xác nhận SHA-256 đã có. Không quay lại kiểu fire-and-forget.
     for(let start=0;start<unique.length;start+=DRIVE_CONCURRENCY){
       const batch=unique.slice(start,start+DRIVE_CONCURRENCY);
