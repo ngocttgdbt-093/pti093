@@ -456,7 +456,7 @@ function openImageViewer(it,index){
   wrap.addEventListener('click',e=>{if(e.target===wrap)cleanup()});
   wrap.append(title,img,close);document.body.appendChild(wrap);document.addEventListener('keydown',onKey);
 }
-function normalizeRecordSearch(v){return String(v||'').trim().toLowerCase().replace(/[\\s.-]/g,'')}
+function normalizeRecordSearch(v){return String(v||'').trim().toLowerCase().replace(/[\s.-]/g,'')}
 async function searchDriveRecords(){
   const keyword=($('driveSearch').value||'').trim(),box=$('driveSearchResults');
   if(!keyword){box.innerHTML='<div class="muted">Nhập Mã HS hoặc BKS để tìm.</div>';return}
@@ -582,7 +582,7 @@ async function sendDrivePayload(payload,recordId,uploadKey){
         cache:'no-store',
         keepalive:false
       });
-      return await waitForDriveUpload(recordId,uploadKey,30000);
+      return await waitForDriveUpload(recordId,uploadKey,20000);
     }catch(e){
       lastError=e;
       if(attempt<maxAttempts){
