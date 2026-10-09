@@ -150,36 +150,66 @@ const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZS
 state.driveRecordId='';
 function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textContent=t;s.className='driveState'+(ok?'':' driveWarn')}
 async function optimizeDriveImage(file){
-  const maxSide=2200;
-  const quality=0.82;
-  if(!file || !file.type || !file.type.startsWith('image/')) return {blob:file,fileName:file.name,mimeType:file.type||'application/octet-stream'};
+  // Chế độ nhanh: ảnh JPEG đã đủ nhỏ thì bỏ qua bước nén hoàn toàn.
+  // Ảnh lớn mới resize + JPEG để giảm mạnh thời gian xử lý và dung lượng Drive.
+  const maxSide=2000;
+  const quality=0.78;
+  const skipBytes=2200*1024;
+  if(!file || !file.type || !file.type.startsWith('image/')) {
+    return {blob:file,fileName:file.name,mimeType:file.type||'application/octet-stream'};
+  }
+  if(file.size<=skipBytes && /\.(jpe?g)$/i.test(file.name||'')){
+    return {blob:file,fileName:file.name,mimeType:file.type||'image/jpeg',originalSize:file.size,optimizedSize:file.size,skipped:true};
+  }
   return await new Promise((resolve,reject)=>{
     const url=URL.createObjectURL(file);
-    const img=new Image();
-    img.onload=()=>{
+    const cleanup=()=>URL.revokeObjectURL(url);
+    const finish=(blob)=>{
+      cleanup();
+      if(!blob){reject(new Error('Không nén được ảnh'));return}
+      const base=(file.name||'anh').replace(/\.[^.]+$/,'');
+      resolve({
+        blob,
+        fileName:/\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg',
+        mimeType:'image/jpeg',
+        originalSize:file.size,
+        optimizedSize:blob.size
+      });
+    };
+    const drawAndEncode=(source)=>{
       try{
-        let w=img.naturalWidth||img.width;
-        let h=img.naturalHeight||img.height;
+        let w=source.naturalWidth||source.width;
+        let h=source.naturalHeight||source.height;
         const scale=Math.min(1,maxSide/Math.max(w,h));
         w=Math.max(1,Math.round(w*scale));
         h=Math.max(1,Math.round(h*scale));
-        const c=document.createElement('canvas');
-        c.width=w;c.height=h;
-        const ctx=c.getContext('2d',{alpha:false});
-        ctx.drawImage(img,0,0,w,h);
-        c.toBlob(blob=>{
-          URL.revokeObjectURL(url);
-          if(!blob){reject(new Error('Không nén được ảnh'));return}
-          const base=(file.name||'anh').replace(/\\.[^.]+$/,'');
-          const fileName=/\\.(jpe?g)$/i.test(file.name||'')?(file.name):(base+'.jpg');
-          resolve({blob,fileName,mimeType:'image/jpeg',originalSize:file.size,optimizedSize:blob.size});
-        },'image/jpeg',quality);
-      }catch(e){
-        URL.revokeObjectURL(url);reject(e);
+        const canvas=document.createElement('canvas');
+        canvas.width=w;
+        canvas.height=h;
+        const ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
+        ctx.drawImage(source,0,0,w,h);
+        canvas.toBlob(finish,'image/jpeg',quality);
+      }catch(err){
+        cleanup();
+        reject(err);
       }
     };
-    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Không đọc được ảnh số hóa'))};
-    img.src=url;
+    if(window.createImageBitmap){
+      createImageBitmap(file,{imageOrientation:'from-image'}).then(bitmap=>{
+        drawAndEncode(bitmap);
+        if(bitmap.close) bitmap.close();
+      }).catch(()=>{
+        const img=new Image();
+        img.onload=()=>drawAndEncode(img);
+        img.onerror=()=>{cleanup();reject(new Error('Không đọc được ảnh'))};
+        img.src=url;
+      });
+    }else{
+      const img=new Image();
+      img.onload=()=>drawAndEncode(img);
+      img.onerror=()=>{cleanup();reject(new Error('Không đọc được ảnh'))};
+      img.src=url;
+    }
   });
 }
 
@@ -211,7 +241,7 @@ window.pti093UploadAll = async function(){
   try{
     for(let i=0;i<items.length;i++){
       const it=items[i];
-      setDriveState('Đang chuẩn bị gửi ảnh '+(i+1)+'/'+items.length+' lên Google Drive...');
+      setDriveState('Đang xử lý ảnh '+(i+1)+'/'+items.length+' (ảnh nhỏ sẽ bỏ qua bước nén)...');
       const optimized=await optimizeDriveImage(it.file);
       const dataUrl=await new Promise((resolve,reject)=>{
         const fr=new FileReader();
