@@ -259,24 +259,28 @@ async function prepareDriveItem(it,index,total){
 }
 
 async function sendDrivePayload(payload){
-  let beaconSent=false;
-  if(navigator.sendBeacon){
+  const maxAttempts=3;
+  let lastError=null;
+  for(let attempt=1;attempt<=maxAttempts;attempt++){
     try{
-      beaconSent=navigator.sendBeacon(
-        PTI093_API,
-        new Blob([payload],{type:'text/plain;charset=UTF-8'})
-      );
-    }catch(e){beaconSent=false}
+      const res=await fetch(PTI093_API,{
+        method:'POST',
+        mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body:payload,
+        cache:'no-store',
+        keepalive:false
+      });
+      if(res && (res.ok || res.type==='opaque')) return true;
+      lastError=new Error('Không nhận được xác nhận từ máy chủ');
+    }catch(e){
+      lastError=e;
+    }
+    if(attempt<maxAttempts){
+      await new Promise(resolve=>setTimeout(resolve,500*attempt));
+    }
   }
-  if(!beaconSent){
-    fetch(PTI093_API,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain;charset=UTF-8'},
-      body:payload
-    }).catch(()=>{});
-  }
-  return true;
+  throw lastError||new Error('Gửi ảnh thất bại');
 }
 
 async function createDriveRecord(){
@@ -361,23 +365,20 @@ window.pti093UploadAll = async function(){
     for(let base=0;base<unique.length;base+=batchSize){
       const batch=unique.slice(base,base+batchSize);
       setDriveState('Đang chuẩn bị ảnh '+(base+1)+'-'+(base+batch.length)+'/'+total+'...');
-      // Nhường 1 nhịp cho trình duyệt cập nhật giao diện trước khi xử lý ảnh.
       await new Promise(resolve=>setTimeout(resolve,0));
       const prepared=await Promise.all(batch.map((x,j)=>prepareDriveItem(x.it,base+j,total)));
+      setDriveState('Đang gửi ảnh '+(base+1)+'-'+(base+batch.length)+'/'+total+'...');
+      await Promise.all(prepared.map(p=>sendDrivePayload(p.payload)));
       for(let j=0;j<prepared.length;j++){
-        const p=prepared[j];
-        // Đánh dấu ngay khi yêu cầu đã được đưa vào hàng đợi gửi.
-        await sendDrivePayload(p.payload);
-        uploaded.add(p.key);
+        uploaded.add(prepared[j].key);
         sent++;
       }
       saveDriveUploadedKeys(id,uploaded);
-      setDriveState('Đã xếp gửi '+sent+'/'+total+' ảnh lên Google Drive...');
-      // Cho giao diện kịp hiển thị tiến độ trước khi chuyển sang nhóm tiếp theo.
+      setDriveState('Đã gửi '+sent+'/'+total+' ảnh lên Google Drive.');
       await new Promise(resolve=>setTimeout(resolve,0));
     }
 
-    setDriveState('Hoàn tất: đã xếp gửi '+sent+'/'+total+' ảnh lên Google Drive.');
+    setDriveState('Đã gửi thành công '+sent+'/'+total+' ảnh lên Google Drive.');
     msg('Đã gửi yêu cầu lưu '+sent+'/'+total+' ảnh mới. Bấm lại sẽ không lưu trùng ảnh đã gửi.',true)
   }catch(e){
     saveDriveUploadedKeys(id,uploaded);
