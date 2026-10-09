@@ -553,37 +553,18 @@ async function prepareDriveItem(it,index,total){
   };
 }
 
-async function sendDrivePayload(payload,recordId,uploadKey){
-  // Xác nhận trực tiếp từ doPost bằng form bridge.
-  // Không dùng fetch no-cors + uploadStatus nữa vì no-cors không đọc được
-  // phản hồi POST, còn API hiện tại đã hỗ trợ e.parameter.payload và postMessage.
-  const maxAttempts=3;
+async function waitForUploadStatus(recordId,uploadKey){
+  const maxChecks=30;
   let lastError=null;
-  for(let attempt=1;attempt<=maxAttempts;attempt++){
+  for(let i=0;i<maxChecks;i++){
     try{
       const result=await new Promise((resolve,reject)=>{
-        const token='pti093_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-        const iframe=document.createElement('iframe');
-        iframe.name=token;
-        iframe.style.cssText='position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none;left:-10px;top:-10px';
-        const form=document.createElement('form');
-        form.method='POST';
-        form.action=PTI093_API;
-        form.target=token;
-        form.style.display='none';
-        const input=document.createElement('input');
-        input.type='hidden';
-        input.name='payload';
-        input.value=payload;
-        form.appendChild(input);
-        document.body.appendChild(iframe);
-        document.body.appendChild(form);
-
+        const cb='pti093UploadStatus_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+        const script=document.createElement('script');
         let settled=false;
         const cleanup=()=>{
-          window.removeEventListener('message',onMessage);
-          try{form.remove()}catch(e){}
-          try{iframe.remove()}catch(e){}
+          try{delete window[cb]}catch(e){window[cb]=undefined}
+          try{script.remove()}catch(e){}
         };
         const finish=(fn,value)=>{
           if(settled)return;
@@ -591,40 +572,62 @@ async function sendDrivePayload(payload,recordId,uploadKey){
           cleanup();
           fn(value);
         };
-        const timer=setTimeout(()=>{
-          finish(reject,new Error('Quá thời gian chờ máy chủ xác nhận ảnh'));
-        },30000);
-        const onMessage=(event)=>{
-          const data=event&&event.data;
-          if(!data||data.source!=='PTI093_DATA_API')return;
-          if(String(data.recordId||'')!==String(recordId||''))return;
-          if(String(data.uploadKey||'')!==String(uploadKey||''))return;
-          clearTimeout(timer);
-          if(data.success){
+        window[cb]=(data)=>{
+          if(data&&data.success&&data.found&&String(data.recordId||'')===String(recordId||'')&&String(data.uploadKey||'')===String(uploadKey||'')){
             finish(resolve,data);
           }else{
-            finish(reject,new Error(data.error||'Máy chủ từ chối lưu ảnh'));
+            finish(resolve,data||{success:false,found:false});
           }
         };
-        window.addEventListener('message',onMessage);
-        try{
-          form.submit();
-        }catch(e){
-          clearTimeout(timer);
-          finish(reject,e);
-        }
+        script.onerror=()=>finish(reject,new Error('Không đọc được trạng thái upload từ máy chủ.'));
+        script.src=PTI093_API+'?action=uploadStatus&recordId='+encodeURIComponent(recordId)+'&uploadKey='+encodeURIComponent(uploadKey)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
+        document.body.appendChild(script);
+        setTimeout(()=>finish(reject,new Error('Quá thời gian kiểm tra trạng thái upload.')),5000);
       });
-      return result;
+      if(result&&result.success&&result.found)return result;
+      lastError=new Error('Máy chủ chưa ghi nhận ảnh.');
     }catch(e){
       lastError=e;
-      if(attempt<maxAttempts){
-        await new Promise(resolve=>setTimeout(resolve,350*attempt));
-      }
     }
+    await new Promise(resolve=>setTimeout(resolve,700));
   }
-  throw lastError||new Error('Gửi ảnh thất bại');
+  throw lastError||new Error('Không xác nhận được ảnh đã lưu.');
 }
 
+async function sendDrivePayload(payload,recordId,uploadKey){
+  // V10: gửi POST một lần, sau đó kiểm tra trạng thái trực tiếp bằng JSONP.
+  // Không phụ thuộc postMessage giữa iframe và trang GitHub Pages.
+  const token='pti093_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+  const iframe=document.createElement('iframe');
+  iframe.name=token;
+  iframe.style.cssText='position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none;left:-10px;top:-10px';
+  const form=document.createElement('form');
+  form.method='POST';
+  form.action=PTI093_API;
+  form.target=token;
+  form.style.display='none';
+  const input=document.createElement('input');
+  input.type='hidden';
+  input.name='payload';
+  input.value=payload;
+  form.appendChild(input);
+  document.body.appendChild(iframe);
+  document.body.appendChild(form);
+  try{
+    form.submit();
+  }catch(e){
+    try{form.remove()}catch(ignore){}
+    try{iframe.remove()}catch(ignore){}
+    throw e;
+  }
+  try{
+    const result=await waitForUploadStatus(recordId,uploadKey);
+    return result;
+  }finally{
+    try{form.remove()}catch(e){}
+    try{iframe.remove()}catch(e){}
+  }
+}
 function renderDriveUploadFailures(){
   const box=$('driveUploadMissing');if(!box)return;
   const rows=Array.isArray(state.driveUploadFailures)?state.driveUploadFailures:[];
