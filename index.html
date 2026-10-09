@@ -265,19 +265,16 @@ const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZS
 state.driveRecordId='';
 function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textContent=t;s.className='driveState'+(ok?'':' driveWarn')}
 async function optimizeDriveImage(file){
-  // Tối ưu theo hướng ưu tiên TỐC ĐỘ:
-  // - JPEG <= 2.5 MB: giữ nguyên, không qua canvas.
-  // - Ảnh lớn: thu về tối đa 1920px, JPEG quality 0.82.
-  // - Việc xử lý nhiều ảnh sẽ chạy song song theo từng nhóm nhỏ ở hàm upload bên dưới.
+  // Tối ưu ẢNH TRƯỚC KHI GỬI DRIVE để giảm mạnh dung lượng nhưng vẫn đủ rõ cho giám định.
+  // Mục tiêu: cạnh dài tối đa 1920px, JPEG quality 0.78.
+  // JPEG nhỏ đã có kích thước phù hợp được giữ nguyên để tránh tốn CPU vô ích.
   const maxSide=1920;
-  const quality=0.82;
-  const skipBytes=2500*1024;
+  const quality=0.78;
+  const keepSmallBytes=900*1024;
   if(!file || !file.type || !file.type.startsWith('image/')){
-    return {blob:file,fileName:file.name,mimeType:file.type||'application/octet-stream'};
+    return {blob:file,fileName:file.name,mimeType:file.type||'application/octet-stream',originalSize:file&&file.size||0,optimizedSize:file&&file.size||0,skipped:true};
   }
-  if(file.size<=skipBytes && /\.(jpe?g)$/i.test(file.name||'')){
-    return {blob:file,fileName:file.name,mimeType:file.type||'image/jpeg',originalSize:file.size,optimizedSize:file.size,skipped:true};
-  }
+
   return await new Promise((resolve,reject)=>{
     const url=URL.createObjectURL(file);
     const cleanup=()=>URL.revokeObjectURL(url);
@@ -285,13 +282,23 @@ async function optimizeDriveImage(file){
       cleanup();
       if(!blob){reject(new Error('Không nén được ảnh'));return}
       const base=(file.name||'anh').replace(/\.[^.]+$/,'');
-      resolve({
+      const result={
         blob,
-        fileName:/\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg',
+        fileName:base+'.jpg',
         mimeType:'image/jpeg',
         originalSize:file.size,
         optimizedSize:blob.size
-      });
+      };
+      // Nếu ảnh nguồn vốn đã rất nhỏ và việc nén lại không đem lại lợi ích,
+      // giữ bản gốc để tốc độ phản hồi tốt hơn.
+      if(blob.size>=file.size && file.size<=keepSmallBytes){
+        result.blob=file;
+        result.fileName=/\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg';
+        result.mimeType=file.type||'image/jpeg';
+        result.optimizedSize=file.size;
+        result.skipped=true;
+      }
+      resolve(result);
     };
     const drawAndEncode=(source)=>{
       try{
@@ -329,7 +336,6 @@ async function optimizeDriveImage(file){
     }
   });
 }
-
 function snapshotGroupsForProject(){
   const groups=state.groups.map(g=>({title:g.title,items:(g.items||[]).slice()}));
   if(state.current&&state.current.items&&state.current.items.length){
@@ -829,39 +835,16 @@ window.pti093UploadAll = async function(){
       const batchTotal=Math.ceil(unique.length/DRIVE_BATCH_SIZE);
       setDriveState('Đang xử lý nhóm '+batchNo+'/'+batchTotal+' · '+sent+'/'+total+' ảnh đã xác nhận...');
 
-      const preparedResults=await Promise.allSettled(
-        batch.map((x,offset)=>prepareDriveItem(x.it,start+offset,total))
-      );
-
-      const ready=[];
-      preparedResults.forEach((r,offset)=>{
-        if(r.status==='fulfilled'){
-          ready.push({x:batch[offset],prepared:r.value});
-        }else{
-          failures.push({
-            key:batch[offset].key,
-            name:(batch[offset].it&&batch[offset].it.file&&batch[offset].it.file.name)||('Ảnh số '+(start+offset+1)),
-            index:start+offset,
-            error:r.reason&&r.reason.message?r.reason.message:String(r.reason||'Không chuẩn bị được ảnh')
-          });
-        }
-      });
-
-      const uploadResults=await Promise.allSettled(
-        ready.map(async item=>{
-          const result=await sendDrivePayload(item.prepared.payload,id,item.prepared.uploadKey);
-          return {item,result};
-        })
-      );
-
-      uploadResults.forEach((r,resultIndex)=>{
-        const item=ready[resultIndex];
-        if(r.status==='fulfilled'){
-          const {result}=r.value;
-          item.x.it.driveFileId=result&&result.fileId?result.fileId:(item.x.it.driveFileId||'');
-          item.x.it.driveFileName=result&&result.fileName?result.fileName:((item.x.it.file&&item.x.it.file.name)||'');
-          item.x.it.driveUploadKey=item.prepared.uploadKey;
-          uploaded.add(item.prepared.key);
+      // Mỗi ảnh tự chuẩn bị -> gửi -> chờ máy chủ xác nhận.
+      // Vì vậy ảnh nào sang Drive xong sẽ phản hồi ngay, không phải chờ cả nhóm.
+      const processOne=async (entry)=>{
+        const prepared=await prepareDriveItem(entry.it,start+entry.offset,total);
+        try{
+          const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
+          entry.it.driveFileId=result&&result.fileId?result.fileId:(entry.it.driveFileId||'');
+          entry.it.driveFileName=result&&result.fileName?result.fileName:((entry.it.file&&entry.it.file.name)||'');
+          entry.it.driveUploadKey=prepared.uploadKey;
+          uploaded.add(prepared.key);
           sent++;
           saveDriveUploadedKeys(id,uploaded);
           if(result&&result.duplicate){
@@ -869,17 +852,21 @@ window.pti093UploadAll = async function(){
           }else{
             setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh trên Google Drive.');
           }
-        }else{
-          const msgText=r.reason&&r.reason.message?r.reason.message:String(r.reason||'Gửi ảnh thất bại');
+          return {ok:true};
+        }catch(e){
+          const err=e&&e.message?e.message:String(e||'Gửi ảnh thất bại');
           failures.push({
-            key:item.x.key,
-            name:(item.x.it&&item.x.it.file&&item.x.it.file.name)||('Ảnh số '+(item.x.index+1)),
-            index:item.x.index,
-            error:msgText
+            key:entry.key,
+            name:(entry.it&&entry.it.file&&entry.it.file.name)||('Ảnh số '+(entry.offset+1)),
+            index:entry.offset,
+            error:err
           });
+          return {ok:false,error:err};
         }
-      });
+      };
 
+      const entries=batch.map((x,offset)=>({it:x.it,key:x.key,offset:start+offset}));
+      await Promise.allSettled(entries.map(processOne));
       await new Promise(resolve=>setTimeout(resolve,0));
     }
 
