@@ -577,19 +577,67 @@ async function waitForDriveUpload(recordId,uploadKey,timeoutMs=30000){
 }
 
 async function sendDrivePayload(payload,recordId,uploadKey){
+  // Xác nhận trực tiếp từ doPost bằng form bridge.
+  // Không dùng fetch no-cors + uploadStatus nữa vì no-cors không đọc được
+  // phản hồi POST, còn API hiện tại đã hỗ trợ e.parameter.payload và postMessage.
   const maxAttempts=3;
   let lastError=null;
   for(let attempt=1;attempt<=maxAttempts;attempt++){
     try{
-      await fetch(PTI093_API,{
-        method:'POST',
-        mode:'no-cors',
-        headers:{'Content-Type':'text/plain;charset=UTF-8'},
-        body:payload,
-        cache:'no-store',
-        keepalive:false
+      const result=await new Promise((resolve,reject)=>{
+        const token='pti093_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+        const iframe=document.createElement('iframe');
+        iframe.name=token;
+        iframe.style.cssText='position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none;left:-10px;top:-10px';
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=PTI093_API;
+        form.target=token;
+        form.style.display='none';
+        const input=document.createElement('input');
+        input.type='hidden';
+        input.name='payload';
+        input.value=payload;
+        form.appendChild(input);
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        let settled=false;
+        const cleanup=()=>{
+          window.removeEventListener('message',onMessage);
+          try{form.remove()}catch(e){}
+          try{iframe.remove()}catch(e){}
+        };
+        const finish=(fn,value)=>{
+          if(settled)return;
+          settled=true;
+          cleanup();
+          fn(value);
+        };
+        const timer=setTimeout(()=>{
+          finish(reject,new Error('Quá thời gian chờ máy chủ xác nhận ảnh'));
+        },30000);
+        const onMessage=(event)=>{
+          const data=event&&event.data;
+          if(!data||data.source!=='PTI093_DATA_API')return;
+          if(String(data.recordId||'')!==String(recordId||''))return;
+          if(String(data.uploadKey||'')!==String(uploadKey||''))return;
+          clearTimeout(timer);
+          if(data.success){
+            finish(resolve,data);
+          }else{
+            finish(reject,new Error(data.error||'Máy chủ từ chối lưu ảnh'));
+          }
+        };
+        window.addEventListener('message',onMessage);
+        try{
+          form.submit();
+        }catch(e){
+          clearTimeout(timer);
+          finish(reject,e);
+        }
       });
-      return await waitForDriveUpload(recordId,uploadKey,30000);
+      return result;
     }catch(e){
       lastError=e;
       if(attempt<maxAttempts){
