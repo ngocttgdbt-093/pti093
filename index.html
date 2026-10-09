@@ -158,7 +158,14 @@ window.pti093UploadAll = async function(){
     return
   }
   const all=getAllGroups();
-  const items=all.flatMap(g=>g.items||[]);
+  // Lấy cả ảnh đã "Lưu mục này" và ảnh đang nằm ở mục hiện tại.
+  // Trường hợp người dùng vừa chọn ảnh nhưng chưa bấm "Lưu mục này",
+  // các ảnh đó vẫn phải được gửi lên Drive.
+  const savedItems=all.flatMap(g=>g.items||[]);
+  const currentItems=(state.current&&Array.isArray(state.current.items))
+    ? state.current.items
+    : [];
+  const items=[...savedItems,...currentItems];
   if(!items.length){
     setDriveState('Chưa có ảnh để gửi.',false);
     msg('Chưa có ảnh để gửi lên Drive.',true);
