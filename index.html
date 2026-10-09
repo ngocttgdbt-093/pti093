@@ -340,7 +340,7 @@ function snapshotGroupsForProject(){
   return groups.filter(g=>g.items&&g.items.length);
 }
 function buildProjectData(){
-  return {version:'PTI093-1.1',recordId:state.driveRecordId||'',caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),maHoSo:($('hoso').value||'').trim(),gdv:selectedGdv(),status:'Đang xử lý',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},sections:snapshotGroupsForProject().map(g=>({title:g.title,items:g.items.map((it,idx)=>({fileId:it.driveFileId||'',fileName:it.driveFileName||((it.file&&it.file.name)||''),clientKey:it.key||'',uploadKey:it.driveUploadKey||'',caption:it.caption||'',rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||idx+1}))})),updatedAt:new Date().toISOString()};
+  return {version:'PTI093-1.2',recordId:state.driveRecordId||'',caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),maHoSo:($('hoso').value||'').trim(),gdv:selectedGdv(),status:state.localDraftId?'Ảnh lưu tại máy':'Đang xử lý',storageType:state.localDraftId?'local':'drive',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},sections:snapshotGroupsForProject().map(g=>({title:g.title,items:g.items.map((it,idx)=>({fileId:it.driveFileId||'',fileName:it.driveFileName||((it.file&&it.file.name)||''),clientKey:it.key||'',uploadKey:it.driveUploadKey||'',caption:it.caption||'',rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||idx+1}))})),updatedAt:new Date().toISOString()};
 }
 async function saveProjectToDrive(showMsg=true){
   const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||localStorage.getItem('pti093_driveRecordId')||'';
@@ -470,6 +470,7 @@ async function searchDriveRecords(){
     ?(driveOutcome.value.results||[]).slice().sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''))):[];
   const localRows=localOutcome.status==='fulfilled'
     ?localOutcome.value.filter(r=>normalizeRecordSearch(r.caseNumber).includes(key)||normalizeRecordSearch(r.bks).includes(key)).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))):[];
+  const localIds=new Set(localRows.map(r=>r.id));
   if(driveOutcome.status==='rejected'||(driveOutcome.status==='fulfilled'&&!driveOutcome.value.success)){
     const err=driveOutcome.status==='rejected'?driveOutcome.reason:driveOutcome.value.error;
     if(!localRows.length){box.innerHTML='<div class="muted">Không truy cập được hồ sơ Drive: '+String(err||'Lỗi tìm kiếm')+'</div>';return}
@@ -484,13 +485,13 @@ async function searchDriveRecords(){
     const caseLine=document.createElement('div');caseLine.textContent='Mã HS: '+(row.caseNumber||'—')+' · BKS: '+(row.bks||'—');
     const meta=document.createElement('div');meta.className='muted';meta.style.marginTop='3px';meta.textContent='GĐV: '+(row.gdv||'Không chọn GĐV')+' · '+(row.status||'Đang xử lý');
     const storage=document.createElement('div');storage.className='muted';storage.style.cssText='margin-top:4px;font-weight:700;color:'+(source==='local'?'#176b4b':'#2366a8');
-    storage.textContent=source==='local'?'Ảnh được lưu trên trình duyệt/máy tính này.':'Dữ liệu hồ sơ trên Drive; mở hồ sơ để xác nhận số ảnh thực tế đã tải lên Drive.';
+    storage.textContent=source==='local'?'Ảnh gốc được lưu trên máy này; chỉ thông tin hồ sơ được đồng bộ lên Drive.':(String(row.status||'').toLowerCase().includes('ảnh lưu tại máy')?'Ảnh gốc được lưu tại máy đã tạo nháp, không nằm trên Drive.':'Dữ liệu hồ sơ trên Drive; mở hồ sơ để xác nhận số ảnh thực tế đã tải lên Drive.');
     const b=document.createElement('button');b.className='btn light';b.style.marginTop='7px';b.textContent=source==='local'?'📂 Mở nháp tại máy':'📂 Mở hồ sơ Drive';
     b.onclick=async()=>{b.disabled=true;try{if(source==='local')await openLocalDraft(row.id);else await openRecordFromDrive(row.recordId)}catch(e){msg('Lỗi mở hồ sơ: '+e.message,true)}finally{b.disabled=false}};
     d.append(title,caseLine,meta,storage,b);box.appendChild(d);
   };
   localRows.forEach((row,idx)=>addCard('local',row,idx));
-  driveRows.forEach((row,idx)=>addCard('drive',row,idx));
+  driveRows.filter(row=>!localIds.has(row.recordId)).forEach((row,idx)=>addCard('drive',row,idx));
 }
 function driveImageKey(it){
   const f=it&&it.file;
@@ -641,9 +642,18 @@ async function getLocalDrafts(){
   }finally{db.close()}
 }
 async function saveLocalDraft(){
-  const db=await openLocalDraftDB();
   const groups=snapshotGroupsForProject();
-  const id=state.localDraftId||('LOCAL-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,7).toUpperCase());
+  // Giữ metadata trên Drive để có thể tìm hồ sơ theo BKS/Mã HS; ảnh gốc vẫn chỉ lưu tại máy.
+  if(!state.driveRecordId&&!state.localDraftId){
+    const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
+    const res=await fetch(PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Ảnh lưu tại máy'),{cache:'no-store'});
+    if(!res.ok)throw new Error('Không tạo được mục hồ sơ trên Drive (HTTP '+res.status+').');
+    const data=await res.json();if(!data.success)throw new Error(data.error||'Không tạo được mục hồ sơ trên Drive.');
+    state.driveRecordId=data.recordId||'';state.localDraftId=state.driveRecordId;
+    sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
+  }
+  const db=await openLocalDraftDB();
+  const id=state.localDraftId||state.driveRecordId||('LOCAL-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,7).toUpperCase());
   const sections=groups.map((g,si)=>({
     title:g.title,
     items:g.items.map((it,ii)=>({
@@ -685,14 +695,16 @@ async function saveLocalDraft(){
     };
     await localDraftTransactionDone(tx);
     state.localDraftId=id;
-    // A local draft must not accidentally inherit a previous Drive record ID.
-    state.driveRecordId='';
-    sessionStorage.removeItem('pti093_driveRecordId');
-    localStorage.removeItem('pti093_driveRecordId');
-    $('driveId').textContent='💻 Bản lưu tại máy: '+id;
+    if(!String(id).startsWith('LOCAL-')){
+      state.driveRecordId=id;sessionStorage.setItem('pti093_driveRecordId',id);localStorage.setItem('pti093_driveRecordId',id);
+    }
+    $('driveId').textContent='💻 Ảnh lưu tại máy · Hồ sơ '+id;
     $('driveId').classList.remove('hidden');
-    setDriveState('Đã lưu nháp tại máy · '+sections.reduce((n,g)=>n+g.items.length,0)+' ảnh · không tải ảnh lên Drive.');
-    msg('Đã lưu nháp tại máy cùng dữ liệu và ảnh gốc. Nháp chỉ có trên trình duyệt/máy tính này; không tự đồng bộ sang máy khác.',true);
+    setDriveState('Đã lưu '+sections.reduce((n,g)=>n+g.items.length,0)+' ảnh gốc tại máy. Đang đồng bộ thông tin hồ sơ lên Drive...');
+    msg('Đã lưu nháp ảnh tại máy. Ảnh không được tải lên Drive; thông tin Mã HS/BKS được lưu trên Drive để có thể tìm kiếm.',true);
+    if(!String(id).startsWith('LOCAL-')){
+      saveProjectToDrive(false).then(()=>setDriveState('Đã lưu ảnh tại máy và đồng bộ thông tin hồ sơ lên Drive.')).catch(e=>setDriveState('Ảnh đã lưu tại máy; chưa đồng bộ được thông tin lên Drive: '+e.message,false));
+    }
   }finally{db.close()}
 }
 async function openLocalDraft(id){
@@ -718,9 +730,11 @@ async function openLocalDraft(id){
     });
     if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
   });
-  state.driveRecordId='';
-  sessionStorage.removeItem('pti093_driveRecordId');
-  localStorage.removeItem('pti093_driveRecordId');
+  if(!String(id).startsWith('LOCAL-')){
+    state.driveRecordId=id;sessionStorage.setItem('pti093_driveRecordId',id);localStorage.setItem('pti093_driveRecordId',id);
+  }else{
+    state.driveRecordId='';sessionStorage.removeItem('pti093_driveRecordId');localStorage.removeItem('pti093_driveRecordId');
+  }
   state.localDraftId=id;
   $('bks').value=meta.bks||'';
   $('hoso').value=meta.caseNumber||'';
@@ -750,7 +764,7 @@ async function saveDraftWithoutPhotos(){
   finally{b.disabled=false}
 }
 async function createDriveRecord(){
-  if(state.driveRecordId){try{await window.pti093UploadAll();await saveProjectToDrive();setDriveState('Hồ sơ đã được cập nhật.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
+  if(state.driveRecordId){try{const result=await window.pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
   const btn=$('driveCreate');btn.disabled=true;setDriveState('Đang tạo hồ sơ và lưu dữ liệu...');
   try{
     const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
