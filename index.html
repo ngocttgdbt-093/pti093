@@ -23,11 +23,11 @@
 <div id="groupsBox" style="margin-top:14px"></div>
 </div></section>
 
-<section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm tiếp bản ảnh khác</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS hoặc BKS…"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
+<section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm tiếp bản ảnh khác</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">📝 Lưu nháp không tải ảnh</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS hoặc BKS…"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
 <div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026</div>
 </div>
 <script>
-const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:4,orientation:'landscape',pages:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false};
+const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:4,orientation:'landscape',pages:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[]};
 const $=id=>document.getElementById(id); const drop=$('drop');
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 function msg(t,show=true){$('status').textContent=t;$('status').classList.toggle('hidden',!show)}
@@ -111,7 +111,65 @@ async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.
       // i là vị trí tuyệt đối trong toàn bộ loại ảnh, không phải vị trí trong trang.
       pages.push(await drawPage(gr,pageItems,no++,Math.floor(i/state.per)+1,total,i));
     }}state.pages=pages;$('preview').innerHTML='';pages.forEach((c,i)=>{const d=document.createElement('div');d.className='pageprev';const t=document.createElement('div');t.className='muted';t.textContent=`Trang ${i+1}`;d.append(t,c);$('preview').appendChild(d)});$('previewInfo').textContent=`Preview ${pages.length} trang A4 · ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh · tối ưu ${pagePixels().dpi} DPI / JPEG ${Math.round(jpegQuality()*100)}%`;$('pdf').disabled=false;window.scrollTo({top:$('preview').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})}
-function pdfBytesFromCanvases(canvases){const enc=new TextEncoder(),chunks=[],objs=[];let off=0;const add=s=>{const b=enc.encode(s);chunks.push(b);off+=b.length};const obj=(n,body)=>{objs[n]=off;add(`${n} 0 obj\n${body}\nendobj\n`)};const streamObj=(n,dict,bytes)=>{objs[n]=off;add(`${n} 0 obj\n${dict}\nstream\n`);chunks.push(bytes);off+=bytes.length;add(`\nendstream\nendobj\n`)};add('%PDF-1.4\n%âãÏÓ\n');obj(1,'<< /Type /Catalog /Pages 2 0 R >>');const pageIds=[];for(let i=0;i<canvases.length;i++){const pid=3+i*3,imgid=4+i*3,contid=5+i*3;pageIds.push(pid);const pw=state.orientation==='landscape'?841.89:595.28,ph=state.orientation==='landscape'?595.28:841.89;obj(pid,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im${i+1} ${imgid} 0 R >> >> /Contents ${contid} 0 R >>`);const c=canvases[i],raw=atob(c.toDataURL('image/jpeg',jpegQuality()).split(',')[1]),u=new Uint8Array(raw.length);for(let j=0;j<raw.length;j++)u[j]=raw.charCodeAt(j);streamObj(imgid,`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${u.length} >>`,u);const cb=enc.encode(`q\n${pw} 0 0 ${ph} 0 0 cm\n/Im${i+1} Do\nQ\n`);streamObj(contid,`<< /Length ${cb.length} >>`,cb)}obj(2,`<< /Type /Pages /Count ${pageIds.length} /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] >>`);const xref=off;add(`xref\n0 ${objs.length}\n0000000000 65535 f \n`);for(let i=1;i<objs.length;i++)add(String(objs[i]).padStart(10,'0')+' 00000 n \n');add(`trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);const total=chunks.reduce((a,b)=>a+b.length,0),out=new Uint8Array(total);let p=0;for(const b of chunks){out.set(b,p);p+=b.length}return out}
+function pdfBytesFromCanvases(canvases,qualityOverride){const enc=new TextEncoder(),chunks=[],objs=[];let off=0;const add=s=>{const b=enc.encode(s);chunks.push(b);off+=b.length};const obj=(n,body)=>{objs[n]=off;add(`${n} 0 obj\n${body}\nendobj\n`)};const streamObj=(n,dict,bytes)=>{objs[n]=off;add(`${n} 0 obj\n${dict}\nstream\n`);chunks.push(bytes);off+=bytes.length;add(`\nendstream\nendobj\n`)};add('%PDF-1.4\n%âãÏÓ\n');obj(1,'<< /Type /Catalog /Pages 2 0 R >>');const pageIds=[];for(let i=0;i<canvases.length;i++){const pid=3+i*3,imgid=4+i*3,contid=5+i*3;pageIds.push(pid);const pw=state.orientation==='landscape'?841.89:595.28,ph=state.orientation==='landscape'?595.28:841.89;obj(pid,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im${i+1} ${imgid} 0 R >> >> /Contents ${contid} 0 R >>`);const c=canvases[i],raw=atob(c.toDataURL('image/jpeg',qualityOverride==null?jpegQuality():qualityOverride).split(',')[1]),u=new Uint8Array(raw.length);for(let j=0;j<raw.length;j++)u[j]=raw.charCodeAt(j);streamObj(imgid,`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${u.length} >>`,u);const cb=enc.encode(`q\n${pw} 0 0 ${ph} 0 0 cm\n/Im${i+1} Do\nQ\n`);streamObj(contid,`<< /Length ${cb.length} >>`,cb)}obj(2,`<< /Type /Pages /Count ${pageIds.length} /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] >>`);const xref=off;add(`xref\n0 ${objs.length}\n0000000000 65535 f \n`);for(let i=1;i<objs.length;i++)add(String(objs[i]).padStart(10,'0')+' 00000 n \n');add(`trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);const total=chunks.reduce((a,b)=>a+b.length,0),out=new Uint8Array(total);let p=0;for(const b of chunks){out.set(b,p);p+=b.length}return out}
+function resamplePdfCanvases(canvases,targetDpi){
+  const src=pagePixels(),scale=targetDpi/src.dpi;
+  if(scale>=0.999)return canvases;
+  return canvases.map(srcCanvas=>{
+    const w=Math.max(1,Math.round(srcCanvas.width*scale)),h=Math.max(1,Math.round(srcCanvas.height*scale));
+    const out=makeCanvas(w,h),ctx=out.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+    ctx.drawImage(srcCanvas,0,0,w,h);
+    return out;
+  });
+}
+function mib(n){return n/1048576}
+const PDF_SAFE_LIMIT=9.5*1048576;
+function pdfPackSize(bytes){return bytes.byteLength||bytes.length||0}
+function makePdfAt(canvases,dpi,quality){return {bytes:pdfBytesFromCanvases(resamplePdfCanvases(canvases,dpi),quality),dpi,quality}}
+async function buildAdaptivePdf(canvases){
+  const tries=[
+    {dpi:pagePixels().dpi,quality:jpegQuality()},
+    {dpi:120,quality:.72},
+    {dpi:100,quality:.65},
+    {dpi:85,quality:.58},
+    {dpi:72,quality:.52}
+  ];
+  let last=null;
+  for(const t of tries){
+    const result=makePdfAt(canvases,t.dpi,t.quality);last=result;
+    if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT)return {...result,compressed:t.dpi!==pagePixels().dpi};
+  }
+  return {...last,compressed:true};
+}
+function splitPdfBytes(canvases,filenameBase){
+  return (async()=>{
+    const parts=[];let start=0,partNo=1;
+    while(start<canvases.length){
+      let lo=start,hi=start+1,best=null;
+      while(hi<=canvases.length){
+        const trial=await buildAdaptivePdf(canvases.slice(start,hi));
+        if(pdfPackSize(trial.bytes)<=PDF_SAFE_LIMIT){best={end:hi,...trial};hi++;}
+        else break;
+      }
+      if(!best){
+        // Một trang vẫn quá lớn: hạ mạnh hơn để tránh vượt ngưỡng nghiệp vụ.
+        const fallbackDpi=[60,50,40];
+        let one=null;
+        for(const dpi of fallbackDpi){
+          const q=dpi===60?.46:dpi===50?.40:.34;
+          const r=makePdfAt(canvases.slice(start,start+1),dpi,q);one=r;
+          if(pdfPackSize(r.bytes)<=PDF_SAFE_LIMIT)break;
+        }
+        best={end:start+1,...one};
+      }
+      parts.push({blob:new Blob([best.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' Phan '+partNo+'.pdf',dpi:best.dpi,quality:best.quality});
+      start=best.end;partNo++;
+    }
+    return parts;
+  })();
+}
+
 
 // ===== Word draft (PC only) =====
 const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -165,17 +223,30 @@ async function exportPdfFile(blob,filename){
 }
 $('pdf').onclick=async()=>{
   if(!state.pages.length)return;
+  const btn=$('pdf');btn.disabled=true;
   try{
-    const bytes=pdfBytesFromCanvases(state.pages);
-    const blob=new Blob([bytes],{type:'application/pdf'});
-    await exportPdfFile(blob,pdfFileName());
-    $('backEdit').style.display='inline-block';
-    $('newCase').style.display='inline-block';
-    msg('Đã tạo PDF. Trên iPhone/iPad, PDF được mở trong Safari; bấm Chia sẻ → Lưu vào Tệp để lưu file.',true);
+    const baseName=pdfFileName();
+    msg('Đang tối ưu PDF để phù hợp giới hạn 10 MB...',true);
+    const result=await buildAdaptivePdf(state.pages);
+    if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT){
+      const blob=new Blob([result.bytes],{type:'application/pdf'});
+      await exportPdfFile(blob,baseName);
+      $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
+      msg('Đã xuất PDF '+mib(pdfPackSize(result.bytes)).toFixed(2)+' MB · '+result.dpi+' DPI · JPEG '+Math.round(result.quality*100)+'%.',true);
+    }else{
+      msg('Bộ ảnh vẫn vượt 9,5 MB ở mức nén an toàn. Đang tự chia thành nhiều PDF...',true);
+      const parts=await splitPdfBytes(state.pages,baseName);
+      for(let i=0;i<parts.length;i++){
+        await exportPdfFile(parts[i].blob,parts[i].filename);
+        if(i<parts.length-1)await new Promise(r=>setTimeout(r,900));
+      }
+      $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
+      msg('Đã xuất '+parts.length+' file PDF, mỗi file được giữ dưới 9,5 MB để phù hợp hệ thống nghiệp vụ.',true);
+    }
   }catch(e){
     msg('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)),false);
     alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
-  }
+  }finally{btn.disabled=false}
 };
 $('backEdit').onclick=()=>{window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});msg('Đã quay lại hồ sơ hiện tại. Anh có thể sửa ảnh, thêm ảnh, sửa thuyết minh hoặc sửa từng nội dung.',true)};
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
@@ -184,6 +255,7 @@ $('driveSearchBtn').onclick=searchDriveRecords;
 $('driveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchDriveRecords()});
 $('driveSaveProject').onclick=async()=>{const b=$('driveSaveProject');b.disabled=true;try{await window.pti093UploadAll();await saveProjectToDrive();setDriveState('Đã lưu thay đổi hồ sơ.')}catch(e){msg('Lỗi lưu thay đổi: '+e.message,true)}finally{b.disabled=false}};
 $('driveCreate').onclick=createDriveRecord;
+$('driveSaveDraft').onclick=saveDraftWithoutPhotos;
 $('newCase').onclick=()=>{const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||''): $('gdv').value; if(gdv){localStorage.setItem('pti093_gdv',gdv); if($('gdv').value==='Nhập tên khác')localStorage.setItem('pti093_gdv_custom',gdv)} location.reload();};
 
 /* ===== PTI093 GOOGLE DRIVE - GIAI ĐOẠN 1: TẠO RECORD ===== */
@@ -503,6 +575,37 @@ async function sendDrivePayload(payload,recordId,uploadKey){
   throw lastError||new Error('Gửi ảnh thất bại');
 }
 
+function renderDriveUploadFailures(){
+  const box=$('driveUploadMissing');if(!box)return;
+  const rows=Array.isArray(state.driveUploadFailures)?state.driveUploadFailures:[];
+  if(!rows.length){box.classList.add('hidden');box.innerHTML='';return}
+  box.classList.remove('hidden');
+  box.innerHTML='<div style="font-weight:700;color:#8a5a00">⚠️ Ảnh chưa được xác nhận ('+rows.length+')</div><div style="margin-top:5px">Chỉ các ảnh dưới đây cần gửi lại:</div>';
+  const ul=document.createElement('ol');ul.style.cssText='margin:6px 0 8px 20px;padding:0';
+  rows.forEach((x,i)=>{const li=document.createElement('li');li.style.marginBottom='3px';li.textContent=(x.name||('Ảnh số '+(x.index+1)))+(x.error?' — '+x.error:'');ul.appendChild(li)});
+  box.appendChild(ul);
+  const b=document.createElement('button');b.type='button';b.className='btn light';b.textContent='↻ Gửi lại chỉ các ảnh chưa xác nhận';
+  b.onclick=async()=>{b.disabled=true;try{await window.pti093UploadAll()}finally{b.disabled=false}};
+  box.appendChild(b);
+}
+async function saveDraftWithoutPhotos(){
+  const ok=confirm('Lưu nháp hồ sơ lên Google Drive mà KHÔNG tải ảnh lên?\n\nHồ sơ sẽ lưu Mã HS, BKS, GĐV, thứ tự/nội dung và thông tin nhận diện ảnh. Ảnh vẫn phải giữ nguyên tên và không di chuyển/đổi tên; khi mở lại, trình duyệt có thể yêu cầu anh chọn lại các ảnh từ máy tính.');
+  if(!ok)return;
+  const b=$('driveSaveDraft');b.disabled=true;setDriveState('Đang lưu nháp không tải ảnh...');
+  try{
+    if(!state.driveRecordId){
+      const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
+      const res=await fetch(PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Đang xử lý'),{cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const data=await res.json();if(!data.success)throw new Error(data.error||'API không tạo được hồ sơ');
+      state.driveRecordId=data.recordId||'';sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
+      $('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden');
+    }
+    await saveProjectToDrive(false);
+    setDriveState('Đã lưu nháp hồ sơ · chưa tải ảnh lên Drive.');
+    msg('Đã lưu nháp không tải ảnh. Khi làm tiếp, giữ nguyên tên ảnh và chọn lại ảnh nếu trình duyệt yêu cầu.',true);
+  }catch(e){setDriveState('Chưa lưu được nháp: '+e.message,false);msg('Lỗi lưu nháp: '+e.message,true)}finally{b.disabled=false}
+}
 async function createDriveRecord(){
   if(state.driveRecordId){try{await window.pti093UploadAll();await saveProjectToDrive();setDriveState('Hồ sơ đã được cập nhật.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
   const btn=$('driveCreate');btn.disabled=true;setDriveState('Đang tạo hồ sơ và lưu dữ liệu...');
@@ -557,15 +660,16 @@ window.pti093UploadAll = async function(){
   const total=unique.length;
 
   const DRIVE_CONCURRENCY=10;
+  const DRIVE_BATCH_SIZE=8;
   let failures=[];
 
   try{
     // V9: chạy song song tối đa 10 ảnh, nhưng MỖI ảnh chỉ được tính thành công
     // sau khi server xác nhận SHA-256 đã có. Không quay lại kiểu fire-and-forget.
-    for(let start=0;start<unique.length;start+=DRIVE_CONCURRENCY){
-      const batch=unique.slice(start,start+DRIVE_CONCURRENCY);
-      const batchNo=Math.floor(start/DRIVE_CONCURRENCY)+1;
-      const batchTotal=Math.ceil(unique.length/DRIVE_CONCURRENCY);
+    for(let start=0;start<unique.length;start+=DRIVE_BATCH_SIZE){
+      const batch=unique.slice(start,start+DRIVE_BATCH_SIZE);
+      const batchNo=Math.floor(start/DRIVE_BATCH_SIZE)+1;
+      const batchTotal=Math.ceil(unique.length/DRIVE_BATCH_SIZE);
       setDriveState('Đang xử lý nhóm '+batchNo+'/'+batchTotal+' · '+sent+'/'+total+' ảnh đã xác nhận...');
 
       const preparedResults=await Promise.allSettled(
@@ -579,6 +683,8 @@ window.pti093UploadAll = async function(){
         }else{
           failures.push({
             key:batch[offset].key,
+            name:(batch[offset].it&&batch[offset].it.file&&batch[offset].it.file.name)||('Ảnh số '+(start+offset+1)),
+            index:start+offset,
             error:r.reason&&r.reason.message?r.reason.message:String(r.reason||'Không chuẩn bị được ảnh')
           });
         }
@@ -607,7 +713,7 @@ window.pti093UploadAll = async function(){
           }
         }else{
           const msgText=r.reason&&r.reason.message?r.reason.message:String(r.reason||'Gửi ảnh thất bại');
-          failures.push({key:'',error:msgText});
+          failures.push({key:item.x.key,name:(item.x.it&&item.x.it.file&&item.x.it.file.name)||('Ảnh số '+(start+ready.indexOf(item.x)+1)),index:start,error:msgText});
         }
       });
 
@@ -615,8 +721,11 @@ window.pti093UploadAll = async function(){
     }
 
     saveDriveUploadedKeys(id,uploaded);
+    state.driveUploadFailures=failures.map(x=>({key:x.key||'',name:x.name||'Ảnh không xác định',index:Number.isFinite(x.index)?x.index:0,error:x.error||''}));
+    renderDriveUploadFailures();
 
     if(failures.length===0&&sent===total){
+      state.driveUploadFailures=[];renderDriveUploadFailures();
       setDriveState('Đã xác nhận đủ '+sent+'/'+total+' ảnh trên Google Drive.');
       msg('Đã xác nhận lưu đủ '+sent+'/'+total+' ảnh. Bộ đếm chỉ tăng sau khi máy chủ xác nhận.',true);
     }else{
@@ -626,6 +735,10 @@ window.pti093UploadAll = async function(){
     }
   }catch(e){
     saveDriveUploadedKeys(id,uploaded);
+    if(!state.driveUploadFailures.length){
+      state.driveUploadFailures=[{key:'',name:'Không xác định được tên ảnh',index:0,error:e.message||String(e)}];
+    }
+    renderDriveUploadFailures();
     const remain=total-sent;
     setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh. Lỗi: '+e.message,false);
     msg('Đã xác nhận '+sent+'/'+total+' ảnh; còn '+remain+' ảnh chưa xác nhận: '+e.message,true);
