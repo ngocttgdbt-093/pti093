@@ -595,8 +595,9 @@ async function waitForUploadStatus(recordId,uploadKey){
 }
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  // V10: gửi POST một lần, sau đó kiểm tra trạng thái trực tiếp bằng JSONP.
-  // Không phụ thuộc postMessage giữa iframe và trang GitHub Pages.
+  // V14: POST qua iframe và nhận xác nhận trực tiếp bằng window.postMessage.
+  // Backend đã trả kết quả upload bằng HtmlService + window.top.postMessage(),
+  // nên không cần gọi lại doGet/uploadStatus JSONP.
   const token='pti093_'+Date.now()+'_'+Math.random().toString(36).slice(2);
   const iframe=document.createElement('iframe');
   iframe.name=token;
@@ -613,20 +614,54 @@ async function sendDrivePayload(payload,recordId,uploadKey){
   form.appendChild(input);
   document.body.appendChild(iframe);
   document.body.appendChild(form);
-  try{
-    form.submit();
-  }catch(e){
-    try{form.remove()}catch(ignore){}
-    try{iframe.remove()}catch(ignore){}
-    throw e;
-  }
-  try{
-    const result=await waitForUploadStatus(recordId,uploadKey);
-    return result;
-  }finally{
-    try{form.remove()}catch(e){}
-    try{iframe.remove()}catch(e){}
-  }
+
+  return await new Promise((resolve,reject)=>{
+    let settled=false;
+    const timeoutMs=30000;
+
+    const cleanup=()=>{
+      window.removeEventListener('message',onMessage);
+      clearTimeout(timer);
+      try{form.remove()}catch(e){}
+      try{iframe.remove()}catch(e){}
+    };
+
+    const finish=(fn,value)=>{
+      if(settled)return;
+      settled=true;
+      cleanup();
+      fn(value);
+    };
+
+    const onMessage=(event)=>{
+      // Chỉ nhận thông báo từ đúng iframe vừa gửi request.
+      if(!iframe.contentWindow || event.source!==iframe.contentWindow)return;
+
+      const data=event.data;
+      if(!data || data.source!=='PTI093_DATA_API')return;
+
+      if(String(data.recordId||'')!==String(recordId||''))return;
+      if(String(data.uploadKey||'')!==String(uploadKey||''))return;
+
+      if(data.success){
+        finish(resolve,data);
+      }else{
+        finish(reject,new Error(data.error||'Máy chủ không xác nhận được ảnh.'));
+      }
+    };
+
+    const timer=setTimeout(()=>{
+      finish(reject,new Error('Quá thời gian chờ máy chủ xác nhận ảnh.'));
+    },timeoutMs);
+
+    window.addEventListener('message',onMessage);
+
+    try{
+      form.submit();
+    }catch(e){
+      finish(reject,e);
+    }
+  });
 }
 function renderDriveUploadFailures(){
   const box=$('driveUploadMissing');if(!box)return;
