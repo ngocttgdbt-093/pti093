@@ -595,9 +595,9 @@ async function waitForUploadStatus(recordId,uploadKey){
 }
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  // V14: POST qua iframe và nhận xác nhận trực tiếp bằng window.postMessage.
-  // Backend đã trả kết quả upload bằng HtmlService + window.top.postMessage(),
-  // nên không cần gọi lại doGet/uploadStatus JSONP.
+  // V15: nhận xác nhận postMessage theo recordId/uploadKey.
+  // Không khóa cứng event.source hoặc data.source vì Apps Script có thể chuyển hướng
+  // phản hồi qua miền googleusercontent.com.
   const token='pti093_'+Date.now()+'_'+Math.random().toString(36).slice(2);
   const iframe=document.createElement('iframe');
   iframe.name=token;
@@ -634,19 +634,18 @@ async function sendDrivePayload(payload,recordId,uploadKey){
     };
 
     const onMessage=(event)=>{
-      // Chỉ nhận thông báo từ đúng iframe vừa gửi request.
-      if(!iframe.contentWindow || event.source!==iframe.contentWindow)return;
-
-      const data=event.data;
-      if(!data || data.source!=='PTI093_DATA_API')return;
-
+      let data=event.data;
+      if(typeof data==='string'){
+        try{data=JSON.parse(data)}catch(e){return}
+      }
+      if(!data || typeof data!=='object')return;
       if(String(data.recordId||'')!==String(recordId||''))return;
       if(String(data.uploadKey||'')!==String(uploadKey||''))return;
 
-      if(data.success){
+      if(data.success===true || data.success===1 || data.ok===true){
         finish(resolve,data);
-      }else{
-        finish(reject,new Error(data.error||'Máy chủ không xác nhận được ảnh.'));
+      }else if(data.success===false || data.ok===false){
+        finish(reject,new Error(data.error||data.message||'Máy chủ không xác nhận được ảnh.'));
       }
     };
 
