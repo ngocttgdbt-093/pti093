@@ -150,15 +150,17 @@ const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZS
 state.driveRecordId='';
 function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textContent=t;s.className='driveState'+(ok?'':' driveWarn')}
 async function optimizeDriveImage(file){
-  // Chế độ nhanh: ảnh JPEG đã đủ nhỏ thì bỏ qua bước nén hoàn toàn.
-  // Ảnh lớn mới resize + JPEG để giảm mạnh thời gian xử lý và dung lượng Drive.
-  const maxSide=2000;
-  const quality=0.78;
-  const skipBytes=2200*1024;
-  if(!file || !file.type || !file.type.startsWith('image/')) {
+  // Tối ưu theo hướng ưu tiên TỐC ĐỘ:
+  // - JPEG <= 2.5 MB: giữ nguyên, không qua canvas.
+  // - Ảnh lớn: thu về tối đa 1920px, JPEG quality 0.82.
+  // - Việc xử lý nhiều ảnh sẽ chạy song song theo từng nhóm nhỏ ở hàm upload bên dưới.
+  const maxSide=1920;
+  const quality=0.82;
+  const skipBytes=2500*1024;
+  if(!file || !file.type || !file.type.startsWith('image/')){
     return {blob:file,fileName:file.name,mimeType:file.type||'application/octet-stream'};
   }
-  if(file.size<=skipBytes && /\.(jpe?g)$/i.test(file.name||'')){
+  if(file.size<=skipBytes && /\\.(jpe?g)$/i.test(file.name||'')){
     return {blob:file,fileName:file.name,mimeType:file.type||'image/jpeg',originalSize:file.size,optimizedSize:file.size,skipped:true};
   }
   return await new Promise((resolve,reject)=>{
@@ -167,10 +169,10 @@ async function optimizeDriveImage(file){
     const finish=(blob)=>{
       cleanup();
       if(!blob){reject(new Error('Không nén được ảnh'));return}
-      const base=(file.name||'anh').replace(/\.[^.]+$/,'');
+      const base=(file.name||'anh').replace(/\\.[^.]+$/,'');
       resolve({
         blob,
-        fileName:/\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg',
+        fileName:/\\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg',
         mimeType:'image/jpeg',
         originalSize:file.size,
         optimizedSize:blob.size
@@ -213,7 +215,104 @@ async function optimizeDriveImage(file){
   });
 }
 
-async function createDriveRecord(){if(state.driveRecordId){setDriveState('Hồ sơ Drive đã được tạo trong phiên này.');$('driveId').textContent='Record ID: '+state.driveRecordId;$('driveId').classList.remove('hidden');return}const btn=$('driveCreate');btn.disabled=true;setDriveState('Đang tạo hồ sơ trên Google Drive...');try{const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();const url=PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Đang xử lý');const res=await fetch(url,{method:'GET',cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();if(!data.success)throw new Error(data.error||'API không tạo được hồ sơ');state.driveRecordId=data.recordId||'';if(state.driveRecordId){sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId)}$('driveId').textContent='Record ID: '+state.driveRecordId;$('driveId').classList.remove('hidden');setDriveState('Đã tạo hồ sơ Drive thành công.');msg('Đã tạo hồ sơ Drive. Record ID: '+state.driveRecordId,true)}catch(e){setDriveState('Chưa tạo được hồ sơ Drive: '+e.message,false);msg('Lỗi kết nối Google Drive: '+e.message,true)}finally{btn.disabled=false}}
+function driveImageKey(it){
+  const f=it&&it.file;
+  if(!f)return '';
+  return [
+    f.name||'',
+    f.size||0,
+    f.lastModified||0,
+    f.webkitRelativePath||''
+  ].join('|');
+}
+function getDriveUploadedKeys(recordId){
+  try{
+    return new Set(JSON.parse(localStorage.getItem('pti093_drive_uploaded_'+recordId)||'[]'));
+  }catch(e){return new Set()}
+}
+function saveDriveUploadedKeys(recordId,set){
+  try{
+    localStorage.setItem('pti093_drive_uploaded_'+recordId,JSON.stringify([...set]));
+  }catch(e){}
+}
+
+async function prepareDriveItem(it,index,total){
+  setDriveState('Đang chuẩn bị ảnh '+(index+1)+'/'+total+'...');
+  const optimized=await optimizeDriveImage(it.file);
+  const dataUrl=await new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>resolve(fr.result);
+    fr.onerror=()=>reject(new Error('Không đọc được ảnh số '+(index+1)));
+    fr.readAsDataURL(optimized.blob);
+  });
+  const base64=String(dataUrl).split(',')[1]||'';
+  return {
+    key:driveImageKey(it),
+    payload:JSON.stringify({
+      action:'uploadImage',
+      recordId:window.__pti093_drive_record_id,
+      fileName:optimized.fileName,
+      mimeType:optimized.mimeType,
+      base64
+    })
+  };
+}
+
+async function sendDrivePayload(payload){
+  let beaconSent=false;
+  if(navigator.sendBeacon){
+    try{
+      beaconSent=navigator.sendBeacon(
+        PTI093_API,
+        new Blob([payload],{type:'text/plain;charset=UTF-8'})
+      );
+    }catch(e){beaconSent=false}
+  }
+  if(!beaconSent){
+    fetch(PTI093_API,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=UTF-8'},
+      body:payload
+    }).catch(()=>{});
+  }
+  return true;
+}
+
+async function createDriveRecord(){
+  if(state.driveRecordId){
+    setDriveState('Hồ sơ Drive đã được tạo trong phiên này.');
+    $('driveId').textContent='Record ID: '+state.driveRecordId;
+    $('driveId').classList.remove('hidden');
+    return
+  }
+  const btn=$('driveCreate');
+  btn.disabled=true;
+  setDriveState('Đang tạo hồ sơ trên Google Drive...');
+  try{
+    const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
+    const url=PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Đang xử lý');
+    const res=await fetch(url,{method:'GET',cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(!data.success)throw new Error(data.error||'API không tạo được hồ sơ');
+    state.driveRecordId=data.recordId||'';
+    if(state.driveRecordId){
+      sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);
+      localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
+    }
+    $('driveId').textContent='Record ID: '+state.driveRecordId;
+    $('driveId').classList.remove('hidden');
+    setDriveState('Đã tạo hồ sơ Drive thành công.');
+    msg('Đã tạo hồ sơ Drive. Record ID: '+state.driveRecordId,true)
+  }catch(e){
+    setDriveState('Chưa tạo được hồ sơ Drive: '+e.message,false);
+    msg('Lỗi kết nối Google Drive: '+e.message,true)
+  }finally{
+    btn.disabled=false
+  }
+}
+
 window.pti093UploadAll = async function(){
   const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||localStorage.getItem('pti093_driveRecordId')||'';
   if(!id){
@@ -221,67 +320,64 @@ window.pti093UploadAll = async function(){
     msg('Chưa có Record ID Drive. Hãy bấm “Tạo hồ sơ Drive” trước.',true);
     return
   }
+  window.__pti093_drive_record_id=id;
+
   const all=getAllGroups();
-  // Lấy cả ảnh đã "Lưu mục này" và ảnh đang nằm ở mục hiện tại.
-  // Trường hợp người dùng vừa chọn ảnh nhưng chưa bấm "Lưu mục này",
-  // các ảnh đó vẫn phải được gửi lên Drive.
   const savedItems=all.flatMap(g=>g.items||[]);
-  const currentItems=(state.current&&Array.isArray(state.current.items))
-    ? state.current.items
-    : [];
+  const currentItems=(state.current&&Array.isArray(state.current.items))?state.current.items:[];
   const items=[...savedItems,...currentItems];
   if(!items.length){
     setDriveState('Chưa có ảnh để gửi.',false);
     msg('Chưa có ảnh để gửi lên Drive.',true);
     return
   }
+
+  // Không gửi lại cùng một ảnh cho cùng một Record ID.
+  // Danh sách được lưu ở localStorage nên bấm nút lần 2 sẽ chỉ gửi ảnh mới.
+  const uploaded=getDriveUploadedKeys(id);
+  const unique=[];
+  const seen=new Set();
+  for(const it of items){
+    const key=driveImageKey(it);
+    if(!key || uploaded.has(key) || seen.has(key))continue;
+    seen.add(key);
+    unique.push({it,key});
+  }
+
+  if(!unique.length){
+    setDriveState('Tất cả ảnh của hồ sơ này đã được gửi trước đó.');
+    msg('Không có ảnh mới để gửi. Hồ sơ này đã được lưu các ảnh hiện có.',true);
+    return
+  }
+
   const btn=$('driveUploadOne');
   btn.disabled=true;
   let sent=0;
+  const total=unique.length;
+  const batchSize=4;
+
   try{
-    for(let i=0;i<items.length;i++){
-      const it=items[i];
-      setDriveState('Đang xử lý ảnh '+(i+1)+'/'+items.length+' (ảnh nhỏ sẽ bỏ qua bước nén)...');
-      const optimized=await optimizeDriveImage(it.file);
-      const dataUrl=await new Promise((resolve,reject)=>{
-        const fr=new FileReader();
-        fr.onload=()=>resolve(fr.result);
-        fr.onerror=()=>reject(new Error('Không đọc được ảnh số '+(i+1)));
-        fr.readAsDataURL(optimized.blob)
-      });
-      const base64=String(dataUrl).split(',')[1]||'';
-      const payload=JSON.stringify({
-        action:'uploadImage',
-        recordId:id,
-        fileName:optimized.fileName,
-        mimeType:optimized.mimeType,
-        base64
-      });
-      setDriveState('Đang nén và gửi ảnh '+(i+1)+'/'+items.length+' lên Google Drive...');
-      let beaconSent=false;
-      if(navigator.sendBeacon){
-        try{
-          beaconSent=navigator.sendBeacon(
-            PTI093_API,
-            new Blob([payload],{type:'text/plain;charset=UTF-8'})
-          );
-        }catch(e){beaconSent=false}
+    // Chuẩn bị tối đa 4 ảnh song song: giảm mạnh thời gian chờ do canvas/FileReader.
+    for(let base=0;base<unique.length;base+=batchSize){
+      const batch=unique.slice(base,base+batchSize);
+      setDriveState('Đang tối ưu nhanh '+(base+1)+'-'+(base+batch.length)+'/'+total+' ảnh...');
+      const prepared=await Promise.all(batch.map((x,j)=>prepareDriveItem(x.it,base+j,total)));
+      for(let j=0;j<prepared.length;j++){
+        const p=prepared[j];
+        // Đánh dấu ngay khi yêu cầu đã được đưa vào hàng đợi gửi.
+        await sendDrivePayload(p.payload);
+        uploaded.add(p.key);
+        sent++;
       }
-      if(!beaconSent){
-        await fetch(PTI093_API,{
-          method:'POST',
-          mode:'no-cors',
-          headers:{'Content-Type':'text/plain;charset=UTF-8'},
-          body:payload
-        }).catch(()=>{});
-      }
-      sent++;
+      saveDriveUploadedKeys(id,uploaded);
     }
-    setDriveState('Đã gửi yêu cầu '+sent+'/'+items.length+' ảnh lên Google Drive.');
-    msg('Đã gửi yêu cầu lưu '+sent+'/'+items.length+' ảnh. Hãy kiểm tra thư mục images của Record ID.',true)
+
+    setDriveState('Đã gửi yêu cầu '+sent+'/'+total+' ảnh lên Google Drive.');
+    msg('Đã gửi yêu cầu lưu '+sent+'/'+total+' ảnh mới. Bấm lại sẽ không lưu trùng ảnh đã gửi.',true)
   }catch(e){
-    setDriveState('Đã gửi '+sent+'/'+items.length+' ảnh. Lỗi: '+e.message,false);
-    msg('Đã gửi '+sent+'/'+items.length+' ảnh; lỗi ở ảnh tiếp theo: '+e.message,true)
+    saveDriveUploadedKeys(id,uploaded);
+    setDriveState('Đã gửi '+sent+'/'+total+' ảnh. Lỗi: '+e.message,false);
+    msg('Đã gửi '+sent+'/'+total+' ảnh; lỗi ở ảnh tiếp theo: '+e.message,true)
   }finally{
     btn.disabled=false
   }
