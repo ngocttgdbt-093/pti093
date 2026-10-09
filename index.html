@@ -595,7 +595,8 @@ async function waitForUploadStatus(recordId,uploadKey){
 }
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  // V15: nhận xác nhận postMessage theo recordId/uploadKey.
+  // V16: ưu tiên postMessage; nếu lớp ContentService của Apps Script làm mất phản hồi,
+  // kiểm tra trạng thái upload qua JSONP mà không gửi POST ảnh lần thứ hai.
   // Không khóa cứng event.source hoặc data.source vì Apps Script có thể chuyển hướng
   // phản hồi qua miền googleusercontent.com.
   const token='pti093_'+Date.now()+'_'+Math.random().toString(36).slice(2);
@@ -617,7 +618,7 @@ async function sendDrivePayload(payload,recordId,uploadKey){
 
   return await new Promise((resolve,reject)=>{
     let settled=false;
-    const timeoutMs=30000;
+    const timeoutMs=10000;
 
     const cleanup=()=>{
       window.removeEventListener('message',onMessage);
@@ -649,8 +650,14 @@ async function sendDrivePayload(payload,recordId,uploadKey){
       }
     };
 
-    const timer=setTimeout(()=>{
-      finish(reject,new Error('Quá thời gian chờ máy chủ xác nhận ảnh.'));
+    const timer=setTimeout(async()=>{
+      // Không gửi lại ảnh để tránh tạo bản sao. Chỉ hỏi trạng thái mà máy chủ đã ghi.
+      try{
+        const status=await waitForUploadStatus(recordId,uploadKey);
+        finish(resolve,status);
+      }catch(statusError){
+        finish(reject,new Error('Không nhận được xác nhận trực tiếp; kiểm tra trạng thái dự phòng thất bại: '+(statusError&&statusError.message?statusError.message:String(statusError))));
+      }
     },timeoutMs);
 
     window.addEventListener('message',onMessage);
