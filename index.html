@@ -390,34 +390,76 @@ window.pti093UploadAll = async function(){
   let sent=0;
   const total=unique.length;
 
+  const DRIVE_CONCURRENCY=6;
+  let failures=[];
+
   try{
-    // Mỗi ảnh chỉ được tính thành công sau khi server xác nhận SHA-256 đã có.
-    for(let i=0;i<unique.length;i++){
-      const x=unique[i];
-      setDriveState('Đang chuẩn bị ảnh '+(i+1)+'/'+total+'...');
+    // V9: chạy song song tối đa 6 ảnh, nhưng MỖI ảnh chỉ được tính thành công
+    // sau khi server xác nhận SHA-256 đã có. Không quay lại kiểu fire-and-forget.
+    for(let start=0;start<unique.length;start+=DRIVE_CONCURRENCY){
+      const batch=unique.slice(start,start+DRIVE_CONCURRENCY);
+      const batchNo=Math.floor(start/DRIVE_CONCURRENCY)+1;
+      const batchTotal=Math.ceil(unique.length/DRIVE_CONCURRENCY);
+      setDriveState('Đang xử lý nhóm '+batchNo+'/'+batchTotal+' · '+sent+'/'+total+' ảnh đã xác nhận...');
+
+      const preparedResults=await Promise.allSettled(
+        batch.map((x,offset)=>prepareDriveItem(x.it,start+offset,total))
+      );
+
+      const ready=[];
+      preparedResults.forEach((r,offset)=>{
+        if(r.status==='fulfilled'){
+          ready.push({x:batch[offset],prepared:r.value});
+        }else{
+          failures.push({
+            key:batch[offset].key,
+            error:r.reason&&r.reason.message?r.reason.message:String(r.reason||'Không chuẩn bị được ảnh')
+          });
+        }
+      });
+
+      const uploadResults=await Promise.allSettled(
+        ready.map(async item=>{
+          const result=await sendDrivePayload(item.prepared.payload,id,item.prepared.uploadKey);
+          return {item,result};
+        })
+      );
+
+      uploadResults.forEach(r=>{
+        if(r.status==='fulfilled'){
+          const {item,result}=r.value;
+          uploaded.add(item.prepared.key);
+          sent++;
+          saveDriveUploadedKeys(id,uploaded);
+          if(result&&result.duplicate){
+            setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh · ảnh đã có sẵn trên Google Drive.');
+          }else{
+            setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh trên Google Drive.');
+          }
+        }else{
+          const msgText=r.reason&&r.reason.message?r.reason.message:String(r.reason||'Gửi ảnh thất bại');
+          failures.push({key:'',error:msgText});
+        }
+      });
+
       await new Promise(resolve=>setTimeout(resolve,0));
-      const prepared=await prepareDriveItem(x.it,i,total);
-
-      setDriveState('Đang gửi ảnh '+(i+1)+'/'+total+'...');
-      const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
-
-      uploaded.add(prepared.key);
-      sent++;
-      saveDriveUploadedKeys(id,uploaded);
-
-      if(result && result.duplicate){
-        setDriveState('Ảnh '+sent+'/'+total+' đã có sẵn trên Google Drive (không tạo trùng).');
-      }else{
-        setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh trên Google Drive.');
-      }
     }
 
-    setDriveState('Đã xác nhận đủ '+sent+'/'+total+' ảnh trên Google Drive.');
-    msg('Đã xác nhận lưu đủ '+sent+'/'+total+' ảnh. Bộ đếm chỉ tăng sau khi máy chủ xác nhận.',true)
+    saveDriveUploadedKeys(id,uploaded);
+
+    if(failures.length===0&&sent===total){
+      setDriveState('Đã xác nhận đủ '+sent+'/'+total+' ảnh trên Google Drive.');
+      msg('Đã xác nhận lưu đủ '+sent+'/'+total+' ảnh. Bộ đếm chỉ tăng sau khi máy chủ xác nhận.',true);
+    }else{
+      const remain=total-sent;
+      setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh. Còn '+remain+' ảnh chưa xác nhận.',false);
+      msg('Đã xác nhận '+sent+'/'+total+' ảnh. Còn '+remain+' ảnh chưa xác nhận; bấm gửi lại để tiếp tục.',true);
+    }
   }catch(e){
     saveDriveUploadedKeys(id,uploaded);
+    const remain=total-sent;
     setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh. Lỗi: '+e.message,false);
-    msg('Đã xác nhận '+sent+'/'+total+' ảnh; ảnh tiếp theo chưa được xác nhận: '+e.message,true)
+    msg('Đã xác nhận '+sent+'/'+total+' ảnh; còn '+remain+' ảnh chưa xác nhận: '+e.message,true);
   }finally{
     btn.disabled=false
   }
