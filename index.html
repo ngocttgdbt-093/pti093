@@ -160,7 +160,7 @@ async function optimizeDriveImage(file){
   if(!file || !file.type || !file.type.startsWith('image/')){
     return {blob:file,fileName:file.name,mimeType:file.type||'application/octet-stream'};
   }
-  if(file.size<=skipBytes && /\\.(jpe?g)$/i.test(file.name||'')){
+  if(file.size<=skipBytes && /\.(jpe?g)$/i.test(file.name||'')){
     return {blob:file,fileName:file.name,mimeType:file.type||'image/jpeg',originalSize:file.size,optimizedSize:file.size,skipped:true};
   }
   return await new Promise((resolve,reject)=>{
@@ -169,7 +169,7 @@ async function optimizeDriveImage(file){
     const finish=(blob)=>{
       cleanup();
       if(!blob){reject(new Error('Không nén được ảnh'));return}
-      const base=(file.name||'anh').replace(/\\.[^.]+$/,'');
+      const base=(file.name||'anh').replace(/\.[^.]+$/,'');
       resolve({
         blob,
         fileName:/\\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg',
