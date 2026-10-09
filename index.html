@@ -237,7 +237,6 @@ function saveDriveUploadedKeys(recordId,set){
 }
 
 async function prepareDriveItem(it,index,total){
-  setDriveState('Đang chuẩn bị ảnh '+(index+1)+'/'+total+'...');
   const optimized=await optimizeDriveImage(it.file);
   const dataUrl=await new Promise((resolve,reject)=>{
     const fr=new FileReader();
@@ -361,7 +360,9 @@ window.pti093UploadAll = async function(){
     // Chuẩn bị tối đa 4 ảnh song song: giảm mạnh thời gian chờ do canvas/FileReader.
     for(let base=0;base<unique.length;base+=batchSize){
       const batch=unique.slice(base,base+batchSize);
-      setDriveState('Đang tối ưu nhanh '+(base+1)+'-'+(base+batch.length)+'/'+total+' ảnh...');
+      setDriveState('Đang chuẩn bị ảnh '+(base+1)+'-'+(base+batch.length)+'/'+total+'...');
+      // Nhường 1 nhịp cho trình duyệt cập nhật giao diện trước khi xử lý ảnh.
+      await new Promise(resolve=>setTimeout(resolve,0));
       const prepared=await Promise.all(batch.map((x,j)=>prepareDriveItem(x.it,base+j,total)));
       for(let j=0;j<prepared.length;j++){
         const p=prepared[j];
@@ -371,9 +372,12 @@ window.pti093UploadAll = async function(){
         sent++;
       }
       saveDriveUploadedKeys(id,uploaded);
+      setDriveState('Đã xếp gửi '+sent+'/'+total+' ảnh lên Google Drive...');
+      // Cho giao diện kịp hiển thị tiến độ trước khi chuyển sang nhóm tiếp theo.
+      await new Promise(resolve=>setTimeout(resolve,0));
     }
 
-    setDriveState('Đã gửi yêu cầu '+sent+'/'+total+' ảnh lên Google Drive.');
+    setDriveState('Hoàn tất: đã xếp gửi '+sent+'/'+total+' ảnh lên Google Drive.');
     msg('Đã gửi yêu cầu lưu '+sent+'/'+total+' ảnh mới. Bấm lại sẽ không lưu trùng ảnh đã gửi.',true)
   }catch(e){
     saveDriveUploadedKeys(id,uploaded);
