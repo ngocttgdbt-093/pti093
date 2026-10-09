@@ -251,6 +251,7 @@ async function prepareDriveItem(it,index,total){
     payload:JSON.stringify({
       action:'uploadImage',
       recordId:window.__pti093_drive_record_id,
+      clientKey:driveImageKey(it),
       fileName:optimized.fileName,
       mimeType:optimized.mimeType,
       base64
