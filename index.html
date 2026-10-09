@@ -236,6 +236,14 @@ function saveDriveUploadedKeys(recordId,set){
   }catch(e){}
 }
 
+async function sha256HexBlob(blob){
+  if(!blob) throw new Error('Không có dữ liệu ảnh để tính mã xác nhận');
+  if(!window.crypto || !crypto.subtle) throw new Error('Trình duyệt không hỗ trợ SHA-256');
+  const buf=await blob.arrayBuffer();
+  const digest=await crypto.subtle.digest('SHA-256',buf);
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 async function prepareDriveItem(it,index,total){
   const optimized=await optimizeDriveImage(it.file);
   const dataUrl=await new Promise((resolve,reject)=>{
@@ -245,12 +253,15 @@ async function prepareDriveItem(it,index,total){
     fr.readAsDataURL(optimized.blob);
   });
   const base64=String(dataUrl).split(',')[1]||'';
+  const uploadKey='sha256:'+await sha256HexBlob(optimized.blob);
   return {
     key:driveImageKey(it),
+    uploadKey,
     payload:JSON.stringify({
       action:'uploadImage',
       recordId:window.__pti093_drive_record_id,
       clientKey:driveImageKey(it),
+      uploadKey,
       fileName:optimized.fileName,
       mimeType:optimized.mimeType,
       base64
@@ -258,12 +269,35 @@ async function prepareDriveItem(it,index,total){
   };
 }
 
-async function sendDrivePayload(payload){
+async function waitForDriveUpload(recordId,uploadKey,timeoutMs=30000){
+  const started=Date.now();
+  let lastError='';
+  while(Date.now()-started<timeoutMs){
+    try{
+      const url=PTI093_API
+        +'?action=uploadStatus'
+        +'&recordId='+encodeURIComponent(recordId)
+        +'&uploadKey='+encodeURIComponent(uploadKey)
+        +'&_='+Date.now();
+      const res=await fetch(url,{method:'GET',cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      if(data && data.success && data.found) return data;
+      if(data && data.success===false && data.error) lastError=data.error;
+    }catch(e){
+      lastError=e && e.message ? e.message : String(e);
+    }
+    await new Promise(resolve=>setTimeout(resolve,700));
+  }
+  throw new Error(lastError ? 'Chưa xác nhận được ảnh trên máy chủ: '+lastError : 'Quá thời gian chờ xác nhận ảnh trên máy chủ');
+}
+
+async function sendDrivePayload(payload,recordId,uploadKey){
   const maxAttempts=3;
   let lastError=null;
   for(let attempt=1;attempt<=maxAttempts;attempt++){
     try{
-      const res=await fetch(PTI093_API,{
+      await fetch(PTI093_API,{
         method:'POST',
         mode:'no-cors',
         headers:{'Content-Type':'text/plain;charset=UTF-8'},
@@ -271,13 +305,12 @@ async function sendDrivePayload(payload){
         cache:'no-store',
         keepalive:false
       });
-      if(res && (res.ok || res.type==='opaque')) return true;
-      lastError=new Error('Không nhận được xác nhận từ máy chủ');
+      return await waitForDriveUpload(recordId,uploadKey,30000);
     }catch(e){
       lastError=e;
-    }
-    if(attempt<maxAttempts){
-      await new Promise(resolve=>setTimeout(resolve,500*attempt));
+      if(attempt<maxAttempts){
+        await new Promise(resolve=>setTimeout(resolve,700*attempt));
+      }
     }
   }
   throw lastError||new Error('Gửi ảnh thất bại');
@@ -336,8 +369,6 @@ window.pti093UploadAll = async function(){
     return
   }
 
-  // Không gửi lại cùng một ảnh cho cùng một Record ID.
-  // Danh sách được lưu ở localStorage nên bấm nút lần 2 sẽ chỉ gửi ảnh mới.
   const uploaded=getDriveUploadedKeys(id);
   const unique=[];
   const seen=new Set();
@@ -358,31 +389,35 @@ window.pti093UploadAll = async function(){
   btn.disabled=true;
   let sent=0;
   const total=unique.length;
-  const batchSize=1;
 
   try{
-    // Bản ổn định: gửi từng ảnh một để tránh nhiều request cùng chờ
-    // LockService của Apps Script và gây miss ảnh.
-    for(let base=0;base<unique.length;base+=batchSize){
-      const batch=unique.slice(base,base+batchSize);
-      setDriveState('Đang chuẩn bị ảnh '+(base+1)+'/'+total+'...');
+    // Mỗi ảnh chỉ được tính thành công sau khi server xác nhận SHA-256 đã có.
+    for(let i=0;i<unique.length;i++){
+      const x=unique[i];
+      setDriveState('Đang chuẩn bị ảnh '+(i+1)+'/'+total+'...');
       await new Promise(resolve=>setTimeout(resolve,0));
-      const prepared=await Promise.all(batch.map((x,j)=>prepareDriveItem(x.it,base+j,total)));
-      setDriveState('Đang gửi ảnh '+(base+1)+'/'+total+'...');
-      await sendDrivePayload(prepared[0].payload);
-      uploaded.add(prepared[0].key);
+      const prepared=await prepareDriveItem(x.it,i,total);
+
+      setDriveState('Đang gửi ảnh '+(i+1)+'/'+total+'...');
+      const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
+
+      uploaded.add(prepared.key);
       sent++;
       saveDriveUploadedKeys(id,uploaded);
-      setDriveState('Đã gửi '+sent+'/'+total+' ảnh lên Google Drive.');
-      await new Promise(resolve=>setTimeout(resolve,60));
+
+      if(result && result.duplicate){
+        setDriveState('Ảnh '+sent+'/'+total+' đã có sẵn trên Google Drive (không tạo trùng).');
+      }else{
+        setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh trên Google Drive.');
+      }
     }
 
-    setDriveState('Đã gửi thành công '+sent+'/'+total+' ảnh lên Google Drive.');
-    msg('Đã gửi yêu cầu lưu '+sent+'/'+total+' ảnh mới. Bấm lại sẽ không lưu trùng ảnh đã gửi.',true)
+    setDriveState('Đã xác nhận đủ '+sent+'/'+total+' ảnh trên Google Drive.');
+    msg('Đã xác nhận lưu đủ '+sent+'/'+total+' ảnh. Bộ đếm chỉ tăng sau khi máy chủ xác nhận.',true)
   }catch(e){
     saveDriveUploadedKeys(id,uploaded);
-    setDriveState('Đã gửi '+sent+'/'+total+' ảnh. Lỗi: '+e.message,false);
-    msg('Đã gửi '+sent+'/'+total+' ảnh; lỗi ở ảnh tiếp theo: '+e.message,true)
+    setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh. Lỗi: '+e.message,false);
+    msg('Đã xác nhận '+sent+'/'+total+' ảnh; ảnh tiếp theo chưa được xác nhận: '+e.message,true)
   }finally{
     btn.disabled=false
   }
