@@ -546,7 +546,7 @@ async function prepareDriveItem(it,index,total){
   };
 }
 
-async function waitForDriveUpload(recordId,uploadKey,timeoutMs=20000){
+async function waitForDriveUpload(recordId,uploadKey,timeoutMs=30000){
   const started=Date.now();
   let lastError='';
   while(Date.now()-started<timeoutMs){
@@ -570,7 +570,7 @@ async function waitForDriveUpload(recordId,uploadKey,timeoutMs=20000){
 }
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  const maxAttempts=2;
+  const maxAttempts=3;
   let lastError=null;
   for(let attempt=1;attempt<=maxAttempts;attempt++){
     try{
@@ -582,7 +582,7 @@ async function sendDrivePayload(payload,recordId,uploadKey){
         cache:'no-store',
         keepalive:false
       });
-      return await waitForDriveUpload(recordId,uploadKey,20000);
+      return await waitForDriveUpload(recordId,uploadKey,30000);
     }catch(e){
       lastError=e;
       if(attempt<maxAttempts){
