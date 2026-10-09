@@ -443,8 +443,7 @@ window.pti093UploadAll = async function(){
     return
   }
 
-  const btn=$('driveUploadOne');
-  btn.disabled=true;
+  // Không còn nút upload riêng: upload được thực hiện trong "Tạo & lưu hồ sơ" và "Lưu thay đổi hồ sơ".
   let sent=0;
   const total=unique.length;
 
@@ -522,7 +521,6 @@ window.pti093UploadAll = async function(){
     setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh. Lỗi: '+e.message,false);
     msg('Đã xác nhận '+sent+'/'+total+' ảnh; còn '+remain+' ảnh chưa xác nhận: '+e.message,true);
   }finally{
-    btn.disabled=false
     return {sent,total,failures};
   }
 }
