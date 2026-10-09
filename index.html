@@ -172,7 +172,7 @@ async function optimizeDriveImage(file){
       const base=(file.name||'anh').replace(/\.[^.]+$/,'');
       resolve({
         blob,
-        fileName:/\\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg',
+        fileName:/\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg',
         mimeType:'image/jpeg',
         originalSize:file.size,
         optimizedSize:blob.size
