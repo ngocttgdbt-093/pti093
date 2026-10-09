@@ -146,11 +146,13 @@ function splitPdfBytes(canvases,filenameBase){
   return (async()=>{
     const parts=[];let start=0,partNo=1;
     while(start<canvases.length){
-      let lo=start,hi=start+1,best=null;
-      while(hi<=canvases.length){
-        const trial=await buildAdaptivePdf(canvases.slice(start,hi));
-        if(pdfPackSize(trial.bytes)<=PDF_SAFE_LIMIT){best={end:hi,...trial};hi++;}
-        else break;
+      // Tìm số trang lớn nhất vẫn dưới ngưỡng bằng chia đôi, tránh nén lặp O(n²) với bộ 300 ảnh.
+      let low=start+1,high=canvases.length,best=null;
+      while(low<=high){
+        const mid=Math.floor((low+high)/2);
+        const trial=await buildAdaptivePdf(canvases.slice(start,mid));
+        if(pdfPackSize(trial.bytes)<=PDF_SAFE_LIMIT){best={end:mid,...trial};low=mid+1}
+        else high=mid-1;
       }
       if(!best){
         // Một trang vẫn quá lớn: hạ mạnh hơn để tránh vượt ngưỡng nghiệp vụ.
