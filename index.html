@@ -854,9 +854,10 @@ window.pti093UploadAll = async function(){
         })
       );
 
-      uploadResults.forEach(r=>{
+      uploadResults.forEach((r,resultIndex)=>{
+        const item=ready[resultIndex];
         if(r.status==='fulfilled'){
-          const {item,result}=r.value;
+          const {result}=r.value;
           item.x.it.driveFileId=result&&result.fileId?result.fileId:(item.x.it.driveFileId||'');
           item.x.it.driveFileName=result&&result.fileName?result.fileName:((item.x.it.file&&item.x.it.file.name)||'');
           item.x.it.driveUploadKey=item.prepared.uploadKey;
@@ -870,7 +871,12 @@ window.pti093UploadAll = async function(){
           }
         }else{
           const msgText=r.reason&&r.reason.message?r.reason.message:String(r.reason||'Gửi ảnh thất bại');
-          failures.push({key:item.x.key,name:(item.x.it&&item.x.it.file&&item.x.it.file.name)||('Ảnh số '+(start+ready.indexOf(item.x)+1)),index:start,error:msgText});
+          failures.push({
+            key:item.x.key,
+            name:(item.x.it&&item.x.it.file&&item.x.it.file.name)||('Ảnh số '+(item.x.index+1)),
+            index:item.x.index,
+            error:msgText
+          });
         }
       });
 
