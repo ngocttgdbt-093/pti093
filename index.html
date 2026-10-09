@@ -139,7 +139,44 @@ $('saveDocx').onclick=saveDocx;$('openDocx').onclick=()=>$('docxFile').click();$
 
 function gdvShortName(name){if(!name)return '';const map={'Nguyễn Minh Ngọc':'NMN','Đặng Xuân Linh':'DXL','Đặng Xuân Diệu':'DXD','Đặng Văn Hiên':'DVH','Phạm Duy Thái':'PDT','Nguyễn Tuấn Hưng':'NTH'};return map[name]||((name||'').trim().split(/\s+/).filter(Boolean).map(w=>w[0]).join('').toUpperCase()||'')}
 function pdfFileName(){const groups=getAllGroups(),bks=(($('bks').value||'').trim()).replace(/[^\w.-]+/g,'_'),gdvCode=gdvShortName(selectedGdv());let prefix='Anh giam dinh';if(groups.length===1){if(groups[0].title==='Bản ảnh hiện trường')prefix='Anh hien truong';else if(groups[0].title==='Giấy tờ có liên quan')prefix='Anh giay to'}return `${prefix}${bks ? ' ' + bks : ''}${gdvCode ? ' ' + gdvCode : ''}.pdf`}
-$('pdf').onclick=()=>{if(!state.pages.length)return;const bytes=pdfBytesFromCanvases(state.pages);const blob=new Blob([bytes],{type:'application/pdf'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=pdfFileName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);$('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';msg('Đã xuất PDF. Hồ sơ hiện tại vẫn được giữ nguyên để anh có thể quay lại sửa hoặc làm tiếp; chỉ khi bấm “Làm tiếp bản ảnh khác” mới bắt đầu phiên mới.',true)};
+async function exportPdfFile(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+  try{
+    if(isiOS){
+      // iPhone/iPad: không dùng <a download> vì Safari có thể báo “Không tìm thấy ứng dụng”.
+      // Mở PDF trực tiếp trong tab Safari; người dùng có thể bấm Chia sẻ → Lưu vào Tệp.
+      const w=window.open(url,'_blank');
+      if(!w) location.href=url;
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      return;
+    }
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+  }catch(e){
+    URL.revokeObjectURL(url);
+    throw e;
+  }
+}
+$('pdf').onclick=async()=>{
+  if(!state.pages.length)return;
+  try{
+    const bytes=pdfBytesFromCanvases(state.pages);
+    const blob=new Blob([bytes],{type:'application/pdf'});
+    await exportPdfFile(blob,pdfFileName());
+    $('backEdit').style.display='inline-block';
+    $('newCase').style.display='inline-block';
+    msg('Đã tạo PDF. Trên iPhone/iPad, PDF được mở trong Safari; bấm Chia sẻ → Lưu vào Tệp để lưu file.',true);
+  }catch(e){
+    msg('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)),false);
+    alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
+  }
+};
 $('backEdit').onclick=()=>{window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});msg('Đã quay lại hồ sơ hiện tại. Anh có thể sửa ảnh, thêm ảnh, sửa thuyết minh hoặc sửa từng nội dung.',true)};
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
 (function(){const custom=localStorage.getItem('pti093_gdv_custom')||'';if(custom)$('gdv').dataset.custom=custom;$('gdv').value='';$('gdv').addEventListener('change',()=>{if($('gdv').value!=='Nhập tên khác'){if($('gdv').value) localStorage.setItem('pti093_gdv',$('gdv').value);}else{const x=prompt('Nhập tên GĐV / Thụ lý:',custom||'');if(x){$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else $('gdv').value='';}});})();
