@@ -569,10 +569,35 @@ async function prepareDriveItem(it,index,total){
 }
 
 async function waitForUploadStatus(recordId,uploadKey){
-  // V17: xác nhận dự phòng có giới hạn thời gian, tránh treo hàng phút.
+  // V19: ưu tiên fetch JSON trực tiếp. Apps Script ContentService có thể
+  // chuyển hướng phản hồi; fetch đã được frontend sử dụng ổn định cho các API khác.
+  // JSONP chỉ giữ làm lớp dự phòng thứ hai.
   const maxChecks=4;
   let lastError=null;
+
   for(let i=0;i<maxChecks;i++){
+    try{
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),3500);
+      try{
+        const url=PTI093_API+'?action=uploadStatus&recordId='+encodeURIComponent(recordId)+'&uploadKey='+encodeURIComponent(uploadKey)+'&_='+Date.now();
+        const res=await fetch(url,{method:'GET',cache:'no-store',signal:controller.signal});
+        if(!res.ok)throw new Error('Máy chủ trả HTTP '+res.status+'.');
+        const data=await res.json();
+        if(data&&data.success&&data.found&&String(data.recordId||'')===String(recordId||'')&&String(data.uploadKey||'')===String(uploadKey||'')){
+          return data;
+        }
+        lastError=new Error('Máy chủ chưa ghi nhận ảnh.');
+      }finally{
+        clearTimeout(timer);
+      }
+    }catch(e){
+      lastError=e&&e.name==='AbortError'
+        ? new Error('Quá thời gian đọc trạng thái upload.')
+        : e;
+    }
+
+    // Nếu fetch không đọc được phản hồi, thử JSONP như lớp dự phòng.
     try{
       const result=await new Promise((resolve,reject)=>{
         const cb='pti093UploadStatus_'+Date.now()+'_'+Math.random().toString(36).slice(2);
@@ -605,8 +630,10 @@ async function waitForUploadStatus(recordId,uploadKey){
     }catch(e){
       lastError=e;
     }
+
     if(i<maxChecks-1)await new Promise(resolve=>setTimeout(resolve,500));
   }
+
   throw lastError||new Error('Không xác nhận được ảnh đã lưu.');
 }
 
