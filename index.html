@@ -773,9 +773,9 @@ async function saveAutoDraft(){
   if(autoDraftSaving){autoDraftAgain=true;return}
   autoDraftSaving=true;
   try{
-    const groups=snapshotGroupsForProject();
+    const groups=[...state.groups.map(g=>({title:g.title,items:(g.items||[]).slice(),isCurrent:false})),...((state.current&&state.current.items&&state.current.items.length)?[{title:state.current.title,items:state.current.items.slice(),isCurrent:true}]:[])];
     const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||''):$('gdv').value;
-    const sections=groups.map((g,si)=>({title:g.title,items:g.items.map((it,ii)=>({
+    const sections=groups.map((g,si)=>({title:g.title,isCurrent:!!g.isCurrent,items:g.items.map((it,ii)=>({
       sectionIndex:si,itemIndex:ii,fileName:(it.file&&it.file.name)||it.driveFileName||('anh-'+(ii+1)+'.jpg'),
       type:(it.file&&it.file.type)||'image/jpeg',lastModified:(it.file&&it.file.lastModified)||Date.now(),
       size:(it.file&&it.file.size)||0,key:it.key||'',caption:it.caption||'',
@@ -863,7 +863,7 @@ async function restoreAutoDraft(){
     if(settings.orientation)state.orientation=settings.orientation;
     if(settings.imagesPerPage){state.per=Number(settings.imagesPerPage);document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per))}
     document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
-    state.groups=groups.slice(1);state.current=groups[0]||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
+    const currentGroup=groups.find(g=>g.isCurrent);state.groups=groups.filter(g=>!g.isCurrent);state.current=currentGroup||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
     state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';
     state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
     if(state.driveRecordId){sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId)}
