@@ -23,8 +23,8 @@
 <div id="groupsBox" style="margin-top:14px"></div>
 </div></section>
 
-<section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm tiếp bản ảnh khác</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS hoặc BKS…"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
-<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v19-20261010</div>
+<section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm tiếp bản ảnh khác</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS hoặc BKS…"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
+<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v20-20261010</div>
 </div>
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:4,orientation:'landscape',pages:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
@@ -934,29 +934,39 @@ window.pti093UploadAll = async function(){
   let sent=0;
   const total=unique.length;
 
-  // V17: upload tuần tự để tránh tranh ScriptLock; mỗi ảnh phải được xác nhận rồi mới sang ảnh kế.
-  const DRIVE_BATCH_SIZE=8;
+  // V20: tối ưu tốc độ với tối đa 2 ảnh xử lý đồng thời.
+  // Mỗi ảnh vẫn chỉ được tính thành công sau khi máy chủ xác nhận.
+  let sent=0;
+  const total=unique.length;
+  const DRIVE_CONCURRENCY=2;
+  const uploadStartedAt=performance.now();
   let failures=[];
 
+  function updateUploadProgress(extra=''){
+    const box=$('driveProgress');
+    if(!box)return;
+    box.classList.remove('hidden');
+    const pct=total?Math.min(100,Math.round(sent*100/total)):100;
+    $('driveProgressBar').style.width=pct+'%';
+    $('driveProgressPct').textContent=pct+'%';
+    $('driveProgressText').textContent='Đã xác nhận '+sent+'/'+total+' ảnh';
+    const elapsed=Math.max(0,(performance.now()-uploadStartedAt)/1000);
+    const speed=sent>0?(sent/elapsed).toFixed(2):'0.00';
+    $('driveProgressMeta').textContent=(extra?extra+' · ':'')+'Thời gian '+elapsed.toFixed(1)+' giây · tốc độ xác nhận '+speed+' ảnh/giây';
+  }
+
   try{
-    // Upload tuần tự: mỗi ảnh chỉ được tính thành công sau khi server xác nhận SHA-256.
-    // Không fire-and-forget và không tạo nhiều POST đồng thời vào ScriptLock.
-    for(let start=0;start<unique.length;start+=DRIVE_BATCH_SIZE){
-      const batch=unique.slice(start,start+DRIVE_BATCH_SIZE);
-      const batchNo=Math.floor(start/DRIVE_BATCH_SIZE)+1;
-      const batchTotal=Math.ceil(unique.length/DRIVE_BATCH_SIZE);
-      setDriveState('Đang xử lý nhóm '+batchNo+'/'+batchTotal+' · '+sent+'/'+total+' ảnh đã xác nhận...');
+    updateUploadProgress('Đang bắt đầu');
 
-      // Mỗi ảnh tự chuẩn bị -> gửi -> chờ máy chủ xác nhận.
-      // Vì vậy ảnh nào sang Drive xong sẽ phản hồi ngay, không phải chờ cả nhóm.
-      const processOne=async (entry)=>{
-        let prepared=null;
+    // V20: tối đa 2 ảnh cùng xử lý. Không fire-and-forget; mỗi ảnh vẫn phải xác nhận.
+    for(let start=0;start<unique.length;start+=DRIVE_CONCURRENCY){
+      const batch=unique.slice(start,start+DRIVE_CONCURRENCY);
+      setDriveState('Đang xử lý '+Math.min(start+1,total)+'-'+Math.min(start+batch.length,total)+'/'+total+' ảnh · đã xác nhận '+sent+'/'+total+'...');
+
+      const processOne=async(entry)=>{
         try{
-          setDriveState('Đang tối ưu ảnh '+(entry.offset+1)+'/'+total+' · đã xác nhận '+sent+'/'+total+'...');
-          prepared=await prepareDriveItem(entry.it,entry.offset,total);
+          const prepared=await prepareDriveItem(entry.it,entry.offset,total);
 
-          // Nếu lần trước POST đã lưu ảnh nhưng phản hồi bị mất, kiểm tra uploadKey cũ
-          // trước khi gửi lại. Như vậy retry không tạo thêm POST không cần thiết.
           const pending=entry.it.drivePendingUploadKey||getDrivePendingUploadKey(id,entry.key)||'';
           if(pending){
             try{
@@ -970,18 +980,16 @@ window.pti093UploadAll = async function(){
                 uploaded.add(prepared.key);
                 sent++;
                 saveDriveUploadedKeys(id,uploaded);
-                setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh trên Google Drive (khôi phục xác nhận).');
+                updateUploadProgress('Khôi phục xác nhận');
                 return {ok:true,recovered:true};
               }
-            }catch(recoverError){
-              // Chưa xác nhận được trạng thái cũ -> tiếp tục luồng POST hiện tại.
-            }
+            }catch(recoverError){}
           }
 
           entry.it.drivePendingUploadKey=prepared.uploadKey;
           saveDrivePendingUploadKey(id,entry.key,prepared.uploadKey);
-          setDriveState('Đang chờ máy chủ xác nhận ảnh '+(entry.offset+1)+'/'+total+' · đã xác nhận '+sent+'/'+total+'...');
           const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
+
           entry.it.driveFileId=result&&result.fileId?result.fileId:(entry.it.driveFileId||'');
           entry.it.driveFileName=result&&result.fileName?result.fileName:((entry.it.file&&entry.it.file.name)||'');
           entry.it.driveUploadKey=prepared.uploadKey;
@@ -990,15 +998,9 @@ window.pti093UploadAll = async function(){
           uploaded.add(prepared.key);
           sent++;
           saveDriveUploadedKeys(id,uploaded);
-          if(result&&result.duplicate){
-            setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh · ảnh đã có sẵn trên Google Drive.');
-          }else{
-            setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh trên Google Drive.');
-          }
+          updateUploadProgress(result&&result.duplicate?'Đã xác nhận ảnh đã có sẵn trên Drive':'Đã xác nhận trên Google Drive');
           return {ok:true};
         }catch(e){
-          // Giữ uploadKey đang chờ cả trong localStorage để nếu người dùng tải lại trang,
-          // lần chạy sau có thể hỏi máy chủ trước khi gửi POST lần nữa.
           if(entry.it.drivePendingUploadKey)saveDrivePendingUploadKey(id,entry.key,entry.it.drivePendingUploadKey);
           const err=e&&e.message?e.message:String(e||'Gửi ảnh thất bại');
           failures.push({
@@ -1007,19 +1009,16 @@ window.pti093UploadAll = async function(){
             index:entry.offset,
             error:err
           });
+          updateUploadProgress('Có ảnh chưa xác nhận');
           return {ok:false,error:err};
         }
       };
 
-      const entries=batch.map((x,offset)=>({it:x.it,key:x.key,offset:start+offset}));
-      // Server upload đang dùng ScriptLock để chống trùng.
-      // Gửi tuần tự từng ảnh giúp mỗi ảnh nhận phản hồi xác nhận riêng,
-      // tránh nhiều request cùng tranh một lock và làm bộ đếm đứng 0/x.
-      for(const entry of entries){
-        await processOne(entry);
-      }
+      const entries=batch.map((x,j)=>({it:x.it,key:x.key,offset:start+j}));
+      await Promise.all(entries.map(processOne));
       await new Promise(resolve=>setTimeout(resolve,0));
     }
+
 
     saveDriveUploadedKeys(id,uploaded);
     state.driveUploadFailures=failures.map(x=>({key:x.key||'',name:x.name||'Ảnh không xác định',index:Number.isFinite(x.index)?x.index:0,error:x.error||''}));
