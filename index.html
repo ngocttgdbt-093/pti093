@@ -36,28 +36,28 @@ function selectedGdv(){let v=$('gdv').value;if(!v)return 'NONAME';if(v==='Nhập
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
-async function addFiles(fs){const candidates=[];for(const f of fs){if(!f.type.startsWith('image/')&&!exts.test(f.name))continue;const key=f.name+'|'+f.size+'|'+f.lastModified;if(!state.current.items.some(x=>x.key===key))candidates.push({file:f,key,caption:state.filenameCaption?fileBaseName(f.name):'',addSeq:++state.addSeq,rotate:0})}if(!candidates.length){msg('Không có ảnh mới để thêm.',true);return}state.current.items.push(...candidates);render();msg(`Đã nhận ${candidates.length} ảnh. Thứ tự giữ nguyên theo thứ tự GĐV thêm ảnh.`,true)}
+async function addFiles(fs){const candidates=[];for(const f of fs){if(!f.type.startsWith('image/')&&!exts.test(f.name))continue;const key=f.name+'|'+f.size+'|'+f.lastModified;if(!state.current.items.some(x=>x.key===key))candidates.push({file:f,key,caption:state.filenameCaption?fileBaseName(f.name):'',addSeq:++state.addSeq,rotate:0})}if(!candidates.length){msg('Không có ảnh mới để thêm.',true);return}state.current.items.push(...candidates);render();scheduleAutoDraftSave(true);msg(`Đã nhận ${candidates.length} ảnh. Thứ tự giữ nguyên theo thứ tự GĐV thêm ảnh.`,true)}
 $('files').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
 $('folder').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.add('drag')}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave')drop.classList.remove('drag') }));
 drop.addEventListener('drop',e=>{drop.classList.remove('drag');addFiles([...e.dataTransfer.files])});
-function render(){const g=$('grid');g.innerHTML='';state.current.items.forEach((it,i)=>{it.rotate=((it.rotate||0)%360+360)%360;const d=document.createElement('div');d.className='thumb';const imgBox=document.createElement('div');imgBox.className='imgBox';const im=document.createElement('img');im.src=URL.createObjectURL(it.file);im.style.transform=`rotate(${it.rotate}deg)`;im.onload=()=>URL.revokeObjectURL(im.src);imgBox.appendChild(im);const n=document.createElement('span');n.className='n';n.textContent=i+1;const actions=document.createElement('div');actions.className='thumbActions';const rb=document.createElement('button');rb.className='replace';rb.textContent='🖼️';rb.title='Thay ảnh nhưng giữ nguyên vị trí và thuyết minh';rb.onclick=()=>{state.replaceIndex=i;$('replaceFile').click()};const rot=document.createElement('button');rot.className='rotate';rot.textContent='↻';rot.title='Xoay ảnh 90°';rot.onclick=()=>{it.rotate=(it.rotate+90)%360;render();msg(`Ảnh số ${i+1} đã xoay ${it.rotate}°.`,true)};const ins=document.createElement('button');ins.className='insert';ins.textContent='＋';ins.title='Chèn ảnh mới ngay sau ảnh này';ins.onclick=()=>{state.insertIndex=i;$('insertFile').click()};const vw=document.createElement('button');vw.className='view';vw.textContent='👁';vw.title='Xem ảnh kích thước lớn';vw.onclick=()=>openImageViewer(it,i);const b2=document.createElement('button');b2.className='del2';b2.textContent='🗑';b2.title='Xóa ảnh';b2.onclick=()=>{state.current.items.splice(i,1);render()};actions.append(rb,rot,ins,vw,b2);const ta=document.createElement('textarea');ta.placeholder='Thuyết minh ảnh (tùy chọn)…';ta.value=it.caption;ta.oninput=()=>it.caption=ta.value;d.append(imgBox,n,actions,ta);g.appendChild(d)});const has=state.current.items.length>0;$('clear').disabled=!has;$('saveNext').disabled=!has;$('finish').disabled=!has&&!state.groups.length;renderGroups()}
+function render(){const g=$('grid');g.innerHTML='';state.current.items.forEach((it,i)=>{it.rotate=((it.rotate||0)%360+360)%360;const d=document.createElement('div');d.className='thumb';const imgBox=document.createElement('div');imgBox.className='imgBox';const im=document.createElement('img');im.src=URL.createObjectURL(it.file);im.style.transform=`rotate(${it.rotate}deg)`;im.onload=()=>URL.revokeObjectURL(im.src);imgBox.appendChild(im);const n=document.createElement('span');n.className='n';n.textContent=i+1;const actions=document.createElement('div');actions.className='thumbActions';const rb=document.createElement('button');rb.className='replace';rb.textContent='🖼️';rb.title='Thay ảnh nhưng giữ nguyên vị trí và thuyết minh';rb.onclick=()=>{state.replaceIndex=i;$('replaceFile').click()};const rot=document.createElement('button');rot.className='rotate';rot.textContent='↻';rot.title='Xoay ảnh 90°';rot.onclick=()=>{it.rotate=(it.rotate+90)%360;render();scheduleAutoDraftSave(true);msg(`Ảnh số ${i+1} đã xoay ${it.rotate}°.`,true)};const ins=document.createElement('button');ins.className='insert';ins.textContent='＋';ins.title='Chèn ảnh mới ngay sau ảnh này';ins.onclick=()=>{state.insertIndex=i;$('insertFile').click()};const vw=document.createElement('button');vw.className='view';vw.textContent='👁';vw.title='Xem ảnh kích thước lớn';vw.onclick=()=>openImageViewer(it,i);const b2=document.createElement('button');b2.className='del2';b2.textContent='🗑';b2.title='Xóa ảnh';b2.onclick=()=>{state.current.items.splice(i,1);render();scheduleAutoDraftSave(true)};actions.append(rb,rot,ins,vw,b2);const ta=document.createElement('textarea');ta.placeholder='Thuyết minh ảnh (tùy chọn)…';ta.value=it.caption;ta.oninput=()=>{it.caption=ta.value;scheduleAutoDraftSave(false)};d.append(imgBox,n,actions,ta);g.appendChild(d)});const has=state.current.items.length>0;$('clear').disabled=!has;$('saveNext').disabled=!has;$('finish').disabled=!has&&!state.groups.length;renderGroups()}
 function renderGroups(){const box=$('groupsBox');box.innerHTML='';if(!state.groups.length){box.innerHTML='<div class="muted">Chưa có nội dung nào được lưu. Bạn có thể chỉ làm 1 nội dung và bấm “Kết thúc & xem Preview”.</div>';return}const h=document.createElement('div');h.className='muted';h.style.fontWeight='700';h.textContent='Các nội dung đã lưu';box.appendChild(h);state.groups.forEach((gr,i)=>{const d=document.createElement('div');d.style.cssText='margin-top:8px;padding:10px;border:1px solid #dbe4df;border-radius:8px;background:#fbfdfc;display:flex;justify-content:space-between;align-items:center;gap:8px';const sp=document.createElement('span');sp.innerHTML=`<b>${i+1}. ${gr.title}</b> · ${gr.items.length} ảnh`;const b=document.createElement('button');b.className='btn light';b.textContent='✎ Sửa';b.onclick=()=>editGroup(i);d.append(sp,b);box.appendChild(d)})}
-function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}state.current={title:state.groups[i].title,items:state.groups[i].items};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');state.groups.splice(i,1);state.editing=i;state.pages=[];$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
-$('title').addEventListener('change',()=>state.current.title=$('title').value);
-$('filenameCaption').addEventListener('change',e=>{state.filenameCaption=e.target.checked;$('filenameCaption').closest('.filenameCaptionBox').classList.toggle('on',state.filenameCaption);if(state.filenameCaption){state.current.items.forEach(it=>{it.caption=fileBaseName(it.file.name)});render();msg('Đã lấy tên file (bỏ phần đuôi) làm thuyết minh cho các ảnh trong mục này.',true)}else{msg('Đã tắt chế độ lấy tên file; ảnh mới sẽ quay về cách thuyết minh bình thường.',true)}});
-$('insertFile').addEventListener('change',async e=>{const fs=[...e.target.files],idx=state.insertIndex;e.target.value='';state.insertIndex=-1;if(idx<0||idx>=state.current.items.length||!fs.length)return;const candidates=[];for(const f of fs){if(!f.type.startsWith('image/')&&!exts.test(f.name))continue;const key=f.name+'|'+f.size+'|'+f.lastModified;if(state.current.items.some(x=>x.key===key)||candidates.some(x=>x.key===key))continue;candidates.push({file:f,key,caption:state.filenameCaption?fileBaseName(f.name):'',addSeq:++state.addSeq,rotate:0})}if(!candidates.length){msg('Không có ảnh mới để chèn.',true);return}state.current.items.splice(idx+1,0,...candidates);render();msg(`Đã chèn ${candidates.length} ảnh sau ảnh số ${idx+1}.`,true)});
-$('replaceFile').addEventListener('change',async e=>{const f=e.target.files[0],i=state.replaceIndex;e.target.value='';state.replaceIndex=-1;if(!f||i<0||i>=state.current.items.length)return;if(!f.type.startsWith('image/')&&!exts.test(f.name))return;const old=state.current.items[i];const key=f.name+'|'+f.size+'|'+f.lastModified;const dup=state.current.items.some((x,j)=>j!==i&&x.key===key);if(dup){msg('Ảnh này đã có trong mục hiện tại.',true);return}state.current.items[i]={...old,file:f,key,caption:state.filenameCaption?fileBaseName(f.name):old.caption};render();msg(`Đã thay ảnh số ${i+1}; vị trí và phần thuyết minh được giữ nguyên.`,true)});
+function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}state.current={title:state.groups[i].title,items:state.groups[i].items};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');state.groups.splice(i,1);state.editing=i;state.pages=[];$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';scheduleAutoDraftSave(true);$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
+$('title').addEventListener('change',()=>{state.current.title=$('title').value;scheduleAutoDraftSave(false)});
+$('filenameCaption').addEventListener('change',e=>{state.filenameCaption=e.target.checked;$('filenameCaption').closest('.filenameCaptionBox').classList.toggle('on',state.filenameCaption);if(state.filenameCaption){state.current.items.forEach(it=>{it.caption=fileBaseName(it.file.name)});render();scheduleAutoDraftSave(false);msg('Đã lấy tên file (bỏ phần đuôi) làm thuyết minh cho các ảnh trong mục này.',true)}else{msg('Đã tắt chế độ lấy tên file; ảnh mới sẽ quay về cách thuyết minh bình thường.',true)}});
+$('insertFile').addEventListener('change',async e=>{const fs=[...e.target.files],idx=state.insertIndex;e.target.value='';state.insertIndex=-1;if(idx<0||idx>=state.current.items.length||!fs.length)return;const candidates=[];for(const f of fs){if(!f.type.startsWith('image/')&&!exts.test(f.name))continue;const key=f.name+'|'+f.size+'|'+f.lastModified;if(state.current.items.some(x=>x.key===key)||candidates.some(x=>x.key===key))continue;candidates.push({file:f,key,caption:state.filenameCaption?fileBaseName(f.name):'',addSeq:++state.addSeq,rotate:0})}if(!candidates.length){msg('Không có ảnh mới để chèn.',true);return}state.current.items.splice(idx+1,0,...candidates);render();scheduleAutoDraftSave(true);msg(`Đã chèn ${candidates.length} ảnh sau ảnh số ${idx+1}.`,true)});
+$('replaceFile').addEventListener('change',async e=>{const f=e.target.files[0],i=state.replaceIndex;e.target.value='';state.replaceIndex=-1;if(!f||i<0||i>=state.current.items.length)return;if(!f.type.startsWith('image/')&&!exts.test(f.name))return;const old=state.current.items[i];const key=f.name+'|'+f.size+'|'+f.lastModified;const dup=state.current.items.some((x,j)=>j!==i&&x.key===key);if(dup){msg('Ảnh này đã có trong mục hiện tại.',true);return}state.current.items[i]={...old,file:f,key,caption:state.filenameCaption?fileBaseName(f.name):old.caption};render();scheduleAutoDraftSave(true);msg(`Đã thay ảnh số ${i+1}; vị trí và phần thuyết minh được giữ nguyên.`,true)});
 function commitCurrent(){if(!state.current.items.length)return null;const g={title:state.current.title,items:state.current.items};if(state.editing>=0){state.groups.splice(state.editing,0,g);state.editing=-1}else{const last=state.groups[state.groups.length-1];if(last&&last.title===g.title)last.items.push(...g.items);else state.groups.push(g)}return g}
-$('saveNext').onclick=()=>{state.current.title=$('title').value;const g=commitCurrent();if(!g)return;state.current={title:$('title').value,items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();msg(`Đã lưu “${g.title}”. Hãy chọn nội dung tiếp theo.`,true);window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})};
-$('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.items.length)commitCurrent();$('title').value=state.current.title;state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();makePreview()};
+$('saveNext').onclick=()=>{state.current.title=$('title').value;const g=commitCurrent();if(!g)return;state.current={title:$('title').value,items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);msg(`Đã lưu “${g.title}”. Hãy chọn nội dung tiếp theo.`,true);window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})};
+$('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.items.length)commitCurrent();$('title').value=state.current.title;state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);makePreview()};
 function getAllGroups(){return state.groups.filter(g=>g.items.length)}
 // counts
 function layoutDims(){const n=state.per;let cols,rows;if(n===1){cols=1;rows=1}else if(n===2){cols=2;rows=1}else if(n===3){cols=3;rows=1}else if(n===4){cols=2;rows=2}else if(n===6){cols=state.orientation==='portrait'?2:3;rows=state.orientation==='portrait'?3:2}else{cols=state.orientation==='portrait'?2:4;rows=state.orientation==='portrait'?4:2}return {cols,rows}}
 function renderLayout(){const box=$('layoutPreview'),txt=$('layoutText');if(!box)return;const d=layoutDims();box.style.gridTemplateColumns=`repeat(${d.cols},1fr)`;box.innerHTML='';for(let i=0;i<state.per;i++){const c=document.createElement('div');c.className='layoutcell';c.textContent=i+1;box.appendChild(c)}txt.textContent=`${state.per} ảnh · ${state.orientation==='portrait'?'A4 dọc':'A4 ngang'} · ${d.cols} × ${d.rows}`;}
-[1,2,3,4,6,8].forEach(n=>{const b=document.createElement('button');b.className='opt'+(n===6?' on':'');b.textContent=n;b.onclick=()=>{state.per=n;document.querySelectorAll('#counts .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout()};$('counts').appendChild(b)});
-document.querySelectorAll('#orient .opt').forEach(b=>b.onclick=()=>{state.orientation=b.dataset.o;document.querySelectorAll('#orient .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout()});
+[1,2,3,4,6,8].forEach(n=>{const b=document.createElement('button');b.className='opt'+(n===6?' on':'');b.textContent=n;b.onclick=()=>{state.per=n;document.querySelectorAll('#counts .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)};$('counts').appendChild(b)});
+document.querySelectorAll('#orient .opt').forEach(b=>b.onclick=()=>{state.orientation=b.dataset.o;document.querySelectorAll('#orient .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)});
 function pagePixels(){/* A4 render: enough pixels for crisp PDF while avoiding oversized raster pages. */
   const dpi=state.per===1?180:(state.per<=4?165:150);
   const mmPerIn=25.4, a4w=state.orientation==='landscape'?297:210, a4h=state.orientation==='landscape'?210:297;
@@ -252,13 +252,13 @@ $('pdf').onclick=async()=>{
 };
 $('backEdit').onclick=()=>{window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});msg('Đã quay lại hồ sơ hiện tại. Anh có thể sửa ảnh, thêm ảnh, sửa thuyết minh hoặc sửa từng nội dung.',true)};
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
-(function(){const custom=localStorage.getItem('pti093_gdv_custom')||'';if(custom)$('gdv').dataset.custom=custom;$('gdv').value='';$('gdv').addEventListener('change',()=>{if($('gdv').value!=='Nhập tên khác'){if($('gdv').value) localStorage.setItem('pti093_gdv',$('gdv').value);}else{const x=prompt('Nhập tên GĐV / Thụ lý:',custom||'');if(x){$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else $('gdv').value='';}});})();
+(function(){const custom=localStorage.getItem('pti093_gdv_custom')||'';if(custom)$('gdv').dataset.custom=custom;const saved=localStorage.getItem('pti093_gdv')||'';if(saved&&[...$('gdv').options].some(o=>o.value===saved))$('gdv').value=saved;else if(custom)$('gdv').value='Nhập tên khác';$('gdv').addEventListener('change',()=>{if($('gdv').value!=='Nhập tên khác'){if($('gdv').value)localStorage.setItem('pti093_gdv',$('gdv').value);}else{const x=prompt('Nhập tên GĐV / Thụ lý:',custom||'');if(x){$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else $('gdv').value='';}scheduleAutoDraftSave(false)});})();
 $('driveSearchBtn').onclick=searchDriveRecords;
 $('driveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchDriveRecords()});
 $('driveSaveProject').onclick=async()=>{const b=$('driveSaveProject');b.disabled=true;try{const result=await window.pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');if(result&&result.total>result.sent)throw new Error('Chưa xác nhận đủ ảnh trên Drive.');state.localDraftId='';await saveProjectToDrive();setDriveState('Đã lưu thay đổi hồ sơ. Ảnh hiện có đã được xác nhận trên Drive.')}catch(e){msg('Lỗi lưu thay đổi: '+e.message,true)}finally{b.disabled=false}};
 $('driveCreate').onclick=createDriveRecord;
 $('driveSaveDraft').onclick=saveDraftWithoutPhotos;
-$('newCase').onclick=()=>{const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||''): $('gdv').value; if(gdv){localStorage.setItem('pti093_gdv',gdv); if($('gdv').value==='Nhập tên khác')localStorage.setItem('pti093_gdv_custom',gdv)} location.reload();};
+$('newCase').onclick=async()=>{const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||''):$('gdv').value,bks=$('bks').value||'',hoso=$('hoso').value||'';if(gdv)localStorage.setItem('pti093_gdv',gdv);localStorage.setItem('pti093_bks',bks);localStorage.setItem('pti093_hoso',hoso);$('newCase').disabled=true;try{await clearAutoDraft()}catch(e){console.warn(e)}location.reload()};
 
 /* ===== PTI093 GOOGLE DRIVE - GIAI ĐOẠN 1: TẠO RECORD ===== */
 const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/exec';
@@ -726,6 +726,8 @@ function renderDriveUploadFailures(){
   box.appendChild(b);
 }
 const PTI093_LOCAL_DB='pti093_local_drafts_v1';
+const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
+let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false;
 function openLocalDraftDB(){
   return new Promise((resolve,reject)=>{
     if(!('indexedDB' in window)){reject(new Error('Trình duyệt không hỗ trợ lưu nháp tại máy.'));return}
@@ -759,6 +761,121 @@ async function getLocalDrafts(){
     });
   }finally{db.close()}
 }
+
+function scheduleAutoDraftSave(imagesDirty=true){
+  if(autoDraftRestoring)return;
+  if(imagesDirty)autoDraftImagesDirty=true;
+  clearTimeout(autoDraftTimer);
+  autoDraftTimer=setTimeout(()=>saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e)),700);
+}
+async function saveAutoDraft(){
+  if(autoDraftRestoring)return;
+  if(autoDraftSaving){autoDraftAgain=true;return}
+  autoDraftSaving=true;
+  try{
+    const groups=snapshotGroupsForProject();
+    const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||''):$('gdv').value;
+    const sections=groups.map((g,si)=>({title:g.title,items:g.items.map((it,ii)=>({
+      sectionIndex:si,itemIndex:ii,fileName:(it.file&&it.file.name)||it.driveFileName||('anh-'+(ii+1)+'.jpg'),
+      type:(it.file&&it.file.type)||'image/jpeg',lastModified:(it.file&&it.file.lastModified)||Date.now(),
+      size:(it.file&&it.file.size)||0,key:it.key||'',caption:it.caption||'',
+      rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||ii+1,
+      driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''
+    }))}));
+    const meta={id:PTI093_AUTO_DRAFT_ID,auto:true,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),
+      gdv,date:$('date').value||'',status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',
+      localDraftId:state.localDraftId||'',settings:{orientation:state.orientation,imagesPerPage:state.per},
+      currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
+    const db=await openLocalDraftDB();
+    try{
+      const tx=db.transaction(autoDraftImagesDirty?['drafts','draftImages']:['drafts'],'readwrite');
+      tx.objectStore('drafts').put(meta);
+      if(autoDraftImagesDirty){
+        const idx=tx.objectStore('draftImages').index('draftId');
+        const cursorReq=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
+        cursorReq.onsuccess=()=>{
+          const cursor=cursorReq.result;
+          if(cursor){cursor.delete();cursor.continue();return}
+          sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
+            const original=groups[si]&&groups[si].items[ii];
+            if(original&&original.file)tx.objectStore('draftImages').put({
+              id:PTI093_AUTO_DRAFT_ID+'|'+si+'|'+ii,draftId:PTI093_AUTO_DRAFT_ID,
+              sectionIndex:si,itemIndex:ii,file:original.file,fileName:item.fileName,
+              type:item.type,lastModified:item.lastModified
+            });
+          }));
+        };
+      }
+      await localDraftTransactionDone(tx);
+      autoDraftImagesDirty=false;
+      try{localStorage.setItem('pti093_bks',meta.bks);localStorage.setItem('pti093_hoso',meta.caseNumber)}catch(e){}
+    }finally{db.close()}
+  }finally{
+    autoDraftSaving=false;
+    if(autoDraftAgain){autoDraftAgain=false;scheduleAutoDraftSave(false)}
+  }
+}
+async function clearAutoDraft(){
+  clearTimeout(autoDraftTimer);
+  const db=await openLocalDraftDB();
+  try{
+    const tx=db.transaction(['drafts','draftImages'],'readwrite');
+    tx.objectStore('drafts').delete(PTI093_AUTO_DRAFT_ID);
+    const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
+    req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
+    await localDraftTransactionDone(tx);
+  }finally{db.close()}
+  autoDraftImagesDirty=true;
+}
+async function restoreAutoDraft(){
+  autoDraftRestoring=true;
+  try{
+    const db=await openLocalDraftDB();
+    let meta,images=[];
+    try{
+      [meta,images]=await Promise.all([
+        new Promise((resolve,reject)=>{const q=db.transaction('drafts','readonly').objectStore('drafts').get(PTI093_AUTO_DRAFT_ID);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)}),
+        new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),q=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error)})
+      ]);
+    }finally{db.close()}
+    if(!meta){
+      $('bks').value=localStorage.getItem('pti093_bks')||'';
+      $('hoso').value=localStorage.getItem('pti093_hoso')||'';
+      return;
+    }
+    const imageMap=new Map(images.map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
+    const groups=[];let missing=0;
+    (meta.sections||[]).forEach((g,si)=>{
+      const items=[];
+      (g.items||[]).forEach((it,ii)=>{
+        const stored=imageMap.get(si+':'+ii);
+        if(!stored||!stored.file){missing++;return}
+        const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
+        items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++state.addSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
+      });
+      if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
+    });
+    $('bks').value=meta.bks||'';$('hoso').value=meta.caseNumber||'';$('date').value=meta.date||'';
+    const gdv=meta.gdv||'';
+    if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
+    else if(gdv){$('gdv').value='Nhập tên khác';$('gdv').dataset.custom=gdv}
+    const settings=meta.settings||{};
+    if(settings.orientation)state.orientation=settings.orientation;
+    if(settings.imagesPerPage){state.per=Number(settings.imagesPerPage);document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per))}
+    document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
+    state.groups=groups.slice(1);state.current=groups[0]||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
+    state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';
+    state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
+    if(state.driveRecordId){sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId)}
+    $('title').value=state.current.title||meta.currentTitle||'Bản ảnh chi tiết thiệt hại';
+    if(state.driveRecordId){$('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden')}
+    render();renderLayout();autoDraftImagesDirty=false;
+    if(groups.length||meta.bks||meta.caseNumber)setDriveState('Đã khôi phục bản nháp tự động · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
+    msg(missing?'Đã khôi phục bản nháp nhưng thiếu '+missing+' ảnh trong bộ nhớ trình duyệt.':'Đã khôi phục công việc đang làm. Anh có thể tiếp tục ngay.',true);
+  }catch(e){console.warn('Không thể khôi phục bản nháp tự động:',e);msg('Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.',true)}
+  finally{autoDraftRestoring=false}
+}
+
 async function saveLocalDraft(){
   const groups=snapshotGroupsForProject();
   // Giữ metadata trên Drive để có thể tìm hồ sơ theo BKS/Mã HS; ảnh gốc vẫn chỉ lưu tại máy.
@@ -1072,4 +1189,6 @@ window.pti093UploadAll = async function(){
 }
 $('driveCreate').onclick=createDriveRecord;
 render();renderLayout();
+['bks','hoso','gdv','date'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>{if(id==='bks')localStorage.setItem('pti093_bks',el.value);if(id==='hoso')localStorage.setItem('pti093_hoso',el.value);scheduleAutoDraftSave(false)});el.addEventListener('change',()=>scheduleAutoDraftSave(false))});
+restoreAutoDraft();
 </script></body></html>
