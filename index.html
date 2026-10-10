@@ -855,7 +855,7 @@ async function restoreAutoDraft(){
         const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
         items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++state.addSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
       });
-      if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
+      if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
     });
     $('bks').value=meta.bks||'';$('hoso').value=meta.caseNumber||'';$('date').value=meta.date||'';
     const gdv=meta.gdv||'';
