@@ -554,7 +554,8 @@ async function prepareDriveItem(it,index,total){
 }
 
 async function waitForUploadStatus(recordId,uploadKey){
-  const maxChecks=30;
+  // V17: xác nhận dự phòng có giới hạn thời gian, tránh treo hàng phút.
+  const maxChecks=4;
   let lastError=null;
   for(let i=0;i<maxChecks;i++){
     try{
@@ -582,20 +583,20 @@ async function waitForUploadStatus(recordId,uploadKey){
         script.onerror=()=>finish(reject,new Error('Không đọc được trạng thái upload từ máy chủ.'));
         script.src=PTI093_API+'?action=uploadStatus&recordId='+encodeURIComponent(recordId)+'&uploadKey='+encodeURIComponent(uploadKey)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
         document.body.appendChild(script);
-        setTimeout(()=>finish(reject,new Error('Quá thời gian kiểm tra trạng thái upload.')),5000);
+        setTimeout(()=>finish(reject,new Error('Quá thời gian kiểm tra trạng thái upload.')),2500);
       });
       if(result&&result.success&&result.found)return result;
       lastError=new Error('Máy chủ chưa ghi nhận ảnh.');
     }catch(e){
       lastError=e;
     }
-    await new Promise(resolve=>setTimeout(resolve,700));
+    if(i<maxChecks-1)await new Promise(resolve=>setTimeout(resolve,500));
   }
   throw lastError||new Error('Không xác nhận được ảnh đã lưu.');
 }
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  // V16: ưu tiên postMessage; nếu lớp ContentService của Apps Script làm mất phản hồi,
+  // V17: ưu tiên postMessage; nếu lớp ContentService của Apps Script làm mất phản hồi,
   // kiểm tra trạng thái upload qua JSONP mà không gửi POST ảnh lần thứ hai.
   // Không khóa cứng event.source hoặc data.source vì Apps Script có thể chuyển hướng
   // phản hồi qua miền googleusercontent.com.
@@ -618,7 +619,7 @@ async function sendDrivePayload(payload,recordId,uploadKey){
 
   return await new Promise((resolve,reject)=>{
     let settled=false;
-    const timeoutMs=10000;
+    const timeoutMs=8000;
 
     const cleanup=()=>{
       window.removeEventListener('message',onMessage);
@@ -911,11 +912,36 @@ window.pti093UploadAll = async function(){
         try{
           setDriveState('Đang tối ưu ảnh '+(entry.offset+1)+'/'+total+' · đã xác nhận '+sent+'/'+total+'...');
           prepared=await prepareDriveItem(entry.it,entry.offset,total);
+
+          // Nếu lần trước POST đã lưu ảnh nhưng phản hồi bị mất, kiểm tra uploadKey cũ
+          // trước khi gửi lại. Như vậy retry không tạo thêm POST không cần thiết.
+          const pending=entry.it.drivePendingUploadKey||'';
+          if(pending){
+            try{
+              const recovered=await waitForUploadStatus(id,pending);
+              if(recovered&&recovered.success&&recovered.found){
+                entry.it.driveFileId=recovered.fileId||entry.it.driveFileId||'';
+                entry.it.driveFileName=recovered.fileName||entry.it.driveFileName||((entry.it.file&&entry.it.file.name)||'');
+                entry.it.driveUploadKey=pending;
+                entry.it.drivePendingUploadKey='';
+                uploaded.add(prepared.key);
+                sent++;
+                saveDriveUploadedKeys(id,uploaded);
+                setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh trên Google Drive (khôi phục xác nhận).');
+                return {ok:true,recovered:true};
+              }
+            }catch(recoverError){
+              // Chưa xác nhận được trạng thái cũ -> tiếp tục luồng POST hiện tại.
+            }
+          }
+
+          entry.it.drivePendingUploadKey=prepared.uploadKey;
           setDriveState('Đang chờ máy chủ xác nhận ảnh '+(entry.offset+1)+'/'+total+' · đã xác nhận '+sent+'/'+total+'...');
           const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
           entry.it.driveFileId=result&&result.fileId?result.fileId:(entry.it.driveFileId||'');
           entry.it.driveFileName=result&&result.fileName?result.fileName:((entry.it.file&&entry.it.file.name)||'');
           entry.it.driveUploadKey=prepared.uploadKey;
+          entry.it.drivePendingUploadKey='';
           uploaded.add(prepared.key);
           sent++;
           saveDriveUploadedKeys(id,uploaded);
