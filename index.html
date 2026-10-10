@@ -767,7 +767,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
   if(autoDraftRestoring||autoDraftResetting)return;
   if(imagesDirty){autoDraftImagesDirty=true;autoDraftImageRevision++}
   clearTimeout(autoDraftTimer);
-  autoDraftTimer=setTimeout(()=>saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e)),700);
+  autoDraftTimer=setTimeout(()=>saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e)),300);
 }
 async function saveAutoDraft(){
   if(autoDraftRestoring||autoDraftResetting)return;
@@ -1196,4 +1196,6 @@ $('driveCreate').onclick=createDriveRecord;
 render();renderLayout();
 ['bks','hoso','gdv','date'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>{if(id==='bks')localStorage.setItem('pti093_bks',el.value);if(id==='hoso')localStorage.setItem('pti093_hoso',el.value);scheduleAutoDraftSave(false)});el.addEventListener('change',()=>scheduleAutoDraftSave(false))});
 restoreAutoDraft();
+window.addEventListener('pagehide',()=>{clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e))});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e))}});
 </script></body></html>
