@@ -37,6 +37,7 @@ function selectedGdv(){let v=$('gdv').value;if(!v)return 'NONAME';if(v==='Nhập
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
 async function addFiles(fs){const candidates=[];for(const f of fs){if(!f.type.startsWith('image/')&&!exts.test(f.name))continue;const key=f.name+'|'+f.size+'|'+f.lastModified;if(!state.current.items.some(x=>x.key===key))candidates.push({file:f,key,caption:state.filenameCaption?fileBaseName(f.name):'',addSeq:++state.addSeq,rotate:0})}if(!candidates.length){msg('Không có ảnh mới để thêm.',true);return}state.current.items.push(...candidates);render();scheduleAutoDraftSave(true);msg(`Đã nhận ${candidates.length} ảnh. Thứ tự giữ nguyên theo thứ tự GĐV thêm ảnh.`,true)}
+$('clear').onclick=()=>{if(!state.current.items.length)return;if(!confirm('Xóa toàn bộ ảnh của nội dung đang làm?'))return;state.current.items=[];render();scheduleAutoDraftSave(true);msg('Đã xóa ảnh của nội dung hiện tại.',true)};
 $('files').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
 $('folder').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.add('drag')}));
@@ -1115,6 +1116,7 @@ window.pti093UploadAll = async function(){
                 entry.it.drivePendingUploadKey='';
                 saveDrivePendingUploadKey(id,entry.key,'');
                 uploaded.add(prepared.key);
+                scheduleAutoDraftSave(false);
                 sent++;
                 saveDriveUploadedKeys(id,uploaded);
                 updateUploadProgress('Khôi phục xác nhận');
@@ -1136,6 +1138,7 @@ window.pti093UploadAll = async function(){
           entry.it.drivePendingUploadKey='';
           saveDrivePendingUploadKey(id,entry.key,'');
           uploaded.add(prepared.key);
+          scheduleAutoDraftSave(false);
           sent++;
           saveDriveUploadedKeys(id,uploaded);
           updateUploadProgress(
