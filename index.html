@@ -24,7 +24,7 @@
 </div></section>
 
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm tiếp bản ảnh khác</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS hoặc BKS…"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
-<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v28.1-20261010</div>
+<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v29-20261010</div>
 </div>
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
@@ -727,7 +727,7 @@ function renderDriveUploadFailures(){
 }
 const PTI093_LOCAL_DB='pti093_local_drafts_v1';
 const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
-let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false;
+let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false,autoDraftImageRevision=0,autoDraftResetting=false;
 function openLocalDraftDB(){
   return new Promise((resolve,reject)=>{
     if(!('indexedDB' in window)){reject(new Error('Trình duyệt không hỗ trợ lưu nháp tại máy.'));return}
@@ -763,15 +763,16 @@ async function getLocalDrafts(){
 }
 
 function scheduleAutoDraftSave(imagesDirty=true){
-  if(autoDraftRestoring)return;
-  if(imagesDirty)autoDraftImagesDirty=true;
+  if(autoDraftRestoring||autoDraftResetting)return;
+  if(imagesDirty){autoDraftImagesDirty=true;autoDraftImageRevision++}
   clearTimeout(autoDraftTimer);
   autoDraftTimer=setTimeout(()=>saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e)),700);
 }
 async function saveAutoDraft(){
-  if(autoDraftRestoring)return;
+  if(autoDraftRestoring||autoDraftResetting)return;
   if(autoDraftSaving){autoDraftAgain=true;return}
   autoDraftSaving=true;
+  const imagesNeedSaving=autoDraftImagesDirty,imageRevision=autoDraftImageRevision;
   try{
     const groups=[...state.groups.map(g=>({title:g.title,items:(g.items||[]).slice(),isCurrent:false})),...((state.current&&state.current.items&&state.current.items.length)?[{title:state.current.title,items:state.current.items.slice(),isCurrent:true}]:[])];
     const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||''):$('gdv').value;
@@ -788,9 +789,9 @@ async function saveAutoDraft(){
       currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
     const db=await openLocalDraftDB();
     try{
-      const tx=db.transaction(autoDraftImagesDirty?['drafts','draftImages']:['drafts'],'readwrite');
+      const tx=db.transaction(imagesNeedSaving?['drafts','draftImages']:['drafts'],'readwrite');
       tx.objectStore('drafts').put(meta);
-      if(autoDraftImagesDirty){
+      if(imagesNeedSaving){
         const idx=tx.objectStore('draftImages').index('draftId');
         const cursorReq=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
         cursorReq.onsuccess=()=>{
@@ -807,7 +808,7 @@ async function saveAutoDraft(){
         };
       }
       await localDraftTransactionDone(tx);
-      autoDraftImagesDirty=false;
+      if(autoDraftImageRevision===imageRevision)autoDraftImagesDirty=false;
       try{localStorage.setItem('pti093_bks',meta.bks);localStorage.setItem('pti093_hoso',meta.caseNumber)}catch(e){}
     }finally{db.close()}
   }finally{
@@ -816,7 +817,8 @@ async function saveAutoDraft(){
   }
 }
 async function clearAutoDraft(){
-  clearTimeout(autoDraftTimer);
+  autoDraftResetting=true;clearTimeout(autoDraftTimer);
+  while(autoDraftSaving)await new Promise(resolve=>setTimeout(resolve,50));
   const db=await openLocalDraftDB();
   try{
     const tx=db.transaction(['drafts','draftImages'],'readwrite');
@@ -825,7 +827,7 @@ async function clearAutoDraft(){
     req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
     await localDraftTransactionDone(tx);
   }finally{db.close()}
-  autoDraftImagesDirty=true;
+  autoDraftImagesDirty=true;autoDraftResetting=false;
 }
 async function restoreAutoDraft(){
   autoDraftRestoring=true;
