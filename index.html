@@ -519,6 +519,21 @@ function saveDriveUploadedKeys(recordId,set){
     localStorage.setItem('pti093_drive_uploaded_'+recordId,JSON.stringify([...set]));
   }catch(e){}
 }
+function getDrivePendingUploadKey(recordId,imageKey){
+  try{
+    const map=JSON.parse(localStorage.getItem('pti093_drive_pending_'+recordId)||'{}');
+    return String(map[imageKey]||'');
+  }catch(e){return ''}
+}
+function saveDrivePendingUploadKey(recordId,imageKey,uploadKey){
+  try{
+    const name='pti093_drive_pending_'+recordId;
+    const map=JSON.parse(localStorage.getItem(name)||'{}');
+    if(uploadKey)map[imageKey]=uploadKey;
+    else delete map[imageKey];
+    localStorage.setItem(name,JSON.stringify(map));
+  }catch(e){}
+}
 
 async function sha256HexBlob(blob){
   if(!blob) throw new Error('Không có dữ liệu ảnh để tính mã xác nhận');
@@ -892,13 +907,13 @@ window.pti093UploadAll = async function(){
   let sent=0;
   const total=unique.length;
 
-  const DRIVE_CONCURRENCY=10;
+  // V17: upload tuần tự để tránh tranh ScriptLock; mỗi ảnh phải được xác nhận rồi mới sang ảnh kế.
   const DRIVE_BATCH_SIZE=8;
   let failures=[];
 
   try{
-    // V9: chạy song song tối đa 10 ảnh, nhưng MỖI ảnh chỉ được tính thành công
-    // sau khi server xác nhận SHA-256 đã có. Không quay lại kiểu fire-and-forget.
+    // Upload tuần tự: mỗi ảnh chỉ được tính thành công sau khi server xác nhận SHA-256.
+    // Không fire-and-forget và không tạo nhiều POST đồng thời vào ScriptLock.
     for(let start=0;start<unique.length;start+=DRIVE_BATCH_SIZE){
       const batch=unique.slice(start,start+DRIVE_BATCH_SIZE);
       const batchNo=Math.floor(start/DRIVE_BATCH_SIZE)+1;
@@ -915,7 +930,7 @@ window.pti093UploadAll = async function(){
 
           // Nếu lần trước POST đã lưu ảnh nhưng phản hồi bị mất, kiểm tra uploadKey cũ
           // trước khi gửi lại. Như vậy retry không tạo thêm POST không cần thiết.
-          const pending=entry.it.drivePendingUploadKey||'';
+          const pending=entry.it.drivePendingUploadKey||getDrivePendingUploadKey(id,entry.key)||'';
           if(pending){
             try{
               const recovered=await waitForUploadStatus(id,pending);
@@ -924,6 +939,7 @@ window.pti093UploadAll = async function(){
                 entry.it.driveFileName=recovered.fileName||entry.it.driveFileName||((entry.it.file&&entry.it.file.name)||'');
                 entry.it.driveUploadKey=pending;
                 entry.it.drivePendingUploadKey='';
+                saveDrivePendingUploadKey(id,entry.key,'');
                 uploaded.add(prepared.key);
                 sent++;
                 saveDriveUploadedKeys(id,uploaded);
@@ -936,12 +952,14 @@ window.pti093UploadAll = async function(){
           }
 
           entry.it.drivePendingUploadKey=prepared.uploadKey;
+          saveDrivePendingUploadKey(id,entry.key,prepared.uploadKey);
           setDriveState('Đang chờ máy chủ xác nhận ảnh '+(entry.offset+1)+'/'+total+' · đã xác nhận '+sent+'/'+total+'...');
           const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
           entry.it.driveFileId=result&&result.fileId?result.fileId:(entry.it.driveFileId||'');
           entry.it.driveFileName=result&&result.fileName?result.fileName:((entry.it.file&&entry.it.file.name)||'');
           entry.it.driveUploadKey=prepared.uploadKey;
           entry.it.drivePendingUploadKey='';
+          saveDrivePendingUploadKey(id,entry.key,'');
           uploaded.add(prepared.key);
           sent++;
           saveDriveUploadedKeys(id,uploaded);
@@ -952,6 +970,9 @@ window.pti093UploadAll = async function(){
           }
           return {ok:true};
         }catch(e){
+          // Giữ uploadKey đang chờ cả trong localStorage để nếu người dùng tải lại trang,
+          // lần chạy sau có thể hỏi máy chủ trước khi gửi POST lần nữa.
+          if(entry.it.drivePendingUploadKey)saveDrivePendingUploadKey(id,entry.key,entry.it.drivePendingUploadKey);
           const err=e&&e.message?e.message:String(e||'Gửi ảnh thất bại');
           failures.push({
             key:entry.key,
