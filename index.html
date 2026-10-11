@@ -15,6 +15,11 @@
 .sourceBadge.drive{background:#e9f1fb;color:#235c94}
 .searchOpenBtn{padding:7px 10px!important;font-size:12px!important;white-space:nowrap}
 .hidden{display:none!important}
+.openLoadBox{margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#f8fbf9;color:#176b4b;font-size:12px}
+.openLoadHead{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:700}
+.openLoadTrack{height:8px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px}
+.openLoadBar{height:100%;width:0;background:#00854a;transition:width .2s ease}
+.openLoadMeta{margin-top:5px;font-size:11px;color:#69766f}
 @media(max-width:650px){
  .pcOnly{display:none!important}.form{grid-template-columns:1fr}.filegrid{grid-template-columns:repeat(2,1fr)}.thumb img{height:95px}.top h1{font-size:16px}
  .folderPick,.folderHelp{display:none!important}
@@ -54,8 +59,8 @@
 <div id="groupsBox" style="margin-top:14px"></div>
 </div></section>
 
-<section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
-<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v30-20261011</div>
+<section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
+<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v31-20261011</div>
 </div>
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
@@ -393,6 +398,8 @@ async function saveProjectToDrive(showMsg=true){
   throw new Error('Chưa xác nhận được project.pti trên máy chủ.');
 }
 async function openRecordFromDrive(recordId){
+  setOpenLoad('Google Drive',0,0,'Đang mở hồ sơ và đọc danh sách ảnh từ Google Drive...');
+  setDriveState('Đang tải hồ sơ từ Google Drive...');
   const data=await fetch(PTI093_API+'?action=openRecord&recordId='+encodeURIComponent(recordId)+'&_='+Date.now(),{cache:'no-store'}).then(r=>r.json());
   if(!data.success)throw new Error(data.error||'Không mở được hồ sơ');
   const p=data.project||{},rec=data.record||{};
@@ -416,6 +423,9 @@ async function openRecordFromDrive(recordId){
   const usedImageIds=new Set();
   const loadedGroups=[];
   let fallbackIndex=0,total=0;
+  const expectedImages=Math.max(serverImages.length,(p.sections||[]).reduce((n,g)=>n+((g.items||[]).length),0));
+  let loadedCount=0;
+  setOpenLoad('Google Drive',0,expectedImages,expectedImages?'Đang tải ảnh từ Google Drive về thiết bị...':'Hồ sơ không có ảnh để tải.');
 
   const loadOne=async(it,sectionIndex,itemIndex)=>{
     let fileId=it.fileId||'';
@@ -440,6 +450,8 @@ async function openRecordFromDrive(recordId){
       const file=new File([blob],ir.fileName||it.fileName||'image.jpg',{type:ir.mimeType||'image/jpeg'});
       fallbackIndex++;
       total++;
+      loadedCount++;
+      setOpenLoad('Google Drive',loadedCount,expectedImages,'Đang tải ảnh '+loadedCount+'/'+expectedImages+' từ Google Drive...');
       return {file,key:it.clientKey||file.name+'|'+file.size+'|'+file.lastModified,caption:it.caption||'',addSeq:it.addSeq||(++state.addSeq),rotate:it.rotate||0,driveFileId:fileId,driveFileName:ir.fileName||it.fileName||'',driveUploadKey:it.uploadKey||''};
     }catch(e){console.warn('Không tải được ảnh',fileId,e);return null}
   };
@@ -473,10 +485,11 @@ async function openRecordFromDrive(recordId){
   $('title').value=state.current.title;
   $('driveId').textContent='Hồ sơ: '+state.driveRecordId;
   $('driveId').classList.remove('hidden');
-  setDriveState('Đã mở hồ sơ · '+total+' ảnh.');
+  finishOpenLoad('Google Drive',total);
+  setDriveState('✓ Đã tải hoàn tất hồ sơ từ Google Drive · '+total+' ảnh.');
   render();
   renderLayout();
-  msg(total?'Đã mở hồ sơ. Có thể chỉnh sửa và lưu tiếp.':'Đã mở hồ sơ nhưng chưa tải được ảnh. Hồ sơ vẫn có thể tiếp tục chỉnh sửa.',true);
+  msg(total?'✓ Đã tải hoàn tất ảnh từ Google Drive. Có thể chỉnh sửa và lưu tiếp.':'Đã mở hồ sơ nhưng chưa tải được ảnh. Hồ sơ vẫn có thể tiếp tục chỉnh sửa.',true);
   window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
 }
 
@@ -493,6 +506,29 @@ function openImageViewer(it,index){
   close.onclick=cleanup;
   wrap.addEventListener('click',e=>{if(e.target===wrap)cleanup()});
   wrap.append(title,img,close);document.body.appendChild(wrap);document.addEventListener('keydown',onKey);
+}
+function deviceStorageLabel(){
+  const ua=navigator.userAgent||'';
+  if(/iPhone|iPad|iPod/i.test(ua))return 'iPhone/iPad';
+  if(/Android/i.test(ua))return 'điện thoại Android';
+  return 'PC';
+}
+function setOpenLoad(source,index,total,detail){
+  const box=$('openLoadBox'),bar=$('openLoadBar'),txt=$('openLoadText'),pct=$('openLoadPct'),meta=$('openLoadMeta');
+  if(!box)return;
+  box.classList.remove('hidden');
+  const safeTotal=Math.max(0,Number(total)||0),safeIndex=Math.max(0,Number(index)||0);
+  const p=safeTotal?Math.min(100,Math.round(safeIndex*100/safeTotal)):0;
+  bar.style.width=p+'%';pct.textContent=p+'%';
+  txt.textContent=detail||('Đang tải dữ liệu từ '+source+'...');
+  meta.textContent=safeTotal?'Đã tải '+safeIndex+'/'+safeTotal+' ảnh · '+source:'Đang kết nối '+source+'...';
+}
+function finishOpenLoad(source,total){
+  const box=$('openLoadBox'),bar=$('openLoadBar'),txt=$('openLoadText'),pct=$('openLoadPct'),meta=$('openLoadMeta');
+  if(!box)return;
+  box.classList.remove('hidden');bar.style.width='100%';pct.textContent='100%';
+  txt.textContent='✓ Đã tải hoàn tất từ '+source;
+  meta.textContent='Hoàn tất '+(Number(total)||0)+' ảnh · Có thể tiếp tục chỉnh sửa.';
 }
 function normalizeRecordSearch(v){
   return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().replace(/[\s.-]/g,'').trim()
@@ -580,7 +616,21 @@ async function searchDriveRecords(){
     const time=td('Cập nhật');time.textContent=fmtDate(row.updatedAt||row.createdAt||row.date);
     const status=td('Trạng thái');status.textContent=row.status||(source==='local'?'Bản lưu tại máy':'Hồ sơ Drive');
     const action=td('Thao tác'),button=document.createElement('button');button.className='btn light searchOpenBtn';button.textContent=source==='local'?'Mở bản tại máy':'Mở hồ sơ Drive';
-    button.onclick=async()=>{button.disabled=true;try{if(source==='local')await openLocalDraft(row.id);else await openRecordFromDrive(row.recordId||row.id)}catch(e){msg('Lỗi mở hồ sơ: '+e.message,true)}finally{button.disabled=false}};
+    button.onclick=async()=>{
+      button.disabled=true;
+      const originalText=button.textContent;
+      button.textContent=source==='local'?'⏳ Đang tải từ '+deviceStorageLabel()+'...':'⏳ Đang tải từ Drive...';
+      try{
+        if(source==='local')await openLocalDraft(row.id);
+        else await openRecordFromDrive(row.recordId||row.id);
+      }catch(e){
+        setDriveState('Không tải được hồ sơ: '+e.message,false);
+        msg('Lỗi mở hồ sơ: '+e.message,true);
+      }finally{
+        button.disabled=false;
+        button.textContent=originalText;
+      }
+    };
     action.appendChild(button);tr.append(hồ,src,gdv,time,status,action);tbody.appendChild(tr);
   }
   wrap.appendChild(table);box.appendChild(wrap);
@@ -1031,6 +1081,9 @@ async function saveLocalDraft(){
   }finally{db.close()}
 }
 async function openLocalDraft(id){
+  const source=deviceStorageLabel();
+  setOpenLoad(source,0,0,'Đang đọc bản lưu ảnh từ '+source+'...');
+  setDriveState('Đang tải ảnh từ '+source+'...');
   const db=await openLocalDraftDB();
   let meta,images;
   try{
@@ -1043,12 +1096,17 @@ async function openLocalDraft(id){
   const imageMap=new Map((images||[]).map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
   const groups=[];
   let missing=0;
+  const expectedImages=(meta.sections||[]).reduce((n,g)=>n+((g.items||[]).length),0);
+  let loadedCount=0;
+  setOpenLoad(source,0,expectedImages,expectedImages?'Đang tải ảnh từ '+source+' vào ứng dụng...':'Bản lưu không có ảnh.');
   (meta.sections||[]).forEach((g,si)=>{
     const items=[];
     (g.items||[]).forEach((it,ii)=>{
       const stored=imageMap.get(si+':'+ii);
       if(!stored||!stored.file){missing++;return}
       const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
+      loadedCount++;
+      setOpenLoad(source,loadedCount,expectedImages,'Đang tải ảnh '+loadedCount+'/'+expectedImages+' từ '+source+'...');
       items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++state.addSeq),driveFileId:'',driveFileName:'',driveUploadKey:''});
     });
     if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
@@ -1072,9 +1130,10 @@ async function openLocalDraft(id){
   state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
   $('title').value=state.current.title;
   $('driveId').textContent='💻 Bản lưu tại máy: '+id;$('driveId').classList.remove('hidden');
-  setDriveState('Đã mở nháp tại máy · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
+  finishOpenLoad(source,groups.reduce((n,g)=>n+g.items.length,0));
+  setDriveState('✓ Đã tải hoàn tất ảnh từ '+source+' · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
   render();renderLayout();
-  msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'Đã mở nháp tại máy. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
+  msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
   window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
 }
 function showLocalSaveConfirm(n){
