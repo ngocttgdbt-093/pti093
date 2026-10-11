@@ -60,7 +60,7 @@
 </div></section>
 
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div>></section>
-<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v31-20261011</div>
+<div class="appFooter">Sản phẩm được phát triển bởi team Mr Ngọc - 2026 · build v32-20261011</div>
 </div>
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
@@ -580,8 +580,12 @@ async function searchDriveRecords(){
   const key=normalizeRecordSearch(keyword);
   const driveRows=driveOutcome.status==='fulfilled'&&driveOutcome.value.success
     ?driveOutcome.value.results.filter(r=>recordMatchesQuery(r,keyword)||variants.some(v=>recordMatchesQuery(r,v))).sort((a,b)=>recordTime(b).localeCompare(recordTime(a))):[];
+  // AUTO-DRAFT chỉ phục vụ phục hồi sau F5/reload, KHÔNG phải hồ sơ Local độc lập.
+  // Không đưa AUTO-DRAFT vào kết quả Search để tránh nhầm hồ sơ Drive thành "Tại máy".
   const localRows=localOutcome.status==='fulfilled'
-    ?localOutcome.value.filter(r=>r.id!==PTI093_AUTO_DRAFT_ID ? recordMatchesQuery(r,keyword)||variants.some(v=>recordMatchesQuery(r,v)) : recordMatchesQuery(r,keyword)||variants.some(v=>recordMatchesQuery(r,v)))
+    ?localOutcome.value
+      .filter(r=>r.id!==PTI093_AUTO_DRAFT_ID && r.auto!==true)
+      .filter(r=>recordMatchesQuery(r,keyword)||variants.some(v=>recordMatchesQuery(r,v)))
       .sort((a,b)=>recordTime(b).localeCompare(recordTime(a))):[];
   if(driveOutcome.status==='rejected'||(driveOutcome.status==='fulfilled'&&!driveOutcome.value.success)){
     const err=driveOutcome.status==='rejected'?driveOutcome.reason:driveOutcome.value.error;
@@ -599,7 +603,7 @@ async function searchDriveRecords(){
   box.innerHTML='';
   const summary=document.createElement('div');summary.className='searchSummary';
   const count=document.createElement('strong');count.textContent='Tìm thấy '+results.length+' hồ sơ';
-  const note=document.createElement('span');note.textContent='Sắp xếp mới nhất trước · Ưu tiên bản lưu tại máy';
+  const note=document.createElement('span');note.textContent='Sắp xếp mới nhất trước · Ưu tiên bản có ảnh trên thiết bị này';
   summary.append(count,note);box.appendChild(summary);
   const wrap=document.createElement('div');wrap.className='searchTableWrap';
   const table=document.createElement('table');table.className='searchTable';
@@ -611,7 +615,10 @@ async function searchDriveRecords(){
     const td=(label)=>{const el=document.createElement('td');el.dataset.label=label;return el};
     const hồ=td('Hồ sơ'),main=document.createElement('div');main.className='caseMain';main.textContent='Mã HS: '+(row.caseNumber||row.maHoSo||'—');hồ.appendChild(main);
     const sub=document.createElement('span');sub.className='subline';sub.textContent='BKS: '+(row.bks||'—');hồ.appendChild(sub);
-    const src=td('Nguồn'),badge=document.createElement('span');badge.className='sourceBadge '+(source==='local'?'local':'drive');badge.textContent=source==='local'?'💻 Tại máy':'☁️ Drive';src.appendChild(badge);
+    const src=td('Nguồn'),badge=document.createElement('span');
+    badge.className='sourceBadge '+(source==='local'?'local':'drive');
+    badge.textContent=source==='local'?'💻 Tại máy':'☁️ Drive';
+    src.appendChild(badge);
     const gdv=td('GĐV');gdv.textContent=row.gdv||row.adjuster||'Chưa có GĐV';
     const time=td('Cập nhật');time.textContent=fmtDate(row.updatedAt||row.createdAt||row.date);
     const status=td('Trạng thái');status.textContent=row.status||(source==='local'?'Bản lưu tại máy':'Hồ sơ Drive');
