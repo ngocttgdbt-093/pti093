@@ -84,10 +84,10 @@ function pti093EnsureDragId(it){
   if(!it.__pti093DragId)it.__pti093DragId='drag-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9);
   return it.__pti093DragId;
 }
-function pti093MoveThumbDom(source,target){
+function pti093MoveThumbDom(source,target,e){
   if(!source||!target||source===target)return;
   const r=target.getBoundingClientRect();
-  const before=(event&&event.clientY!==undefined?event.clientY:0) < r.top+r.height/2;
+  const before=(e&&e.clientY!==undefined?e.clientY:0) < r.top+r.height/2;
   target.parentNode.insertBefore(source,before?target:target.nextSibling);
   pti093DragMoved=true;
 }
@@ -119,7 +119,7 @@ function pti093FinishDrag(){
 }
 function render(){const g=$('grid');g.innerHTML='';state.current.items.forEach((it,i)=>{it.rotate=((it.rotate||0)%360+360)%360;const d=document.createElement('div');d.className='thumb';d.dataset.dragId=pti093EnsureDragId(it);d.title='Kéo ảnh để đổi thứ tự';d.draggable=true;
 d.addEventListener('dragstart',e=>{pti093DragId=d.dataset.dragId;pti093DragMoved=false;d.classList.add('dragging');try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',pti093DragId)}catch(_){}});
-d.addEventListener('dragover',e=>{e.preventDefault();if(!pti093DragId||pti093DragId===d.dataset.dragId)return;d.classList.add('dragOver');const source=g.querySelector('.thumb[data-drag-id="'+CSS.escape(pti093DragId)+'"]');if(source)pti093MoveThumbDom(source,d)});
+d.addEventListener('dragover',e=>{e.preventDefault();if(!pti093DragId||pti093DragId===d.dataset.dragId)return;d.classList.add('dragOver');const source=g.querySelector('.thumb[data-drag-id="'+CSS.escape(pti093DragId)+'"]');if(source)pti093MoveThumbDom(source,d,e)});
 d.addEventListener('dragleave',()=>d.classList.remove('dragOver'));
 d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('dragOver');pti093FinishDrag()});
 d.addEventListener('dragend',()=>pti093FinishDrag());
