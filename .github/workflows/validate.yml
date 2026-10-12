@@ -16,8 +16,9 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
-          const m = html.match(/<script>([\\s\\S]*)<\\/script>/i);
-          if (!m) throw new Error('Không tìm thấy <script> trong index.html');
-          new Function(m[1]);
+          const start = html.indexOf('<script>');
+          const end = html.lastIndexOf('</script>');
+          if (start < 0 || end <= start) throw new Error('Không tìm thấy <script> trong index.html');
+          new Function(html.slice(start + 8, end));
           console.log('PTI093 JavaScript syntax: OK');
           NODE
