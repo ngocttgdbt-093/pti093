@@ -1,0 +1,23 @@
+name: Validate PTI093 JavaScript
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check embedded JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const m = html.match(/<script>([\\s\\S]*)<\\/script>/i);
+          if (!m) throw new Error('Không tìm thấy <script> trong index.html');
+          new Function(m[1]);
+          console.log('PTI093 JavaScript syntax: OK');
+          NODE
