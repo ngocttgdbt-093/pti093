@@ -46,7 +46,7 @@
 <div class="wrap">
 <section class="card"><div class="hd">1. Thông tin chung & bố cục</div><div class="bd"><div class="form">
 <div class="field"><label>GĐV / Thụ lý</label><select id="gdv"><option value="" selected>Không chọn GĐV</option><option>Phạm Duy Thái</option><option>Đặng Xuân Linh</option><option>Nguyễn Tuấn Hưng</option><option>Đặng Xuân Diệu</option><option>Đặng Văn Hiên</option><option>Nguyễn Minh Ngọc</option><option>Nhập tên khác</option></select></div>
-<div class="field"><label>Mã hồ sơ</label><input id="hoso" placeholder="Nhập mã hồ sơ"></div><div class="field"><label>Biển số xe</label><input id="bks" placeholder="Ví dụ: 15A-123.45"></div><div class="field"><label>Ngày giám định</label><input id="date" type="date"></div>
+<div class="field"><label>Mã hồ sơ</label><input id="hoso" placeholder="Nhập mã hồ sơ"></div><div class="field"><label>Biển số xe</label><input id="bks" placeholder="Ví dụ: 15A-123.45"></div><div class="field"><label>Ngày giám định</label><input id="date" type="date"></div><div class="field"><label>Garage/địa điểm giám định</label><input id="garage" placeholder="Nhập tên garage hoặc địa điểm giám định"></div>
 </div><hr style="border:0;border-top:1px solid #e4ebe7;margin:16px 0"><div class="field"><label>Số ảnh trên mỗi trang</label><div id="counts" class="opts"></div></div><div class="field" style="margin-top:12px"><label>Khổ giấy</label><div id="orient" class="opts"><button class="opt" data-o="landscape">A4 ngang</button><button class="opt on" data-o="portrait">A4 dọc</button></div></div><div class="layoutbox"><div class="layoutmeta"><span>Minh họa bố cục hiện tại</span><span id="layoutText">6 ảnh · A4 dọc · 2 × 3</span></div><div id="layoutPreview" class="layoutgrid"></div></div>
 </div></section>
 <section class="card"><div class="hd">2. Chọn ảnh theo từng nội dung</div><div class="bd">
@@ -69,6 +69,7 @@
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const $=id=>document.getElementById(id); const drop=$('drop');
+function formatDateDMY(value){const v=String(value||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}return v;}
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 function msg(t,show=true){$('status').textContent=t;$('status').classList.toggle('hidden',!show)}
 function fileBaseName(name){return String(name||'').replace(/\.[^.]+$/, '');}
@@ -190,7 +191,7 @@ async function drawPage(group,pageItems,pageNo,groupPageNo,groupPages,groupStart
     ctx.fillStyle='#00854a';ctx.fillRect(0,0,W,header);
     const logo=await loadLogo();const logoW=125,logoH=53;ctx.drawImage(logo,m,18,logoW,logoH);
     ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 34px Arial';ctx.fillText(group.title,W/2,55);if(partLabel){ctx.font='700 18px Arial';ctx.fillText('Bản ảnh '+partLabel,W/2,77);}
-    ctx.font='400 19px Arial';let sub=[$('bks').value.trim(),$('hoso').value.trim(),$('date').value].filter(Boolean).join(' · ');ctx.fillText(sub,W/2,88);
+    ctx.font='400 19px Arial';let sub=[$('bks').value.trim(),$('hoso').value.trim(),formatDateDMY($('date').value),$('garage').value.trim()].filter(Boolean).join(' · ');ctx.fillText(sub,W/2,88);
     ctx.font='400 16px Arial';ctx.fillText('TT CH&GĐ MB tại Hải Phòng (093)',W/2,116);
   }
   // Bố cục luôn lấy theo state.per, không lấy theo số ảnh còn lại của trang cuối.
@@ -521,7 +522,7 @@ function snapshotGroupsForProject(){
   return groups.filter(g=>g.items&&g.items.length);
 }
 function buildProjectData(){
-  return {version:'PTI093-1.2',recordId:state.driveRecordId||'',caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),maHoSo:($('hoso').value||'').trim(),gdv:selectedGdv(),status:state.localDraftId?'Ảnh lưu tại máy':'Đang xử lý',storageType:state.localDraftId?'local':'drive',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},sections:snapshotGroupsForProject().map(g=>({title:g.title,items:g.items.map((it,idx)=>({fileId:it.driveFileId||'',fileName:it.driveFileName||((it.file&&it.file.name)||''),clientKey:it.key||'',uploadKey:it.driveUploadKey||'',caption:it.caption||'',rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||idx+1}))})),updatedAt:new Date().toISOString()};
+  return {version:'PTI093-1.2',recordId:state.driveRecordId||'',caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),date:$('date').value||'',garage:($('garage').value||'').trim(),maHoSo:($('hoso').value||'').trim(),gdv:selectedGdv(),status:state.localDraftId?'Ảnh lưu tại máy':'Đang xử lý',storageType:state.localDraftId?'local':'drive',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},sections:snapshotGroupsForProject().map(g=>({title:g.title,items:g.items.map((it,idx)=>({fileId:it.driveFileId||'',fileName:it.driveFileName||((it.file&&it.file.name)||''),clientKey:it.key||'',uploadKey:it.driveUploadKey||'',caption:it.caption||'',rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||idx+1}))})),updatedAt:new Date().toISOString()};
 }
 async function saveProjectToDrive(showMsg=true){
   const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||localStorage.getItem('pti093_driveRecordId')||'';
@@ -549,6 +550,7 @@ async function openRecordFromDrive(recordId){
   $('bks').value=p.bks||rec.bks||'';
   $('hoso').value=p.caseNumber||rec.caseNumber||'';
   $('date').value=p.date||rec.date||$('date').value||'';
+  $('garage').value=p.garage||rec.garage||'';
   const gdv=p.gdv||rec.gdv||'';
   if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
   else if(gdv){$('gdv').value='Nhập tên khác';$('gdv').dataset.custom=gdv}
@@ -1072,7 +1074,7 @@ async function saveAutoDraft(){
       rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||ii+1,
       driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''
     }))}));
-    const meta={id:PTI093_AUTO_DRAFT_ID,auto:true,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),
+    const meta={id:PTI093_AUTO_DRAFT_ID,auto:true,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
       gdv,date:$('date').value||'',status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',
       localDraftId:state.localDraftId||'',settings:{orientation:state.orientation,imagesPerPage:state.per},
       currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
@@ -1167,7 +1169,7 @@ async function restoreAutoDraft(){
       });
       if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
     });
-    $('bks').value=meta.bks||'';$('hoso').value=meta.caseNumber||'';$('date').value=meta.date||'';
+    $('bks').value=meta.bks||'';$('hoso').value=meta.caseNumber||'';$('date').value=meta.date||'';$('garage').value=meta.garage||'';
     const gdv=meta.gdv||'';
     if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
     else if(gdv){$('gdv').value='Nhập tên khác';$('gdv').dataset.custom=gdv}
@@ -1230,7 +1232,7 @@ async function saveLocalDraft(){
   }));
   const meta={
     id,storageType:'local',caseNumber:($('hoso').value||'').trim(),
-    bks:($('bks').value||'').trim(),gdv:selectedGdv(),
+    bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),date:$('date').value||'',gdv:selectedGdv(),
     status:'Bản nháp tại máy',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},
     sections,updatedAt:new Date().toISOString()
   };
@@ -1525,7 +1527,7 @@ window.pti093UploadAll = async function(){
 }
 $('driveCreate').onclick=createDriveRecord;
 render();renderLayout();
-['bks','hoso','gdv','date'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>{if(id==='bks')localStorage.setItem('pti093_bks',el.value);if(id==='hoso')localStorage.setItem('pti093_hoso',el.value);scheduleAutoDraftSave(false)});el.addEventListener('change',()=>scheduleAutoDraftSave(false))});
+['bks','hoso','gdv','date','garage'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>{if(id==='bks')localStorage.setItem('pti093_bks',el.value);if(id==='hoso')localStorage.setItem('pti093_hoso',el.value);scheduleAutoDraftSave(false)});el.addEventListener('change',()=>scheduleAutoDraftSave(false))});
 restoreAutoDraft();
 window.addEventListener('pagehide',()=>{clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e))});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e))}});
