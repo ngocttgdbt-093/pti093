@@ -358,7 +358,7 @@ async function exportHighQualitySplit(filenameBase,button,progress){
     if(!parts.length)throw new Error('Không tạo được tệp PDF nào.');
     let exported=0;
     for(let i=0;i<parts.length;i++){
-      update('Đang xuất tệp '+(i+1)+'/'+parts.length+' · '+parts[i].filename+' ('+mib(pdfPackSize(parts[i].blob.size?new Uint8Array(parts[i].blob.size):new Uint8Array(0))).toFixed(2)+' MB)…');
+      update('Đang xuất tệp '+(i+1)+'/'+parts.length+' · '+parts[i].filename+' ('+mib(parts[i].blob.size).toFixed(2)+' MB)…');
       await new Promise(resolve=>setTimeout(resolve,120));
       await exportPdfFile(parts[i].blob,parts[i].filename);
       exported++;
