@@ -262,12 +262,20 @@ function showPdfWarning(message,baseName){
   const cb=document.createElement('input');cb.type='checkbox';cb.id='pdfHighQualityCheck';
   const span=document.createElement('span');span.textContent='Tách PDF thành nhiều file để giữ chất lượng ảnh cao hơn (tự động xuất khi tick).';
   label.append(cb,span);box.appendChild(label);
-  const progress=document.createElement('div');progress.id='pdfHighProgress';progress.className='status';progress.style.display='none';progress.setAttribute('role','status');progress.setAttribute('aria-live','polite');box.appendChild(progress);
+  const progressWrap=document.createElement('div');progressWrap.id='pdfHighProgressWrap';progressWrap.style.cssText='display:none;margin:10px 0;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#fff';
+  const progressTop=document.createElement('div');progressTop.style.cssText='display:flex;justify-content:space-between;gap:12px;align-items:center;font-weight:700;margin-bottom:6px';
+  const progressLabel=document.createElement('span');progressLabel.id='pdfHighProgressLabel';progressLabel.textContent='Đang chuẩn bị…';
+  const progressPct=document.createElement('span');progressPct.id='pdfHighProgressPct';progressPct.textContent='0%';
+  progressTop.append(progressLabel,progressPct);
+  const progressTrack=document.createElement('div');progressTrack.style.cssText='height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden';
+  const progressBar=document.createElement('div');progressBar.id='pdfHighProgressBar';progressBar.style.cssText='height:100%;width:0%;background:#07834f;border-radius:999px;transition:width .18s ease';
+  progressTrack.appendChild(progressBar);
+  const progress=document.createElement('div');progress.id='pdfHighProgress';progress.className='status';progress.style.cssText='margin-top:7px;font-size:13px';progress.setAttribute('role','status');progress.setAttribute('aria-live','polite');
+  progressWrap.append(progressTop,progressTrack,progress);box.appendChild(progressWrap);
   const b=document.createElement('button');b.type='button';b.className='btn green pdfHighBtn';b.textContent='📄 Xuất PDF chất lượng cao · tự tách file';
   b.onclick=()=>exportHighQualitySplit(baseName,b,progress);
   box.appendChild(b);
-  cb.addEventListener('change',()=>{if(cb.checked){exportHighQualitySplit(baseName,b,progress)}});
-
+  cb.addEventListener('change',()=>{if(cb.checked)exportHighQualitySplit(baseName,b,progress)});
 }
 async function renderPageRangeWithLabel(start,end,label,totalParts){
   const out=[];
@@ -277,42 +285,41 @@ async function renderPageRangeWithLabel(start,end,label,totalParts){
   }
   return out;
 }
-async function splitHighQualityPdf(filenameBase){
+async function splitHighQualityPdf(filenameBase,onProgress=()=>{}){
   const pages=state.pages||[],safe=PDF_SAFE_LIMIT;
   if(!pages.length)return [];
   const ranges=[];let start=0;
-  // Chia theo chất lượng preview gốc, không hạ DPI/JPEG như chế độ nén.
   while(start<pages.length){
     let bestEnd=start+1;
     for(let end=start+1;end<=pages.length;end++){
       const trial=makePdfAt(pages.slice(start,end),pagePixels().dpi,jpegQuality());
       if(pdfPackSize(trial.bytes)<=safe)bestEnd=end;else break;
+      if(end%2===0){onProgress(5+Math.round(start/pages.length*30),'Đang tính cách chia PDF…');await new Promise(resolve=>setTimeout(resolve,0))}
     }
     ranges.push([start,bestEnd]);start=bestEnd;
+    onProgress(5+Math.round(start/pages.length*30),'Đã xác định '+start+'/'+pages.length+' trang');
+    await new Promise(resolve=>setTimeout(resolve,0));
   }
-  const totalParts=ranges.length,parts=[];
+  const parts=[];
   for(let pi=0;pi<ranges.length;pi++){
-    const [s,e]=ranges[pi],label=`${pi+1}/${totalParts}`;
-    let canvases=await renderPageRangeWithLabel(s,e,label,totalParts);
-    let result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
-    // Nhãn làm PDF lớn hơn một chút; nếu vượt ngưỡng, tách tiếp tại trang cuối.
-    if(pdfPackSize(result.bytes)>safe && e-s>1){
-      const newEnd=e-1;
-      ranges[pi]=[s,newEnd];
-      ranges.splice(pi+1,0,[newEnd,e]);
-      pi--;continue;
-    }
+    const [s,e]=ranges[pi],label=`${pi+1}/${ranges.length}`;
+    onProgress(35+Math.round(pi/Math.max(1,ranges.length)*45),'Đang dựng PDF phần '+(pi+1)+'/'+ranges.length+'…');
+    await new Promise(resolve=>setTimeout(resolve,0));
+    const canvases=await renderPageRangeWithLabel(s,e,label,ranges.length);
+    const result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
+    if(pdfPackSize(result.bytes)>safe&&e-s>1){const ne=e-1;ranges[pi]=[s,ne];ranges.splice(pi+1,0,[ne,e]);pi--;continue}
     parts.push({blob:new Blob([result.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+(pi+1)+'.pdf',dpi:result.dpi,quality:result.quality});
+    onProgress(35+Math.round((pi+1)/Math.max(1,ranges.length)*45),'Đã dựng '+(pi+1)+'/'+ranges.length+' tệp PDF');
   }
-  // Nếu việc kiểm tra nhãn làm thay đổi số phần, dựng lại tên/tiêu đề cho đúng tổng số phần.
-  if(parts.length!==totalParts){
-    parts.length=0;
-    const finalTotal=ranges.length;
+  if(parts.length!==ranges.length){
+    parts.length=0;const total=ranges.length;
     for(let pi=0;pi<ranges.length;pi++){
-      const [s,e]=ranges[pi],label=`${pi+1}/${finalTotal}`;
-      const canvases=await renderPageRangeWithLabel(s,e,label,finalTotal);
+      onProgress(35+Math.round(pi/Math.max(1,total)*45),'Đang hoàn thiện nhãn tệp '+(pi+1)+'/'+total+'…');
+      const [s,e]=ranges[pi],label=`${pi+1}/${total}`;
+      const canvases=await renderPageRangeWithLabel(s,e,label,total);
       const result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
       parts.push({blob:new Blob([result.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+(pi+1)+'.pdf',dpi:result.dpi,quality:result.quality});
+      await new Promise(resolve=>setTimeout(resolve,0));
     }
   }
   return parts;
@@ -345,36 +352,24 @@ let pdfHighQualityRunning=false;
 async function exportHighQualitySplit(filenameBase,button,progress){
   if(pdfHighQualityRunning)return;
   if(!state.pages||!state.pages.length){msg('Không có trang PDF để xuất.',true);return}
-  pdfHighQualityRunning=true;
-  if(button)button.disabled=true;
+  pdfHighQualityRunning=true;if(button)button.disabled=true;
   const checkbox=$('pdfHighQualityCheck');if(checkbox)checkbox.disabled=true;
-  if(progress){progress.style.display='block';progress.textContent='Đang chuẩn bị xuất PDF chất lượng cao…'}
-  const update=(text)=>{if(progress)progress.textContent=text;msg(text,true)};
+  const wrap=$('pdfHighProgressWrap'),label=$('pdfHighProgressLabel'),pct=$('pdfHighProgressPct'),bar=$('pdfHighProgressBar');
+  if(wrap)wrap.style.display='block';
+  const update=(percent,text)=>{const p=Math.max(0,Math.min(100,Math.round(percent)));if(progress)progress.textContent=text;if(label)label.textContent=text;if(pct)pct.textContent=p+'%';if(bar)bar.style.width=p+'%';msg(p+'% · '+text,true)};
   try{
-    update('Đang chia '+state.pages.length+' trang thành các tệp PDF. Vui lòng giữ nguyên tab này.');
-    // Yield to the browser between expensive stages so the progress remains visible.
-    await new Promise(resolve=>setTimeout(resolve,50));
-    const parts=await splitHighQualityPdf(filenameBase);
+    update(2,'Đang chuẩn bị xuất PDF chất lượng cao…');await new Promise(resolve=>setTimeout(resolve,40));
+    const parts=await splitHighQualityPdf(filenameBase,update);
     if(!parts.length)throw new Error('Không tạo được tệp PDF nào.');
-    let exported=0;
     for(let i=0;i<parts.length;i++){
-      update('Đang xuất tệp '+(i+1)+'/'+parts.length+' · '+parts[i].filename+' ('+mib(parts[i].blob.size).toFixed(2)+' MB)…');
-      await new Promise(resolve=>setTimeout(resolve,120));
-      await exportPdfFile(parts[i].blob,parts[i].filename);
-      exported++;
-      update('Đã chuẩn bị '+exported+'/'+parts.length+' tệp PDF. Nếu trình duyệt hỏi quyền tải nhiều tệp, hãy chọn Cho phép.');
-      await new Promise(resolve=>setTimeout(resolve,250));
+      update(80+Math.round(i/parts.length*19),'Đang xuất tệp '+(i+1)+'/'+parts.length+' · '+parts[i].filename+' ('+mib(parts[i].blob.size).toFixed(2)+' MB)…');
+      await new Promise(resolve=>setTimeout(resolve,80));await exportPdfFile(parts[i].blob,parts[i].filename);
+      update(80+Math.round((i+1)/parts.length*19),'Đã gửi '+(i+1)+'/'+parts.length+' tệp PDF để lưu.');
+      await new Promise(resolve=>setTimeout(resolve,180));
     }
-    update('Hoàn tất: đã gửi '+exported+' tệp PDF chất lượng cao để lưu. Kiểm tra thư mục Tải xuống hoặc hộp thoại Chia sẻ.');
-  }catch(e){
-    const message='Xuất PDF chất lượng cao bị gián đoạn: '+(e&&e.message?e.message:String(e))+'. Hãy thử lại; nếu trình duyệt đã lưu một số tệp, kiểm tra trước khi xuất lại.';
-    update(message);
-    alert(message);
-  }finally{
-    pdfHighQualityRunning=false;
-    if(button)button.disabled=false;
-    if(checkbox)checkbox.disabled=false;
-  }
+    update(100,'Hoàn tất gửi '+parts.length+' tệp PDF. Kiểm tra thư mục Tải xuống hoặc hộp thoại Chia sẻ.');
+  }catch(e){const message='Xuất PDF chất lượng cao bị gián đoạn: '+(e&&e.message?e.message:String(e))+'. Hãy kiểm tra các tệp đã lưu trước khi thử lại.';update(100,message);alert(message)}
+  finally{pdfHighQualityRunning=false;if(button)button.disabled=false;if(checkbox)checkbox.disabled=false}
 }
 
 // ===== Word draft (PC only) =====
