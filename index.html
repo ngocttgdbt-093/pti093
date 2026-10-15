@@ -1682,4 +1682,54 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   });
   apply();
 })();
+</script><style id="pcDashboardLayoutTune">
+/* Layout adjustment from user's test feedback: wider metadata, compact PDF panel, full-width image gallery. */
+@media(min-width:1000px){
+ body:not(.classic-ui) .wrap{grid-template-columns:minmax(350px,1.12fr) minmax(430px,1.42fr) minmax(265px,.82fr);gap:12px}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(1){grid-column:1;grid-row:1}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(2){grid-column:2;grid-row:1}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(3){grid-column:3;grid-row:1}
+ body:not(.classic-ui) .wrap>.pcImageGallery{grid-column:1/-1;grid-row:2;min-width:0;margin-top:0;border:1px solid #d8e5fb;border-radius:15px;box-shadow:0 5px 18px #1c4f9510;background:#fff;overflow:hidden}
+ body:not(.classic-ui) .pcImageGallery .hd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+ body:not(.classic-ui) .pcImageGallery .bd{padding:14px}
+ body:not(.classic-ui) .pcImageGallery .filegrid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
+ body:not(.classic-ui) .pcImageGallery .thumb .imgBox,body:not(.classic-ui) .pcImageGallery .thumb .imgBox img{height:155px}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(1) .form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(1) .field{min-width:0}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(1) input,body:not(.classic-ui) .wrap>.card:nth-of-type(1) select{width:100%;min-width:0}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(3) .driveRow{align-items:stretch}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(3) .driveRow .btn{width:100%;white-space:normal}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(3) .driveSearchRow input{min-width:0;width:100%}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(3) .driveSearchRow{display:grid!important;grid-template-columns:minmax(0,1fr)}
+}
+@media(min-width:1000px) and (max-width:1250px){
+ body:not(.classic-ui) .wrap{grid-template-columns:minmax(320px,1.08fr) minmax(390px,1.35fr) minmax(245px,.8fr)}
+ body:not(.classic-ui) .wrap>.card:nth-of-type(1) .form{grid-template-columns:minmax(0,1fr)}
+ body:not(.classic-ui) .pcImageGallery .filegrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+}
+@media(max-width:999px){body:not(.classic-ui) .wrap>.pcImageGallery{margin-bottom:14px;border:1px solid #d8e5fb;border-radius:14px;background:#fff;overflow:hidden}body:not(.classic-ui) .pcImageGallery .hd{font-size:16px}body:not(.classic-ui) .pcImageGallery .bd{padding:12px}}
+</style>
+<script id="pcImageGalleryMove">
+(function(){
+ function mountGallery(){
+  var wrap=document.querySelector('body:not(.classic-ui) .wrap');
+  var source=document.getElementById('grid');
+  if(!wrap||!source||source.dataset.pcGalleryMounted==='1') return;
+  var section=document.createElement('section');
+  section.className='card pcImageGallery';
+  section.innerHTML='<div class="hd"><span>Danh sách ảnh đã chọn</span><span id="pcGalleryCount" style="font-size:12px;font-weight:600">Chưa có ảnh</span></div><div class="bd"></div>';
+  section.querySelector('.bd').appendChild(source);
+  var third=wrap.querySelector(':scope > .card:nth-of-type(3)');
+  if(third&&third.nextSibling) wrap.insertBefore(section,third.nextSibling); else wrap.appendChild(section);
+  source.dataset.pcGalleryMounted='1';
+  function countImages(){
+   var n=source.querySelectorAll('.thumb').length;
+   var label=section.querySelector('#pcGalleryCount');
+   if(label) label.textContent=n ? n+' ảnh' : 'Chưa có ảnh';
+  }
+  new MutationObserver(countImages).observe(source,{childList:true,subtree:true});
+  countImages();
+ }
+ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mountGallery); else mountGallery();
+})();
 </script></body></html>
