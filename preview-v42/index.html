@@ -1753,63 +1753,77 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 #ptiPreviewModal .ppm-title{font-weight:800;font-size:17px}
 #ptiPreviewModal .ppm-close{border:1px solid #ffffff70;background:#ffffff18;color:#fff;border-radius:9px;padding:9px 14px;font-weight:700;cursor:pointer}
 #ptiPreviewModal .ppm-content{flex:1 1 auto;overflow:auto;padding:18px;min-height:0}
-#ptiPreviewModal .ppm-content #preview{margin:0!important}
-#ptiPreviewModal .ppm-content .preview{max-width:1200px;margin:0 auto}
-#ptiPreviewModal .ppm-content #previewInfo{max-width:1200px;margin:0 auto 12px}
-#ptiPreviewModal .ppm-foot{flex:0 0 auto;padding:10px 16px;background:#fff;border-top:1px solid #d7e3f6;box-shadow:0 -4px 16px #183e7610}
-#ptiPreviewModal .ppm-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;max-width:1500px;margin:0 auto}
-#ptiPreviewModal .ppm-actions>.actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}
-#ptiPreviewModal .ppm-actions .driveBox{flex:1 1 460px;margin:0;padding:10px 12px;min-width:280px}
-#ptiPreviewModal .ppm-actions .driveRow{display:flex;flex-wrap:wrap;gap:8px}
-#ptiPreviewModal .ppm-actions .driveRow .btn{flex:1 1 180px}
-#ptiPreviewModal .ppm-actions .driveSearchRow input{min-width:200px;flex:1}
-#ptiPreviewModal .ppm-actions #driveProgress{max-width:100%}
-@media(max-width:700px){#ptiPreviewModal .ppm-head{padding:9px 12px}#ptiPreviewModal .ppm-content{padding:10px}#ptiPreviewModal .ppm-foot{padding:8px}#ptiPreviewModal .ppm-actions{display:block}#ptiPreviewModal .ppm-actions>.actions{margin-bottom:8px}#ptiPreviewModal .ppm-actions .driveBox{min-width:0}#ptiPreviewModal .ppm-actions .driveRow .btn{flex-basis:100%}}
+#ptiPreviewModal .ppm-content>.card{max-width:1500px;margin:0 auto 16px;box-shadow:none}
+#ptiPreviewModal .ppm-content #preview{margin-top:12px!important}
+#ptiPreviewModal .ppm-content .preview{grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));gap:16px}
+#ptiPreviewModal .ppm-content .preview>div{max-width:none}
+#ptiPreviewModal .ppm-foot{flex:0 0 auto;padding:10px 16px;background:#fff;border-top:1px solid #d7e3f6}
+#ptiPreviewModal .ppm-actions{display:flex;flex-wrap:wrap;gap:9px;max-width:1500px;margin:0 auto}
+#ptiPreviewModal .ppm-actions .btn{min-width:150px}
+@media(min-width:1000px){
+ .wrap{max-width:none!important;width:100%!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)!important;gap:14px!important;padding:0 14px!important}
+ .wrap>.card:nth-of-type(1) .form{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .wrap>.card:nth-of-type(1) .form .field:has(#garage){grid-column:1/-1!important}
+ .wrap>.card:nth-of-type(1) input,.wrap>.card:nth-of-type(1) select{width:100%;min-width:0}
+ .wrap>.card:nth-of-type(1){grid-column:1!important;grid-row:1!important}
+ .wrap>.card:nth-of-type(2){grid-column:2!important;grid-row:1!important}
+ .wrap>.card:nth-of-type(3){grid-column:3!important;grid-row:1!important}
+ .wrap>.pcImageGallery{grid-column:1/-1!important;grid-row:2!important}
+}
+.searchTable .recordOpenPrimary{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;visibility:visible!important;opacity:1!important;margin:9px 0 0!important;width:100%;min-width:130px;white-space:normal!important;overflow-wrap:anywhere;position:static!important;transform:none!important;padding:10px 12px!important;border-radius:10px!important;font-size:13px!important;line-height:1.35!important;font-weight:750!important;background:#eaf2ff!important;color:#1455ad!important;border:1px solid #b8d0ff!important;box-shadow:0 2px 7px #174d9414!important}
+.searchTable td[data-label="Hồ sơ"]{min-width:180px}
+.searchTable td[data-label="Thao tác"] .recordOpenPrimary{display:none!important}
+@media(max-width:650px){
+ #ptiPreviewModal .ppm-head{padding:9px 12px}
+ #ptiPreviewModal .ppm-content{padding:10px}
+ #ptiPreviewModal .ppm-actions{display:block}
+ #ptiPreviewModal .ppm-actions .btn{width:100%;margin:4px 0}
+ .wrap{display:block!important;max-width:850px!important;margin:12px auto 30px!important;padding:0 9px!important}
+ .wrap>.card{margin-bottom:14px!important}
+ .searchTable .recordOpenPrimary{display:flex!important}
+ .searchTable td[data-label="Thao tác"]{display:none!important}
+}
 </style>
 <script id="pcPreviewModalLogic">
 (function(){
- let modal,content,foot,origins=[],opened=false,waitingForPreview=false,observer=null;
+ let modal,content,origParent=null,origNext=null,opened=false,pending=false,obs=null,bodyObs=null;
  function ensure(){
   if(modal)return;
-  modal=document.createElement('div');modal.id='ptiPreviewModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Xem trước bản ảnh');
+  modal=document.createElement('div');modal.id='ptiPreviewModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Xem trước bản ảnh toàn màn hình');
   modal.innerHTML='<div class="ppm-head"><div class="ppm-title">Xem trước bản ảnh · PDF A4</div><button type="button" class="ppm-close" id="ptiPreviewClose">✕ Đóng Preview</button></div><div class="ppm-content" id="ptiPreviewContent"></div><div class="ppm-foot"><div class="ppm-actions" id="ptiPreviewActions"></div></div>';
-  document.body.appendChild(modal);content=modal.querySelector('#ptiPreviewContent');foot=modal.querySelector('#ptiPreviewActions');
+  document.body.appendChild(modal);content=modal.querySelector('#ptiPreviewContent');
   modal.querySelector('#ptiPreviewClose').addEventListener('click',close);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&opened)close()});
  }
- function moveIn(el,parent){if(!el)return;origins.push({el,parent:el.parentNode,next:el.nextSibling});parent.appendChild(el)}
- function open(){
-  if(opened)return;
-  ensure();
-  const info=document.getElementById('previewInfo'),preview=document.getElementById('preview');
-  if(!preview||!info||!preview.children.length)return;
-  origins=[];
-  const actions=preview.parentElement?.querySelector('.actions');
-  const pdfWarn=document.getElementById('pdfWarn'),driveBox=document.querySelector('.driveBox');
-  moveIn(info,content);moveIn(preview,content);
-  if(actions)moveIn(actions,foot);
-  if(pdfWarn)moveIn(pdfWarn,foot);
-  if(driveBox)moveIn(driveBox,foot);
-  modal.classList.add('open');document.body.style.overflow='hidden';opened=true;waitingForPreview=false;
-  if(observer){observer.disconnect();observer=null}
+ function tryOpen(){
+  if(!pending||opened)return;
+  const info=document.getElementById('previewInfo'),preview=document.getElementById('preview'),card=preview&&preview.closest('.wrap > .card');
+  if(!card||!info||!preview||!preview.children.length)return;
+  const txt=(info.textContent||'').trim();
+  if(!/^Preview\s+\d+/i.test(txt))return;
+  ensure();origParent=card.parentNode;origNext=card.nextSibling;content.appendChild(card);
+  modal.classList.add('open');document.body.style.overflow='hidden';opened=true;pending=false;
+  if(obs){obs.disconnect();obs=null} if(bodyObs){bodyObs.disconnect();bodyObs=null}
   modal.querySelector('#ptiPreviewClose').focus();
  }
  function close(){
   if(!opened)return;
-  for(const o of origins.slice().reverse()){if(o.parent){if(o.next&&o.next.parentNode===o.parent)o.parent.insertBefore(o.el,o.next);else o.parent.appendChild(o.el)}}
-  origins=[];modal.classList.remove('open');document.body.style.overflow='';opened=false;
+  const card=content.querySelector('.wrap > .card')||content.querySelector('.card');
+  if(card&&origParent){if(origNext&&origNext.parentNode===origParent)origParent.insertBefore(card,origNext);else origParent.appendChild(card)}
+  modal.classList.remove('open');document.body.style.overflow='';opened=false;pending=false;
+  origParent=null;origNext=null;
  }
- function check(){if(!waitingForPreview)return;const p=document.getElementById('preview');const i=document.getElementById('previewInfo');if(p&&p.children.length&&i&&/^Preview\s/i.test(i.textContent.trim()))open()}
- document.addEventListener('click',e=>{
-  const finish=e.target.closest&&e.target.closest('#finish');
-  if(!finish)return;
-  waitingForPreview=true;
-  if(observer)observer.disconnect();
-  const p=document.getElementById('preview');
-  if(p){observer=new MutationObserver(check);observer.observe(p,{childList:true,subtree:true})}
-  setTimeout(check,150);setTimeout(check,500);setTimeout(check,1200);setTimeout(check,2500);
- });
- const backEditObserver=new MutationObserver(()=>{if(opened&&document.getElementById('backEdit')?.style.display==='inline-block'){}});
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure,{once:true});
+ document.addEventListener('click',function(e){
+  const btn=e.target.closest&&e.target.closest('#finish');
+  if(!btn)return;
+  pending=true;
+  if(obs)obs.disconnect();
+  const info=document.getElementById('previewInfo'),preview=document.getElementById('preview');
+  if(info){obs=new MutationObserver(tryOpen);obs.observe(info,{childList:true,subtree:true,characterData:true})}
+  if(preview){const po=new MutationObserver(tryOpen);po.observe(preview,{childList:true,subtree:true});const old=obs;obs={disconnect(){old&&old.disconnect();po.disconnect()}}}
+  if(bodyObs)bodyObs.disconnect();
+  bodyObs=new MutationObserver(tryOpen);bodyObs.observe(document.body,{childList:true,subtree:true});
+  [100,350,800,1500,2500,4000].forEach(ms=>setTimeout(tryOpen,ms));
+ },true);
 })();
 </script></body></html>
