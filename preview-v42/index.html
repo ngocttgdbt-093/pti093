@@ -173,7 +173,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 </div></section>
 
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
-<div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v46-20261016</span></div>
+<div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v47-20261016</span></div>
 </div>
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
@@ -1761,6 +1761,25 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 .wrap.preview-closed>.card:nth-of-type(3) .actions .btn,
 .wrap.preview-closed>.card:nth-of-type(3) .driveBox .btn{max-width:100%;margin:4px 3px 4px 0}
 @media(max-width:1000px){.wrap.preview-closed{grid-template-columns:1fr!important}}
+/* V47: clearer Drive upload progress, separate from local-PC image preparation. */
+#driveProgress{
+  margin-top:12px!important;padding:14px 15px!important;
+  border:1px solid #c9d8e8!important;border-radius:12px!important;
+  background:#f7faff!important;box-shadow:0 2px 7px rgba(28,67,116,.05)!important;
+}
+#driveProgress>div:first-child{
+  display:flex!important;align-items:center!important;gap:14px!important;
+  justify-content:space-between!important;flex-wrap:wrap!important;
+  font-size:14px!important;line-height:1.5!important;
+}
+#driveProgressText{display:block!important;flex:1 1 220px!important;font-weight:750!important;color:#17345f!important;line-height:1.5!important}
+#driveProgressPct{display:block!important;flex:0 0 auto!important;min-width:46px!important;text-align:right!important;font-size:17px!important;font-weight:850!important;color:#08784b!important}
+#driveProgress>div:nth-child(2){height:10px!important;margin-top:10px!important;background:#e5ebf3!important;border-radius:999px!important;overflow:hidden!important}
+#driveProgressBar{height:100%!important;border-radius:999px!important;background:linear-gradient(90deg,#1769e8,#48a0ff)!important;transition:width .25s ease!important}
+#driveProgressMeta{margin-top:9px!important;font-size:12px!important;line-height:1.65!important;color:#5c6f86!important;overflow-wrap:anywhere!important}
+#driveState{display:block!important;flex:1 1 100%!important;line-height:1.6!important;padding-top:3px!important;overflow-wrap:anywhere!important}
+#driveUploadMissing{margin-top:12px!important;padding:12px 14px!important;border-radius:10px!important;line-height:1.6!important;overflow-wrap:anywhere!important}
+@media(max-width:650px){#driveProgress{padding:12px!important}#driveProgressText{flex-basis:170px!important}#driveProgressMeta{font-size:11px!important}}
 #ptiPreviewModal.open{display:flex}
 #ptiPreviewModal .ppm-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:linear-gradient(110deg,#063b91,#0968e8 70%,#2d8bff);color:#fff;box-shadow:0 3px 12px #123d8530}
 #ptiPreviewModal .ppm-title{font-weight:800;font-size:17px}
