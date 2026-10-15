@@ -1755,11 +1755,11 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 #ptiPreviewModal .ppm-content{flex:1 1 auto;overflow:auto;padding:18px;min-height:0}
 #ptiPreviewModal .ppm-content>.card{max-width:1500px;margin:0 auto 16px;box-shadow:none}
 #ptiPreviewModal .ppm-content #preview{margin-top:12px!important}
-#ptiPreviewModal .ppm-content .preview{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px}
+#ptiPreviewModal .ppm-content .preview{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important;align-items:start!important}#ptiPreviewModal .ppm-content .preview>*{width:100%!important;min-width:0!important;max-width:none!important}#ptiPreviewModal .ppm-content .preview img{max-width:100%;height:auto}
 #ptiPreviewModal .ppm-content .preview>div{max-width:none}
 #ptiPreviewModal .ppm-foot{flex:0 0 auto;padding:10px 16px;background:#fff;border-top:1px solid #d7e3f6}
 #ptiPreviewModal .ppm-actions{display:flex;flex-wrap:wrap;gap:9px;max-width:1500px;margin:0 auto}
-#ptiPreviewModal .ppm-actions .btn{min-width:150px}.ppm-actions .driveBox{display:contents!important}.ppm-actions .driveBox>h3,.ppm-actions .driveBox>.hd{display:none!important}.ppm-actions .driveBox button{display:inline-flex!important;align-items:center;justify-content:center;min-height:44px;white-space:normal}.ppm-actions .driveBox #driveProgressWrap,.ppm-actions .driveBox #driveProgressBar,.ppm-actions .driveBox .progressWrap,.ppm-actions .driveBox .status{display:none!important}
+#ptiPreviewModal .ppm-actions .btn{min-width:150px}.ppm-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important}.ppm-actions>button{display:inline-flex!important;align-items:center;justify-content:center;min-width:0!important;min-height:48px;white-space:normal!important;text-align:center}.ppm-actions #driveState,.ppm-actions #driveId,.ppm-actions #driveProgress{display:none!important}
 @media(min-width:1000px){
  .wrap{max-width:none!important;width:100%!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:14px!important;padding:0 14px!important}
  .wrap>.card:nth-of-type(1) .form{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -1771,9 +1771,10 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
  .wrap>.pcImageGallery{grid-column:1/-1!important;grid-row:3!important}
 }
 .searchTable .recordOpenPrimary{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;visibility:visible!important;opacity:1!important;margin:9px 0 0!important;width:100%;min-width:130px;white-space:normal!important;overflow-wrap:anywhere;position:static!important;transform:none!important;padding:10px 12px!important;border-radius:10px!important;font-size:13px!important;line-height:1.35!important;font-weight:750!important;background:#eaf2ff!important;color:#1455ad!important;border:1px solid #b8d0ff!important;box-shadow:0 2px 7px #174d9414!important}
-.searchTable{width:100%;table-layout:fixed}.searchTable th,.searchTable td{padding:12px 10px;vertical-align:middle;overflow-wrap:anywhere}.searchTable th:nth-child(1),.searchTable td:nth-child(1){width:28%}.searchTable th:nth-child(2),.searchTable td:nth-child(2){width:13%}.searchTable th:nth-child(3),.searchTable td:nth-child(3){width:18%}.searchTable th:nth-child(4),.searchTable td:nth-child(4){width:19%}.searchTable th:nth-child(5),.searchTable td:nth-child(5){width:22%}.searchTable td[data-label="Hồ sơ"]{min-width:0}.searchTable .recordOpenPrimary{max-width:260px;min-height:42px;font-size:14px!important;white-space:nowrap!important}
+.searchTable{width:100%;table-layout:auto}.searchTable th,.searchTable td{padding:12px 10px;vertical-align:middle;overflow-wrap:anywhere;white-space:normal}.searchTable th:nth-child(1),.searchTable td:nth-child(1){width:30%;min-width:210px}.searchTable th:nth-child(2),.searchTable td:nth-child(2){width:13%;min-width:90px}.searchTable th:nth-child(3),.searchTable td:nth-child(3){width:18%;min-width:130px}.searchTable th:nth-child(4),.searchTable td:nth-child(4){width:18%;min-width:135px}.searchTable th:nth-child(5),.searchTable td:nth-child(5){width:21%;min-width:140px}.searchTable td[data-label="Hồ sơ"]{min-width:210px}.searchTable .recordOpenPrimary{max-width:100%;min-width:150px;min-height:42px;font-size:14px!important;white-space:normal!important}
 .searchTable td[data-label="Thao tác"] .recordOpenPrimary{display:none!important}
 @media(max-width:999px){.wrap{display:block!important;max-width:850px!important;margin:12px auto 30px!important;padding:0 9px!important}.wrap>.card{margin-bottom:14px!important}}
+@media(max-width:999px){.searchTableWrap{overflow-x:visible}.searchTable,.searchTable tbody,.searchTable tr,.searchTable td{display:block;width:100%!important;min-width:0!important}.searchTable thead{display:none}.searchTable tbody tr{padding:8px 10px;border-bottom:1px solid #dbe7e0}.searchTable td{display:grid;grid-template-columns:minmax(95px,34%) minmax(0,1fr);gap:8px;border:0!important;padding:7px 4px!important;overflow-wrap:anywhere}.searchTable td:before{content:attr(data-label);font-weight:700;color:#176b4b}.searchTable td[data-label="Hồ sơ"]{display:block}.searchTable td[data-label="Hồ sơ"]:before{display:none}.searchTable .recordOpenPrimary{width:100%;max-width:320px}}
 @media(max-width:650px){
  #ptiPreviewModal .ppm-head{padding:9px 12px}
  #ptiPreviewModal .ppm-content{padding:10px}
@@ -1787,7 +1788,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 </style>
 <script id="pcPreviewModalLogic">
 (function(){
- let modal,content,origParent=null,origNext=null,opened=false,pending=false,obs=null,bodyObs=null,actionBar=null;
+ let modal,content,origParent=null,origNext=null,opened=false,pending=false,obs=null,bodyObs=null,actionBar=null,moved=[];
  function ensure(){
   if(modal)return;
   modal=document.createElement('div');modal.id='ptiPreviewModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Xem trước bản ảnh toàn màn hình');
@@ -1796,20 +1797,16 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   modal.querySelector('#ptiPreviewClose').addEventListener('click',close);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&opened)close()});
  }
- function addButton(el){if(!el||actionBar.contains(el))return;actionBar.appendChild(el)}
+ function moveToFooter(el){if(!el||actionBar.contains(el))return;moved.push({el,parent:el.parentNode,next:el.nextSibling});actionBar.appendChild(el)}
  function tryOpen(){
   if(!pending||opened)return;
   const info=document.getElementById('previewInfo'),preview=document.getElementById('preview'),card=preview&&preview.closest('.wrap > .card');
-  if(!card||!info||!preview||!preview.children.length)return;
-  if(!/^Preview\s+\d+/i.test((info.textContent||'').trim()))return;
+  if(!card||!info||!preview||!preview.children.length||!/^Preview\s+\d+/i.test((info.textContent||'').trim()))return;
   ensure();origParent=card.parentNode;origNext=card.nextSibling;content.appendChild(card);
-  // Build a compact footer with only: export A4 PDF, new batch, save locally.
-  const pdf=card.querySelector('#exportPdf')||document.getElementById('exportPdf')||document.getElementById('pdfExport');
-  const fresh=document.getElementById('newBatch')||document.getElementById('newProject')||document.getElementById('resetAll');
-  const local=document.getElementById('saveLocal')||document.getElementById('localSave')||document.getElementById('saveLocalDraft');
-  [pdf,fresh,local].forEach(addButton);
-  const driveBox=card.querySelector('.driveBox')||document.querySelector('.driveBox');
-  if(driveBox){const driveBtns=[...driveBox.querySelectorAll('button')];driveBtns.forEach(btn=>{if(btn.id==='driveSaveLocal'&&!actionBar.contains(btn))addButton(btn);});}
+  // Exactly three footer actions, matching the Drive action row in the reference.
+  moveToFooter(document.getElementById('driveCreate'));
+  moveToFooter(document.getElementById('driveSaveProject'));
+  moveToFooter(document.getElementById('driveSaveDraft'));
   modal.classList.add('open');document.body.style.overflow='hidden';opened=true;pending=false;
   if(obs){obs.disconnect();obs=null}if(bodyObs){bodyObs.disconnect();bodyObs=null}
   modal.querySelector('#ptiPreviewClose').focus();
@@ -1818,8 +1815,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   if(!opened)return;
   const card=content.querySelector('.wrap > .card')||content.querySelector('.card');
   if(card&&origParent){if(origNext&&origNext.parentNode===origParent)origParent.insertBefore(card,origNext);else origParent.appendChild(card)}
-  // Restore action buttons to their original container positions.
-  const restored=[...actionBar.children];restored.forEach(el=>{if(el.dataset.ppmOriginalParent){const p=document.querySelector(el.dataset.ppmOriginalParent);if(p)p.appendChild(el);delete el.dataset.ppmOriginalParent}});
+  moved.forEach(({el,parent,next})=>{if(parent){if(next&&next.parentNode===parent)parent.insertBefore(el,next);else parent.appendChild(el)}});moved=[];
   modal.classList.remove('open');document.body.style.overflow='';opened=false;pending=false;origParent=null;origNext=null;
  }
  document.addEventListener('click',function(e){
