@@ -1761,14 +1761,14 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 #ptiPreviewModal .ppm-actions{display:flex;flex-wrap:wrap;gap:9px;max-width:1500px;margin:0 auto}
 #ptiPreviewModal .ppm-actions .btn{min-width:150px}.ppm-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important}.ppm-actions>button{display:inline-flex!important;align-items:center;justify-content:center;min-width:0!important;min-height:48px;white-space:normal!important;text-align:center}.ppm-actions #driveState,.ppm-actions #driveId,.ppm-actions #driveProgress{display:none!important}
 @media(min-width:1000px){
- .wrap{max-width:none!important;width:100%!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:14px!important;padding:0 14px!important}
+ .wrap{max-width:none!important;width:100%!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)!important;gap:14px!important;padding:0 14px!important}
  .wrap>.card:nth-of-type(1) .form{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  .wrap>.card:nth-of-type(1) .form .field:has(#garage){grid-column:1/-1!important}
  .wrap>.card:nth-of-type(1) input,.wrap>.card:nth-of-type(1) select{width:100%;min-width:0}
  .wrap>.card:nth-of-type(1){grid-column:1!important;grid-row:1!important}
  .wrap>.card:nth-of-type(2){grid-column:2!important;grid-row:1!important}
- .wrap>.card:nth-of-type(3){grid-column:1/-1!important;grid-row:2!important;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}.wrap>.card:nth-of-type(3)>.hd{grid-column:1/-1}.wrap>.card:nth-of-type(3) #previewInfo,.wrap>.card:nth-of-type(3) #preview{grid-column:1/-1}.wrap>.card:nth-of-type(3) .driveBox{grid-column:1/-1}
- .wrap>.pcImageGallery{grid-column:1/-1!important;grid-row:3!important}
+ .wrap>.card:nth-of-type(3){grid-column:3!important;grid-row:1!important;display:block!important}.wrap>.card:nth-of-type(3)>.hd{grid-column:auto}.wrap>.card:nth-of-type(3) #previewInfo,.wrap>.card:nth-of-type(3) #preview{grid-column:auto}.wrap>.card:nth-of-type(3) .driveBox{grid-column:auto}
+ .wrap>.pcImageGallery{grid-column:1/-1!important;grid-row:2!important}
 }
 .searchTable .recordOpenPrimary{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;visibility:visible!important;opacity:1!important;margin:9px 0 0!important;width:100%;min-width:130px;white-space:normal!important;overflow-wrap:anywhere;position:static!important;transform:none!important;padding:10px 12px!important;border-radius:10px!important;font-size:13px!important;line-height:1.35!important;font-weight:750!important;background:#eaf2ff!important;color:#1455ad!important;border:1px solid #b8d0ff!important;box-shadow:0 2px 7px #174d9414!important}
 .searchTable{width:100%;table-layout:auto}.searchTable th,.searchTable td{padding:12px 10px;vertical-align:middle;overflow-wrap:anywhere;white-space:normal}.searchTable th:nth-child(1),.searchTable td:nth-child(1){width:30%;min-width:210px}.searchTable th:nth-child(2),.searchTable td:nth-child(2){width:13%;min-width:90px}.searchTable th:nth-child(3),.searchTable td:nth-child(3){width:18%;min-width:130px}.searchTable th:nth-child(4),.searchTable td:nth-child(4){width:18%;min-width:135px}.searchTable th:nth-child(5),.searchTable td:nth-child(5){width:21%;min-width:140px}.searchTable td[data-label="Hồ sơ"]{min-width:210px}.searchTable .recordOpenPrimary{max-width:100%;min-width:150px;min-height:42px;font-size:14px!important;white-space:normal!important}
