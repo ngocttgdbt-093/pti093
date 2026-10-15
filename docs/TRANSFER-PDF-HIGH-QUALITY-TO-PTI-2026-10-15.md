@@ -22,6 +22,11 @@ Nút trong cảnh báo PDF gọi `exportHighQualitySplit(baseName)`, nhưng hàm
 - PR cần xem xét: tạo sau khi đóng gói (chưa merge vào main).
 - File: `index.html`
 
+## Kết quả kiểm thử cập nhật — 15/10/2026
+- Người dùng đã xác nhận trực tiếp: “Tôi đã test thành công”. Ghi nhận kết quả kiểm thử thực tế của chức năng xuất PDF chất lượng cao có thanh tiến trình.
+- Bản có thanh phần trăm đã được merge vào nhánh `main` của repo PTI và GitHub Pages workflow đã hoàn tất với kết quả `success`.
+- Mã nguồn PTI trên `main` đã được kiểm tra có các thành phần `pdfHighProgressPct` và `pdfHighProgressBar`.
+
 ## Kiểm thử và giới hạn
 - Đã xác nhận trong mã nguồn 093 có lời gọi tới hàm bị thiếu; nhánh sửa 093 đã thêm hàm và trạng thái tiến trình.
 - Đã chuyển cùng thay đổi chọn lọc sang nhánh PTI.
