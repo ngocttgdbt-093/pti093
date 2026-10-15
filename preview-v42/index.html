@@ -1831,7 +1831,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   if(!pending||opened)return;
   const info=document.getElementById('previewInfo'),preview=document.getElementById('preview'),card=preview&&preview.closest('.wrap > .card');
   if(!card||!info||!preview||!preview.children.length||!/^Preview\s+\d+/i.test((info.textContent||'').trim()))return;
-  ensure();origParent=card.parentNode;origNext=card.nextSibling;content.appendChild(card);
+  ensure();origParent=card.parentNode;origNext=card.nextSibling;card.style.display='';delete card.dataset.previewHiddenAfterClose;content.appendChild(card);
   // Exactly three footer actions, matching the Drive action row in the reference.
   moveToFooter(document.getElementById('driveCreate'));
   moveToFooter(document.getElementById('driveSaveProject'));
@@ -1843,7 +1843,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
  function close(){
   if(!opened)return;
   const card=content.querySelector('.wrap > .card')||content.querySelector('.card');
-  if(card&&origParent){if(origNext&&origNext.parentNode===origParent)origParent.insertBefore(card,origNext);else origParent.appendChild(card)}
+  if(card&&origParent){if(origNext&&origNext.parentNode===origParent)origParent.insertBefore(card,origNext);else origParent.appendChild(card);card.style.display='none';card.dataset.previewHiddenAfterClose='1'}
   moved.forEach(({el,parent,next})=>{if(parent){if(next&&next.parentNode===parent)parent.insertBefore(el,next);else parent.appendChild(el)}});moved=[];
   modal.classList.remove('open');document.body.style.overflow='';opened=false;pending=false;origParent=null;origNext=null;
  }
@@ -1856,5 +1856,27 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   if(bodyObs)bodyObs.disconnect();bodyObs=new MutationObserver(tryOpen);bodyObs.observe(document.body,{childList:true,subtree:true});
   [100,350,800,1500,2500,4000].forEach(ms=>setTimeout(tryOpen,ms));
  },true);
+})();
+</script><script id="previewV42Recovery">
+(function(){
+  // Defensive recovery for older cached/script-order cases: expose the upload entry point only after the app has initialized.
+  const stateNode=document.getElementById('driveState');
+  const create=document.getElementById('driveCreate');
+  if(create){
+    create.addEventListener('click',function(){
+      setTimeout(function(){
+        if(typeof window.pti093UploadAll!=='function' && stateNode){
+          stateNode.textContent='Không thể khởi chạy chức năng tải ảnh lên Drive. Hãy tải lại trang thử nghiệm; chưa xác nhận lưu Drive.';
+          stateNode.classList.remove('hidden');
+        }
+      },0);
+    },true);
+  }
+  // Remove any accidentally rendered CSS text nodes from earlier preview experiments.
+  document.querySelectorAll('body *').forEach(function(el){
+    if(el.children.length===0 && el.textContent && el.textContent.trim().startsWith('/* Search results: responsive record cards')){
+      el.remove();
+    }
+  });
 })();
 </script></body></html>
