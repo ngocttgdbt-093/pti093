@@ -1162,7 +1162,9 @@ async function sendDrivePayload(payload,recordId,uploadKey){
 
   return await new Promise((resolve,reject)=>{
     let settled=false;
-    const timeoutMs=8000;
+    // Rút ngắn thời gian chờ phản hồi trực tiếp; khi hết hạn chỉ kiểm tra trạng thái server,
+    // tuyệt đối không POST ảnh lần hai. Xác nhận vẫn dựa trên uploadStatus.
+    const timeoutMs=3000;
 
     const cleanup=()=>{
       window.removeEventListener('message',onMessage);
