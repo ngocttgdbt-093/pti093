@@ -118,3 +118,21 @@ Không tự đổi endpoint hoặc sửa backend khi chưa đối chiếu bản 
 - [ ] Chưa xác nhận mốc 25,1 giây.
 
 **Nguyên tắc:** đây là gói chuyển giao để phục hồi core; không phải tuyên bố chức năng Drive đã được sửa hoặc đã được kiểm thử trong phiên này.
+
+
+## 9. Đối chiếu bổ sung với file `/index.html` hiện có trên `main` (đã đọc sau khi tạo gói)
+
+Đây là phát hiện quan trọng để xử lý lỗi `window.pti093UploadAll is not a function`:
+
+- `preview-v42/index.html` (nguồn snapshot, SHA `3e1aec8f152dd4c67277300f2cf76784fb28651b`): handler `driveSaveProject` nằm khoảng dòng 576 và gọi `pti093UploadAll()` trực tiếp. Khai báo `window.pti093UploadAll = pti093UploadAll` nằm khoảng dòng 1505; phần gán lên `window` xuất hiện sau các handler. Có thêm một lần gán khác khoảng dòng 1673.
+- `/index.html` trên `main` (SHA `4fe3c6539abc997da1f037daa5df36b398a8af5a`): hàm được công khai sớm bằng `window.pti093UploadAll = async function(){...}` khoảng dòng 469, trước handler `driveSaveProject` ở khoảng dòng 645. Các nơi gọi hàm dùng `window.pti093UploadAll()` và có kiểm tra đủ số ảnh xác nhận trước khi đánh dấu lưu thành công.
+- Cả hai file hiện đều có `DRIVE_CONCURRENCY=5`; vì vậy khác biệt không chỉ nằm ở số luồng. Bản `/index.html` có các sửa đổi mới hơn liên quan đến cách công khai/gọi hàm và kiểm tra kết quả.
+
+### Kết luận có căn cứ từ đối chiếu mã
+
+1. Không được coi `preview-v42/index.html` là đồng nhất với `/index.html` chỉ vì cả hai có concurrency 5.
+2. Cấu trúc công khai hàm upload ở file gốc `/index.html` mới hơn là hướng sửa cụ thể cần ưu tiên kiểm thử trên một bản phục hồi riêng.
+3. Đây là kết luận từ đọc/so sánh mã, chưa phải chứng minh nguyên nhân runtime cuối cùng; lỗi có thể còn phụ thuộc lỗi JavaScript xảy ra trước đó, nội dung deployment hoặc trạng thái trình duyệt.
+4. Không copy toàn bộ `/index.html` đè lên `preview-v42` một cách mù quáng. Trước hết phải so sánh các hàm upload và các helper phụ thuộc, sau đó dựng bản phục hồi riêng và thử 10 ảnh.
+5. File `/index.html` trên `main` vẫn chưa được xác nhận bằng phép thử mới 10/10 trong phiên này. Mốc 34 giây và mục tiêu 25,1 giây vẫn là mốc tham chiếu do người dùng cung cấp.
+
