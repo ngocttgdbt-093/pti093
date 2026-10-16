@@ -64,7 +64,7 @@
 </div></section>
 
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
-<div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v40-20261016.3</span></div>
+<div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v40-20261016.4</span></div>
 </div>
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
@@ -1070,15 +1070,14 @@ async function prepareDriveItem(it,index,total){
 }
 
 async function waitForUploadStatus(recordId,uploadKey){
-  // V40.3: thử JSONP trực tiếp; nếu trình duyệt chặn script trực tiếp,
-  // thử cùng endpoint trong iframe cùng nguồn kế thừa. Chỉ đọc trạng thái,
-  // tuyệt đối không POST ảnh lần thứ hai.
+  // V40.4: callback JSONP luôn là tên hàm hợp lệ; iframe chuyển tiếp kết quả về cửa sổ chính.
+  // Chỉ kiểm tra trạng thái; không POST ảnh lần thứ hai.
   const maxChecks=4;
   let lastError=null;
 
   for(let i=0;i<maxChecks;i++){
     const cb='pti093UploadStatus_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    const url=PTI093_API+'?action=uploadStatus&recordId='+encodeURIComponent(recordId)+'&uploadKey='+encodeURIComponent(uploadKey)+'&callback=';
+    const base=PTI093_API+'?action=uploadStatus&recordId='+encodeURIComponent(recordId)+'&uploadKey='+encodeURIComponent(uploadKey)+'&callback=';
     const readResult=(data)=>{
       if(data&&data.success&&data.found&&String(data.recordId||'')===String(recordId||'')&&String(data.uploadKey||'')===String(uploadKey||'')) return data;
       if(data&&data.success&&data.found===false) throw new Error('Máy chủ chưa ghi nhận ảnh.');
@@ -1090,38 +1089,41 @@ async function waitForUploadStatus(recordId,uploadKey){
       const data=await new Promise((resolve,reject)=>{
         const script=document.createElement('script');
         let settled=false;
-        const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian JSONP trực tiếp.')),1800);
         const cleanup=()=>{try{delete window[cb]}catch(e){window[cb]=undefined}try{script.remove()}catch(e){}clearTimeout(timer)};
         const finish=(fn,value)=>{if(settled)return;settled=true;cleanup();fn(value)};
+        const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian JSONP trực tiếp.')),1800);
         window[cb]=(value)=>finish(resolve,value);
         script.async=true;
         script.onerror=()=>finish(reject,new Error('JSONP trực tiếp bị trình duyệt chặn hoặc không tải được.'));
-        script.src=url+encodeURIComponent(cb)+'&_='+Date.now();
+        script.src=base+encodeURIComponent(cb)+'&_='+Date.now();
         document.head.appendChild(script);
       });
       return readResult(data);
     }catch(e){lastError=e}
 
-    // Transport 2: JSONP trong iframe ẩn; callback được gọi về cửa sổ ứng dụng.
+    // Transport 2: callback hợp lệ nằm trong iframe, sau đó chuyển dữ liệu sang parent.
     try{
       const data=await new Promise((resolve,reject)=>{
         const frame=document.createElement('iframe');
         frame.style.cssText='position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none;left:-20px;top:-20px';
         let settled=false;
-        const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian JSONP trong iframe.')),2200);
         const cleanup=()=>{try{delete window[cb]}catch(e){window[cb]=undefined}try{frame.remove()}catch(e){}clearTimeout(timer)};
         const finish=(fn,value)=>{if(settled)return;settled=true;cleanup();fn(value)};
+        const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian JSONP trong iframe.')),2200);
         window[cb]=(value)=>finish(resolve,value);
-        document.body.appendChild(frame);
         frame.onload=()=>{
+          if(settled)return;
+          frame.onload=null;
           try{
-            const callback='parent.'+cb;
-            const src=url+encodeURIComponent(callback)+'&_='+Date.now();
-            frame.contentDocument.open();
-            frame.contentDocument.write('<!doctype html><html><head></head><body><script src="'+src.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"><\/script></body></html>');
-            frame.contentDocument.close();
+            const doc=frame.contentDocument;
+            const src=base+encodeURIComponent(cb)+'&_='+Date.now();
+            const html='<!doctype html><html><head></head><body><script>window["'+cb+'"]=function(data){parent["'+cb+'"](data)};<\\/script><script src="'+src.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"><\\/script></body></html>';
+            doc.open();
+            doc.write(html);
+            doc.close();
           }catch(err){finish(reject,err)}
         };
+        document.body.appendChild(frame);
         frame.src='about:blank';
       });
       return readResult(data);
