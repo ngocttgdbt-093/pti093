@@ -1070,52 +1070,65 @@ async function prepareDriveItem(it,index,total){
 }
 
 async function waitForUploadStatus(recordId,uploadKey){
-  // V40.2: ưu tiên JSONP vì Apps Script ContentService có thể chuyển hướng,
-  // khiến fetch/CORS hoặc đọc JSON trực tiếp thất bại dù máy chủ đã ghi nhận ảnh.
-  // Chỉ kiểm tra trạng thái, tuyệt đối không gửi POST ảnh lần thứ hai.
-  const maxChecks=6;
+  // V40.3: thử JSONP trực tiếp; nếu trình duyệt chặn script trực tiếp,
+  // thử cùng endpoint trong iframe cùng nguồn kế thừa. Chỉ đọc trạng thái,
+  // tuyệt đối không POST ảnh lần thứ hai.
+  const maxChecks=4;
   let lastError=null;
 
   for(let i=0;i<maxChecks;i++){
+    const cb='pti093UploadStatus_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const url=PTI093_API+'?action=uploadStatus&recordId='+encodeURIComponent(recordId)+'&uploadKey='+encodeURIComponent(uploadKey)+'&callback=';
+    const readResult=(data)=>{
+      if(data&&data.success&&data.found&&String(data.recordId||'')===String(recordId||'')&&String(data.uploadKey||'')===String(uploadKey||'')) return data;
+      if(data&&data.success&&data.found===false) throw new Error('Máy chủ chưa ghi nhận ảnh.');
+      throw new Error((data&&data.error)||'Phản hồi trạng thái upload không hợp lệ.');
+    };
+
+    // Transport 1: JSONP trực tiếp.
     try{
-      const result=await new Promise((resolve,reject)=>{
-        const cb='pti093UploadStatus_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      const data=await new Promise((resolve,reject)=>{
         const script=document.createElement('script');
         let settled=false;
-        const cleanup=()=>{
-          try{delete window[cb]}catch(e){window[cb]=undefined}
-          try{script.remove()}catch(e){}
-          clearTimeout(timer);
-        };
-        const finish=(fn,value)=>{
-          if(settled)return;
-          settled=true;
-          cleanup();
-          fn(value);
-        };
-        const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian kiểm tra trạng thái upload.')),1800);
-        window[cb]=(data)=>{
-          if(data&&data.success&&data.found&&String(data.recordId||'')===String(recordId||'')&&String(data.uploadKey||'')===String(uploadKey||'')){
-            finish(resolve,data);
-          }else{
-            finish(resolve,data||{success:false,found:false});
-          }
-        };
-        script.onerror=()=>finish(reject,new Error('Không đọc được trạng thái upload từ máy chủ.'));
-        script.src=PTI093_API+'?action=uploadStatus&recordId='+encodeURIComponent(recordId)+'&uploadKey='+encodeURIComponent(uploadKey)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
-        document.body.appendChild(script);
+        const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian JSONP trực tiếp.')),1800);
+        const cleanup=()=>{try{delete window[cb]}catch(e){window[cb]=undefined}try{script.remove()}catch(e){}clearTimeout(timer)};
+        const finish=(fn,value)=>{if(settled)return;settled=true;cleanup();fn(value)};
+        window[cb]=(value)=>finish(resolve,value);
+        script.async=true;
+        script.onerror=()=>finish(reject,new Error('JSONP trực tiếp bị trình duyệt chặn hoặc không tải được.'));
+        script.src=url+encodeURIComponent(cb)+'&_='+Date.now();
+        document.head.appendChild(script);
       });
-      if(result&&result.success&&result.found&&String(result.recordId||'')===String(recordId||'')&&String(result.uploadKey||'')===String(uploadKey||'')){
-        return result;
-      }
-      lastError=new Error('Máy chủ chưa ghi nhận ảnh.');
-    }catch(e){
-      lastError=e;
-    }
+      return readResult(data);
+    }catch(e){lastError=e}
 
-    if(i<maxChecks-1)await new Promise(resolve=>setTimeout(resolve,300));
+    // Transport 2: JSONP trong iframe ẩn; callback được gọi về cửa sổ ứng dụng.
+    try{
+      const data=await new Promise((resolve,reject)=>{
+        const frame=document.createElement('iframe');
+        frame.style.cssText='position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none;left:-20px;top:-20px';
+        let settled=false;
+        const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian JSONP trong iframe.')),2200);
+        const cleanup=()=>{try{delete window[cb]}catch(e){window[cb]=undefined}try{frame.remove()}catch(e){}clearTimeout(timer)};
+        const finish=(fn,value)=>{if(settled)return;settled=true;cleanup();fn(value)};
+        window[cb]=(value)=>finish(resolve,value);
+        document.body.appendChild(frame);
+        frame.onload=()=>{
+          try{
+            const callback='parent.'+cb;
+            const src=url+encodeURIComponent(callback)+'&_='+Date.now();
+            frame.contentDocument.open();
+            frame.contentDocument.write('<!doctype html><html><head></head><body><script src="'+src.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"><\\/script></body></html>');
+            frame.contentDocument.close();
+          }catch(err){finish(reject,err)}
+        };
+        frame.src='about:blank';
+      });
+      return readResult(data);
+    }catch(e){lastError=e}
+
+    if(i<maxChecks-1) await new Promise(resolve=>setTimeout(resolve,250));
   }
-
   throw lastError||new Error('Không xác nhận được ảnh đã lưu.');
 }
 async function sendDrivePayload(payload,recordId,uploadKey){
