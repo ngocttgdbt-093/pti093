@@ -612,7 +612,6 @@ window.pti093UploadAll = async function(){
     renderDriveUploadFailures();
 
     const elapsedMs=performance.now()-uploadStartedAt;
-    const otherMs=Math.max(0,elapsedMs-prepTotalMs-sendTotalMs);
     const prepWallMs=window.__pti093PrepWallMs||0;
     const sendWallMs=window.__pti093SendWallMs||0;
     const measuredPrep=Math.min(elapsedMs,prepWallMs||prepTotalMs);
