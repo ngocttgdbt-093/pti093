@@ -1223,7 +1223,7 @@ function renderDriveUploadFailures(){
   rows.forEach((x,i)=>{const li=document.createElement('li');li.style.marginBottom='3px';li.textContent=(x.name||('Ảnh số '+(x.index+1)))+(x.error?' — '+x.error:'');ul.appendChild(li)});
   box.appendChild(ul);
   const b=document.createElement('button');b.type='button';b.className='btn light';b.textContent='↻ Gửi lại chỉ các ảnh chưa xác nhận';
-  b.onclick=async()=>{b.disabled=true;try{await window.pti093UploadAll()}finally{b.disabled=false}};
+  b.onclick=async()=>{b.disabled=true;try{await pti093UploadAll()}finally{b.disabled=false}};
   box.appendChild(b);
 }
 const PTI093_LOCAL_DB='pti093_local_drafts_v1';
@@ -1570,29 +1570,183 @@ async function saveDraftWithoutPhotos(){
   catch(e){setDriveState('Chưa lưu được nháp tại máy: '+e.message,false);msg('Lỗi lưu nháp tại máy: '+e.message,true)}
   finally{b.disabled=false}
 }
+async function pti093UploadAll(){
+  const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||localStorage.getItem('pti093_driveRecordId')||'';
+  if(!id){
+    setDriveState('Chưa có Record ID Drive.',false);
+    msg('Chưa có Record ID Drive. Hãy bấm “Tạo hồ sơ Drive” trước.',true);
+    return
+  }
+  window.__pti093_drive_record_id=id;
+
+  const all=getAllGroups();
+  const savedItems=all.flatMap(g=>g.items||[]);
+  const currentItems=(state.current&&Array.isArray(state.current.items))?state.current.items:[];
+  const items=[...savedItems,...currentItems];
+  if(!items.length){
+    setDriveState('Chưa có ảnh để gửi.',false);
+    msg('Chưa có ảnh để gửi lên Drive.',true);
+    return
+  }
+
+  const uploaded=getDriveUploadedKeys(id);
+  const unique=[];
+  const seen=new Set();
+  for(const it of items){
+    const key=driveImageKey(it);
+    // Nếu ảnh đã có fileId/uploadKey từ project.pti thì chắc chắn đã được lưu.
+    // Không gửi lại ảnh chỉ vì localStorage của trình duyệt đã mất trạng thái.
+    if(!key || it.driveFileId || it.driveUploadKey || uploaded.has(key) || seen.has(key))continue;
+    seen.add(key);
+    unique.push({it,key});
+  }
+
+  if(!unique.length){
+    setDriveState('Tất cả ảnh của hồ sơ này đã được gửi trước đó.');
+    msg('Không có ảnh mới để gửi. Hồ sơ này đã được lưu các ảnh hiện có.',true);
+    return
+  }
+
+  // Không còn nút upload riêng: upload được thực hiện trong "Tạo & lưu hồ sơ" và "Lưu thay đổi hồ sơ".
+
+  // Skin PTI: kế thừa mốc đã kiểm nghiệm ở 093 V24 — tối đa 5 ảnh đồng thời.
+  // Vẫn đợi từng ảnh hoàn tất và chỉ tăng bộ đếm sau khi máy chủ xác nhận.
+  let sent=0;
+  const total=unique.length;
+  const DRIVE_CONCURRENCY=5;
+  const uploadStartedAt=performance.now();
+  let failures=[];
+  let prepTotalMs=0;
+  let sendTotalMs=0;
+
+  function updateUploadProgress(extra=''){
+    const box=$('driveProgress');
+    if(!box)return;
+    box.classList.remove('hidden');
+    const pct=total?Math.min(100,Math.round(sent*100/total)):100;
+    $('driveProgressBar').style.width=pct+'%';
+    $('driveProgressPct').textContent=pct+'%';
+    $('driveProgressText').textContent='Đã xác nhận '+sent+'/'+total+' ảnh';
+    const elapsed=Math.max(0,(performance.now()-uploadStartedAt)/1000);
+    const speed=sent>0?(sent/elapsed).toFixed(2):'0.00';
+    $('driveProgressMeta').textContent=(extra?extra+' · ':'')+'Thời gian '+elapsed.toFixed(1)+' giây · tốc độ xác nhận '+speed+' ảnh/giây';
+  }
+
+  try{
+    updateUploadProgress('Đang bắt đầu');
+
+    // V22: tối đa 3 ảnh cùng xử lý. Không fire-and-forget; mỗi ảnh vẫn phải xác nhận.
+    for(let start=0;start<unique.length;start+=DRIVE_CONCURRENCY){
+      const batch=unique.slice(start,start+DRIVE_CONCURRENCY);
+      setDriveState('Đang xử lý '+Math.min(start+1,total)+'-'+Math.min(start+batch.length,total)+'/'+total+' ảnh · đã xác nhận '+sent+'/'+total+'...');
+
+      const processOne=async(entry)=>{
+        const itemStartedAt=performance.now();
+        let prepMs=0;
+        let sendMs=0;
+        try{
+          const prepStartedAt=performance.now();
+          const prepared=await prepareDriveItem(entry.it,entry.offset,total);
+          prepMs=performance.now()-prepStartedAt;
+          prepTotalMs+=prepMs;
+
+          const pending=entry.it.drivePendingUploadKey||getDrivePendingUploadKey(id,entry.key)||'';
+          if(pending){
+            try{
+              const recovered=await waitForUploadStatus(id,pending);
+              if(recovered&&recovered.success&&recovered.found){
+                entry.it.driveFileId=recovered.fileId||entry.it.driveFileId||'';
+                entry.it.driveFileName=recovered.fileName||entry.it.driveFileName||((entry.it.file&&entry.it.file.name)||'');
+                entry.it.driveUploadKey=pending;
+                entry.it.drivePendingUploadKey='';
+                saveDrivePendingUploadKey(id,entry.key,'');
+                uploaded.add(prepared.key);
+                scheduleAutoDraftSave(false);
+                sent++;
+                saveDriveUploadedKeys(id,uploaded);
+                updateUploadProgress('Khôi phục xác nhận');
+                return {ok:true,recovered:true};
+              }
+            }catch(recoverError){}
+          }
+
+          entry.it.drivePendingUploadKey=prepared.uploadKey;
+          saveDrivePendingUploadKey(id,entry.key,prepared.uploadKey);
+          const sendStartedAt=performance.now();
+          const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
+          sendMs=performance.now()-sendStartedAt;
+          sendTotalMs+=sendMs;
+
+          entry.it.driveFileId=result&&result.fileId?result.fileId:(entry.it.driveFileId||'');
+          entry.it.driveFileName=result&&result.fileName?result.fileName:((entry.it.file&&entry.it.file.name)||'');
+          entry.it.driveUploadKey=prepared.uploadKey;
+          entry.it.drivePendingUploadKey='';
+          saveDrivePendingUploadKey(id,entry.key,'');
+          uploaded.add(prepared.key);
+          scheduleAutoDraftSave(false);
+          sent++;
+          saveDriveUploadedKeys(id,uploaded);
+          updateUploadProgress(
+            (result&&result.duplicate?'Đã xác nhận ảnh đã có sẵn trên Drive':'Đã xác nhận trên Google Drive')
+            +' · ảnh '+(entry.offset+1)+': chuẩn bị '+(prepMs/1000).toFixed(1)+'s · gửi/xác nhận '+(sendMs/1000).toFixed(1)+'s'
+          );
+          return {ok:true};
+        }catch(e){
+          if(entry.it.drivePendingUploadKey)saveDrivePendingUploadKey(id,entry.key,entry.it.drivePendingUploadKey);
+          const err=e&&e.message?e.message:String(e||'Gửi ảnh thất bại');
+          failures.push({
+            key:entry.key,
+            name:(entry.it&&entry.it.file&&entry.it.file.name)||('Ảnh số '+(entry.offset+1)),
+            index:entry.offset,
+            error:err
+          });
+          updateUploadProgress('Có ảnh chưa xác nhận');
+          return {ok:false,error:err};
+        }
+      };
+
+      const entries=batch.map((x,j)=>({it:x.it,key:x.key,offset:start+j}));
+      await Promise.all(entries.map(processOne));
+      await new Promise(resolve=>setTimeout(resolve,0));
+    }
+
+
+    saveDriveUploadedKeys(id,uploaded);
+    state.driveUploadFailures=failures.map(x=>({key:x.key||'',name:x.name||'Ảnh không xác định',index:Number.isFinite(x.index)?x.index:0,error:x.error||''}));
+    renderDriveUploadFailures();
+
+    if(failures.length===0&&sent===total){
+      state.driveUploadFailures=[];renderDriveUploadFailures();
+      setDriveState('Đã xác nhận đủ '+sent+'/'+total+' ảnh trên Google Drive.');
+      msg('Đã xác nhận lưu đủ '+sent+'/'+total+' ảnh. Bộ đếm chỉ tăng sau khi máy chủ xác nhận.',true);
+    }else{
+      const remain=total-sent;
+      setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh. Còn '+remain+' ảnh chưa xác nhận.',false);
+      msg('Đã xác nhận '+sent+'/'+total+' ảnh. Còn '+remain+' ảnh chưa xác nhận; bấm gửi lại để tiếp tục.',true);
+    }
+  }catch(e){
+    saveDriveUploadedKeys(id,uploaded);
+    if(!state.driveUploadFailures.length){
+      state.driveUploadFailures=[{key:'',name:'Không xác định được tên ảnh',index:0,error:e.message||String(e)}];
+    }
+    renderDriveUploadFailures();
+    const remain=total-sent;
+    setDriveState('Đã xác nhận '+sent+'/'+total+' ảnh. Lỗi: '+e.message,false);
+    msg('Đã xác nhận '+sent+'/'+total+' ảnh; còn '+remain+' ảnh chưa xác nhận: '+e.message,true);
+  }finally{
+    return {sent,total,failures};
+  }
+}
+
 async function createDriveRecord(){
-  if(state.driveRecordId){try{const result=await window.pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
+  if(state.driveRecordId){try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
   const btn=$('driveCreate');btn.disabled=true;setDriveState('Đang tạo hồ sơ và lưu dữ liệu...');
   try{
     const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
-    // Apps Script có thể chuyển hướng sang script.googleusercontent.com; fetch() đôi khi trả HTTP 404
-    // dù Web App vẫn phản hồi được khi tải như script. Dùng JSONP cho GET createRecord.
-    const data=await new Promise((resolve,reject)=>{
-      const cb='pti093CreateRecord_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-      const script=document.createElement('script');
-      let settled=false;
-      const cleanup=()=>{try{delete window[cb]}catch(e){window[cb]=undefined}try{script.remove()}catch(e){}clearTimeout(timer)};
-      const finish=(fn,value)=>{if(settled)return;settled=true;cleanup();fn(value)};
-      const timer=setTimeout(()=>finish(reject,new Error('Quá thời gian tạo hồ sơ qua Apps Script.')),10000);
-      window[cb]=(value)=>finish(resolve,value);
-      script.async=true;
-      script.onerror=()=>finish(reject,new Error('Không đọc được phản hồi tạo hồ sơ từ Apps Script.'));
-      script.src=PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Đang xử lý')+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
-      document.head.appendChild(script);
-    });
-    if(!data||!data.success)throw new Error((data&&data.error)||'API không tạo được hồ sơ');state.driveRecordId=data.recordId||'';state.localDraftId='';sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
+    const res=await fetch(PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Đang xử lý'),{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();if(!data.success)throw new Error(data.error||'API không tạo được hồ sơ');state.driveRecordId=data.recordId||'';state.localDraftId='';sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
     $('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden');
-    const result=await window.pti093UploadAll();if(!result||(result.failures&&result.failures.length)||(Number.isFinite(result.total)&&result.sent<result.total))throw new Error('Chưa xác nhận đủ ảnh trên Drive ('+(result&&Number.isFinite(result.sent)?result.sent:0)+'/'+(result&&Number.isFinite(result.total)?result.total:'?')+'). Hồ sơ chưa được đánh dấu hoàn tất; hãy gửi lại các ảnh chưa xác nhận.');
+    const result=await pti093UploadAll();if(!result||result.failures&&result.failures.length)throw new Error('Có ảnh chưa được xác nhận lưu lên Drive.');
     await saveProjectToDrive(false);await finalizeCompletedSession();setDriveState('Đã tạo hồ sơ, lưu ảnh và lưu dữ liệu nháp.');msg('Đã tạo và lưu hồ sơ thành công. Có thể tìm lại theo Mã HS hoặc BKS.',true);
   }catch(e){setDriveState('Chưa hoàn tất hồ sơ: '+e.message,false);msg('Lỗi lưu hồ sơ: '+e.message,true)}finally{btn.disabled=false}
 }
@@ -1604,3 +1758,10 @@ restoreAutoDraft();
 window.addEventListener('pagehide',()=>{clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e))});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e))}});
 </script></body></html>
+
+function checkUploadEntry(){
+    if(typeof window.pti093UploadAll!=='function' && stateNode){
+      stateNode.textContent='Lỗi khởi chạy chức năng tải ảnh Drive. Chưa gửi ảnh; hãy tải lại trang thử nghiệm.';
+      stateNode.classList.remove('hidden');
+    }
+  }
