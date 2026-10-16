@@ -1435,7 +1435,7 @@ window.pti093UploadAll = async function(){
   // Mỗi ảnh chỉ được tính thành công sau khi máy chủ xác nhận.
   let sent=0;
   const total=unique.length;
-  const DRIVE_CONCURRENCY=1;
+  const DRIVE_CONCURRENCY=5;
   const uploadStartedAt=performance.now();
   let failures=[];
   let prepTotalMs=0;
