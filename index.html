@@ -613,7 +613,12 @@ window.pti093UploadAll = async function(){
 
     const elapsedMs=performance.now()-uploadStartedAt;
     const otherMs=Math.max(0,elapsedMs-prepTotalMs-sendTotalMs);
-    const timing='Tổng chuẩn bị '+(prepTotalMs/1000).toFixed(1)+'s · tổng gửi/xác nhận '+(sendTotalMs/1000).toFixed(1)+'s · phần còn lại '+(otherMs/1000).toFixed(1)+'s';
+    const prepWallMs=window.__pti093PrepWallMs||0;
+    const sendWallMs=window.__pti093SendWallMs||0;
+    const measuredPrep=Math.min(elapsedMs,prepWallMs||prepTotalMs);
+    const measuredSend=Math.min(Math.max(0,elapsedMs-measuredPrep),sendWallMs||sendTotalMs);
+    const otherMs=Math.max(0,elapsedMs-measuredPrep-measuredSend);
+    const timing='Chuẩn bị (ước tính) '+(measuredPrep/1000).toFixed(1)+'s · gửi/xác nhận (ước tính) '+(measuredSend/1000).toFixed(1)+'s · phần còn lại '+(otherMs/1000).toFixed(1)+'s · tổng '+(elapsedMs/1000).toFixed(1)+'s';
     updateUploadProgress(timing);
     if(failures.length===0&&sent===total){
       state.driveUploadFailures=[];renderDriveUploadFailures();
