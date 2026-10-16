@@ -1738,6 +1738,8 @@ async function pti093UploadAll(){
   }
 }
 
+window.pti093UploadAll = pti093UploadAll;
+
 async function createDriveRecord(){
   if(state.driveRecordId){try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
   const btn=$('driveCreate');btn.disabled=true;setDriveState('Đang tạo hồ sơ và lưu dữ liệu...');
@@ -1758,10 +1760,3 @@ restoreAutoDraft();
 window.addEventListener('pagehide',()=>{clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e))});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e))}});
 </script></body></html>
-
-function checkUploadEntry(){
-    if(typeof window.pti093UploadAll!=='function' && stateNode){
-      stateNode.textContent='Lỗi khởi chạy chức năng tải ảnh Drive. Chưa gửi ảnh; hãy tải lại trang thử nghiệm.';
-      stateNode.classList.remove('hidden');
-    }
-  }
