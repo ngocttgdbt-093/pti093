@@ -1117,7 +1117,7 @@ async function waitForUploadStatus(recordId,uploadKey){
           try{
             const doc=frame.contentDocument;
             const src=base+encodeURIComponent(cb)+'&_='+Date.now();
-            const html='<!doctype html><html><head></head><body><script>window["'+cb+'"]=function(data){parent["'+cb+'"](data)};<\\/script><script src="'+src.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"><\\/script></body></html>';
+            const html='<!doctype html><html><head></head><body><script>window["'+cb+'"]=function(data){parent["'+cb+'"](data)};<\/script><script src="'+src.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"><\/script></body></html>';
             doc.open();
             doc.write(html);
             doc.close();
