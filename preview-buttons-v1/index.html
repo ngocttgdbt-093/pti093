@@ -1946,6 +1946,61 @@ body:not(.classic-ui) .pcImageGallery #pcSavedGroupsGallery{
 @media(max-width:600px){
  body:not(.classic-ui) .pcImageGallery #grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
 }
+
+/* v2: nút thao tác ảnh dạng icon tròn, kính mờ; nhãn chỉ hiện khi rê chuột */
+.thumbActions{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ gap:clamp(5px,.8vw,12px)!important;padding:9px 8px!important;
+ border-top:1px solid rgba(210,224,241,.65)!important;
+ background:rgba(248,251,255,.72)!important;
+ backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ overflow:visible!important;
+}
+.thumbActions button{
+ position:relative!important;flex:0 0 34px!important;width:34px!important;min-width:34px!important;
+ height:34px!important;padding:0!important;margin:0!important;border:1px solid rgba(255,255,255,.65)!important;
+ border-radius:50%!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ font-size:0!important;line-height:1!important;color:#fff!important;
+ box-shadow:0 3px 8px rgba(26,57,91,.13),inset 0 1px 0 rgba(255,255,255,.28)!important;
+ opacity:.88;transform:translateY(0) scale(1);
+ transition:transform .18s ease,opacity .18s ease,filter .18s ease,box-shadow .18s ease!important;
+ z-index:3;
+}
+.thumbActions button::before{font-size:16px!important;line-height:1!important;display:block}
+.thumbActions .replace{background:rgba(28,112,245,.84)!important}
+.thumbActions .replace::before{content:"▣"}
+.thumbActions .rotate{background:rgba(235,145,0,.86)!important}
+.thumbActions .rotate::before{content:"⟳"}
+.thumbActions .insert{background:rgba(20,166,82,.86)!important}
+.thumbActions .insert::before{content:"＋"}
+.thumbActions .view{background:rgba(0,151,174,.86)!important}
+.thumbActions .view::before{content:"◉"}
+.thumbActions .del2{background:rgba(229,45,45,.86)!important}
+.thumbActions .del2::before{content:"▤"}
+.thumbActions button:hover,.thumbActions button:focus-visible{
+ opacity:1!important;filter:saturate(1.25) brightness(1.08)!important;
+ transform:translateY(-2px) scale(1.1)!important;
+ box-shadow:0 7px 16px rgba(15,42,75,.25),0 0 0 3px rgba(255,255,255,.72)!important;
+ outline:none!important;z-index:10;
+}
+/* tooltip tùy biến, giữ title làm nội dung hướng dẫn */
+.thumbActions button::after{
+ content:attr(title);position:absolute;left:50%;bottom:calc(100% + 9px);transform:translate(-50%,4px);
+ width:max-content;max-width:180px;white-space:normal;text-align:center;
+ padding:6px 9px;border-radius:7px;background:rgba(24,39,61,.94);color:#fff;
+ font:600 11px/1.35 Arial,'Segoe UI',sans-serif;letter-spacing:0;
+ box-shadow:0 4px 12px rgba(0,0,0,.2);opacity:0;visibility:hidden;pointer-events:none;
+ transition:opacity .15s ease,transform .15s ease;z-index:20;
+}
+.thumbActions button:hover::after,.thumbActions button:focus-visible::after{
+ opacity:1;visibility:visible;transform:translate(-50%,0);
+}
+@media(max-width:480px){
+ .thumbActions{gap:5px!important;padding:8px 4px!important}
+ .thumbActions button{flex-basis:31px!important;width:31px!important;min-width:31px!important;height:31px!important}
+ .thumbActions button::before{font-size:15px!important}
+}
+
 </style>
 
 <script id="pcPreviewModalLogic">
