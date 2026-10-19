@@ -11,14 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check embedded JavaScript syntax
+      - name: Check each embedded JavaScript block
         run: |
           node <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
-          const start = html.indexOf('<script>');
-          const end = html.lastIndexOf('</script>');
-          if (start < 0 || end <= start) throw new Error('Không tìm thấy <script> trong index.html');
-          new Function(html.slice(start + 8, end));
-          console.log('PTI093 JavaScript syntax: OK');
+          const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+          if (!scripts.length) throw new Error('Không tìm thấy <script> trong index.html');
+          let checked = 0;
+          for (const [index, match] of scripts.entries()) {
+            const [, attrs, source] = match;
+            if (/\bsrc\s*=/i.test(attrs) || !source.trim()) continue;
+            if (/^\s*async\s*$/m.test(source)) {
+              throw new Error('Có token async đứng riêng trong script số ' + (index + 1));
+            }
+            new Function(source);
+            checked++;
+          }
+          if (!checked) throw new Error('Không có script nội bộ nào được kiểm tra');
+          console.log('PTI093 JavaScript syntax: OK (' + checked + ' inline scripts)');
           NODE
