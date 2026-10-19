@@ -1450,7 +1450,6 @@ async function saveAutoDraft(){
     if(autoDraftAgain){autoDraftAgain=false;scheduleAutoDraftSave(false)}
   }
 }
-async 
 // ===== KẾT THÚC PHIÊN LÀM VIỆC =====
 // Khi GĐV đã xuất PDF hoặc đã lưu hồ sơ (Drive/Local), bản nháp tự động
 // không còn cần để phục hồi lại ở lần mở app sau. Chỉ giữ lại GĐV để làm phiên mới.
@@ -1791,7 +1790,7 @@ async function pti093UploadAll(){
           const prepared=await prepareDriveItem(entry.it,entry.offset,total);
           prepMs=performance.now()-prepStartedAt;
           prepTotalMs+=prepMs;
-          console.info('[DRIVE-BENCH] prepared', {benchRunId, index:entry.offset+1, file:fileLabel, prepMs:Math.round(prepMs), payloadBytes:prepared&&prepared.payload?String(prepared.payload).length:null, uploadKey:prepared&&prepared.uploadKey||null});
+          console.info('[DRIVE-BENCH] prepared', {benchRunId, index:entry.offset+1, file:fileLabel, prepMs:Math.round(prepMs), payloadBytes:prepared&&prepared.payload?String(prepared.payload).length:null, hasUploadKey:!!(prepared&&prepared.uploadKey)});
 
           const pending=entry.it.drivePendingUploadKey||getDrivePendingUploadKey(id,entry.key)||'';
           if(pending){
@@ -1881,7 +1880,7 @@ async function pti093UploadAll(){
     msg('Đã xác nhận '+sent+'/'+total+' ảnh; còn '+remain+' ảnh chưa xác nhận: '+e.message,true);
   }finally{
     const totalMs=performance.now()-uploadStartedAt;
-    const report={benchRunId, concurrency:DRIVE_CONCURRENCY, total, confirmed:sent, failed:failures.length, totalMs:Math.round(totalMs), prepTotalMs:Math.round(prepTotalMs), sendTotalMs:Math.round(sendTotalMs), estimatedOtherMs:Math.round(totalMs-prepTotalMs-sendTotalMs), avgSecPerImage:total?Number((totalMs/1000/total).toFixed(2)):0, finishedAt:new Date().toISOString()};
+    const report={benchRunId, concurrency:DRIVE_CONCURRENCY, total, confirmed:sent, failed:failures.length, totalMs:Math.round(totalMs), aggregatePreparationMs:Math.round(prepTotalMs), aggregateSendMs:Math.round(sendTotalMs), avgSecPerImage:total?Number((totalMs/1000/total).toFixed(2)):0, finishedAt:new Date().toISOString()};
     console.info('[DRIVE-BENCH] run-summary', report);
     try{console.table(failures.map(x=>({index:(x.index||0)+1,file:x.name,error:x.error})));}catch(e){}
     return {sent,total,failures,benchmark:report};
