@@ -1687,7 +1687,7 @@ async function openLocalDraft(id){
   state.localDraftId=id;
   $('bks').value=meta.bks||'';
   $('hoso').value=meta.caseNumber||'';
-  $('date').value=meta.date||'';
+  setDateInput(meta.date||'');
   $('garage').value=meta.garage||'';
   const gdv=meta.gdv||'';
   if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
