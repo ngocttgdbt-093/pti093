@@ -374,7 +374,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 </div></section>
 
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
-<div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v55-20261018.1</span></div>
+<div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v55-20261018.2</span></div>
 </div>
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
@@ -769,7 +769,16 @@ $('pdf').onclick=async()=>{
     alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
   }finally{btn.disabled=false}
 };
-$('backEdit').onclick=()=>{window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});msg('Đã quay lại hồ sơ hiện tại. Anh có thể sửa ảnh, thêm ảnh, sửa thuyết minh hoặc sửa từng nội dung.',true)};
+$('backEdit').onclick=()=>{
+  // Nút này nằm bên trong Preview toàn màn hình: phải đóng modal trước khi cuộn về trình sửa.
+  if(typeof window.pti093ClosePreview==='function')window.pti093ClosePreview();
+  document.body.style.overflow='';
+  setTimeout(()=>{
+    const drop=$('drop');
+    if(drop)window.scrollTo({top:drop.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'});
+    msg('Đã quay lại hồ sơ hiện tại. Anh có thể sửa ảnh, thêm ảnh, sửa thuyết minh hoặc sửa từng nội dung.',true);
+  },80);
+};
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
 (function(){const custom=localStorage.getItem('pti093_gdv_custom')||'';if(custom)$('gdv').dataset.custom=custom;const saved=localStorage.getItem('pti093_gdv')||'';if(saved&&[...$('gdv').options].some(o=>o.value===saved))$('gdv').value=saved;else if(custom)$('gdv').value='Nhập tên khác';$('gdv').addEventListener('change',()=>{if($('gdv').value!=='Nhập tên khác'){if($('gdv').value)localStorage.setItem('pti093_gdv',$('gdv').value);}else{const x=prompt('Nhập tên GĐV / Thụ lý:',custom||'');if(x){$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else $('gdv').value='';}scheduleAutoDraftSave(false)});})();
 $('driveSearchBtn').onclick=searchDriveRecords;
@@ -2309,6 +2318,8 @@ body:not(.classic-ui) .pcImageGallery #pcSavedGroupsGallery{
   }
   modal.classList.remove('open');document.body.style.overflow='';opened=false;pending=false;origParent=null;origNext=null;
  }
+ // Expose a controlled close action so the in-preview "Quay lại chỉnh sửa" button can close the overlay.
+ window.pti093ClosePreview=close;
  document.addEventListener('click',function(e){
   if(!(e.target.closest&&e.target.closest('#finish')))return;
   pending=true;if(obs)obs.disconnect();
