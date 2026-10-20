@@ -1930,7 +1930,14 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   const button=document.getElementById('uiModeToggle');
   if(!style||!button)return;
   let modern=false;
-  try{modern=localStorage.getItem('pti093_ui_mode')==='modern';}catch(e){}
+  try{
+    // Chuyển mặc định sang Classic một lần cho người dùng hiện hữu; sau đó tôn trọng lựa chọn nút đổi giao diện.
+    if(localStorage.getItem('pti093_ui_default_classic_v1')!=='1'){
+      localStorage.setItem('pti093_ui_mode','classic');
+      localStorage.setItem('pti093_ui_default_classic_v1','1');
+    }
+    modern=localStorage.getItem('pti093_ui_mode')==='modern';
+  }catch(e){}
   function apply(){
     style.disabled=!modern;
     document.body.classList.toggle('classic-ui',!modern);
