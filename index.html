@@ -118,6 +118,9 @@ body.classic-ui #uiModeToggle{background:#176b4b;color:#fff;border-color:#176b4b
  .thumb{border-radius:12px}
  #uiModeToggle{right:10px;bottom:12px;padding:10px 13px;font-size:12px}
 }
+/* Local-save progress and ID must stay visible in the 093 interface. */
+#driveProgress:not(.hidden),#driveId:not(.hidden){display:block!important}
+#driveState{display:inline-flex!important}
 </style><style id="pcDashboardTest">
 /* PC dashboard test based on user's reference screenshot; UI-only overrides. */
 body:not(.classic-ui){--pc-blue:#1267e8;--pc-ink:#10285b;--pc-line:#d8e5fb;background:linear-gradient(135deg,#f2f7ff,#e8f1ff);color:var(--pc-ink)}
@@ -1571,39 +1574,47 @@ async function restoreAutoDraft(){
 }
 
 async function saveLocalDraft(){
-  const groups=snapshotGroupsForProject();
-  // Giữ metadata trên Drive để có thể tìm hồ sơ theo BKS/Mã HS; ảnh gốc vẫn chỉ lưu tại máy.
-  if(!state.driveRecordId&&!state.localDraftId){
-    const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
-    const res=await fetch(PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Ảnh lưu tại máy'),{cache:'no-store'});
-    if(!res.ok)throw new Error('Không tạo được mục hồ sơ trên Drive (HTTP '+res.status+').');
-    const data=await res.json();if(!data.success)throw new Error(data.error||'Không tạo được mục hồ sơ trên Drive.');
-    state.driveRecordId=data.recordId||'';state.localDraftId=state.driveRecordId;
-    sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
-  }
-  const db=await openLocalDraftDB();
-  const id=state.localDraftId||state.driveRecordId||('LOCAL-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,7).toUpperCase());
-  const sections=groups.map((g,si)=>({
-    title:g.title,
-    items:g.items.map((it,ii)=>({
-      sectionIndex:si,itemIndex:ii,
-      fileName:(it.file&&it.file.name)||it.driveFileName||('anh-'+(ii+1)+'.jpg'),
-      type:(it.file&&it.file.type)||'image/jpeg',
-      lastModified:(it.file&&it.file.lastModified)||Date.now(),
-      size:(it.file&&it.file.size)||0,
-      key:it.key||'',
-      caption:it.caption||'',
-      rotate:((it.rotate||0)%360+360)%360,
-      addSeq:it.addSeq||ii+1
-    }))
-  }));
-  const meta={
-    id,storageType:'local',caseNumber:($('hoso').value||'').trim(),
-    bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),date:$('date').value||'',gdv:selectedGdv(),
-    status:'Bản nháp tại máy',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},
-    sections,updatedAt:new Date().toISOString()
+  // LƯU LOCAL THUẦN TÚY: ID riêng LOCAL-..., không tạo record hoặc đồng bộ metadata lên Drive.
+  const progress=(pct,label,detail='')=>{
+    const box=$('driveProgress');if(box)box.classList.remove('hidden');
+    if($('driveProgressText'))$('driveProgressText').textContent=label;
+    if($('driveProgressPct'))$('driveProgressPct').textContent=pct+'%';
+    if($('driveProgressBar'))$('driveProgressBar').style.width=pct+'%';
+    if($('driveProgressMeta'))$('driveProgressMeta').textContent=detail;
+    setDriveState(label);msg(label+(detail?' · '+detail:''),true);
   };
+  progress(3,'Đang chuẩn bị lưu tại máy…','Đang đọc thông tin hồ sơ');
+  const groups=snapshotGroupsForProject();
+  const existingLocalId=String(state.localDraftId||'').startsWith('LOCAL-')?state.localDraftId:'';
+  const id=existingLocalId||('LOCAL-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,7).toUpperCase());
+  const total=groups.reduce((n,g)=>n+g.items.length,0);
+  // Bản local độc lập, không giữ liên kết tới record/ảnh Drive.
+  for(const g of [...(state.groups||[]),state.current||{}])for(const it of (g.items||[])){
+    it.driveFileId='';it.driveFileName='';it.driveUploadKey='';
+  }
+  state.driveRecordId='';state.localDraftId=id;
+  try{sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+  try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
+  let db;
   try{
+    db=await openLocalDraftDB();
+    progress(15,'Đang chuẩn bị dữ liệu lưu…',total+' ảnh');
+    const sections=groups.map((g,si)=>({
+      title:g.title,
+      items:g.items.map((it,ii)=>({
+        sectionIndex:si,itemIndex:ii,
+        fileName:(it.file&&it.file.name)||('anh-'+(ii+1)+'.jpg'),
+        type:(it.file&&it.file.type)||'image/jpeg',
+        lastModified:(it.file&&it.file.lastModified)||Date.now(),
+        size:(it.file&&it.file.size)||0,key:it.key||'',caption:it.caption||'',
+        rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||ii+1
+      }))
+    }));
+    const meta={id,storageType:'local',caseNumber:($('hoso').value||'').trim(),
+      bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),date:$('date').value||'',gdv:selectedGdv(),
+      status:'Bản lưu tại máy',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},
+      sections,updatedAt:new Date().toISOString()};
+    progress(25,'Đang ghi thông tin hồ sơ…','Chỉ lưu trong trình duyệt trên thiết bị này');
     const tx=db.transaction(['drafts','draftImages'],'readwrite');
     const drafts=tx.objectStore('drafts'),images=tx.objectStore('draftImages');
     drafts.put(meta);
@@ -1611,30 +1622,26 @@ async function saveLocalDraft(){
     cursorReq.onsuccess=()=>{
       const cursor=cursorReq.result;
       if(cursor){cursor.delete();cursor.continue();return}
-      sections.forEach((section,si)=>{
-        section.items.forEach((item,ii)=>{
-          const original=groups[si].items[ii];
-          if(!original||!original.file)return;
-          images.put({
-            id:id+'|'+si+'|'+ii,draftId:id,sectionIndex:si,itemIndex:ii,
-            file:original.file,fileName:item.fileName,type:item.type,lastModified:item.lastModified
-          });
-        });
-      });
+      progress(45,'Đang lưu ảnh vào bộ nhớ trình duyệt…',total+' ảnh');
+      sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
+        const original=groups[si].items[ii];if(!original||!original.file)return;
+        images.put({id:id+'|'+si+'|'+ii,draftId:id,sectionIndex:si,itemIndex:ii,
+          file:original.file,fileName:item.fileName,type:item.type,lastModified:item.lastModified});
+      }));
     };
     await localDraftTransactionDone(tx);
-    state.localDraftId=id;
-    if(!String(id).startsWith('LOCAL-')){
-      state.driveRecordId=id;sessionStorage.setItem('pti093_driveRecordId',id);localStorage.setItem('pti093_driveRecordId',id);
-    }
-    $('driveId').textContent='💻 Ảnh lưu tại máy · Hồ sơ '+id;
+    $('driveId').textContent='💻 ID hồ sơ local: '+id;
     $('driveId').classList.remove('hidden');
-    setDriveState('Đã lưu '+sections.reduce((n,g)=>n+g.items.length,0)+' ảnh gốc tại máy. Đang đồng bộ thông tin hồ sơ lên Drive...');
-    msg('Đã lưu nháp ảnh tại máy. Ảnh không được tải lên Drive; thông tin Mã HS/BKS được lưu trên Drive để có thể tìm kiếm.',true);
-    if(!String(id).startsWith('LOCAL-')){
-      saveProjectToDrive(false).then(()=>setDriveState('Đã lưu ảnh tại máy và đồng bộ thông tin hồ sơ lên Drive.')).catch(e=>setDriveState('Ảnh đã lưu tại máy; chưa đồng bộ được thông tin lên Drive: '+e.message,false));
-    }
-  }finally{db.close()}
+    progress(100,'✓ Đã lưu hồ sơ tại máy thành công',total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');
+    return id;
+  }catch(e){
+    const box=$('driveProgress');if(box)box.classList.remove('hidden');
+    if($('driveProgressText'))$('driveProgressText').textContent='Lưu tại máy thất bại';
+    if($('driveProgressPct'))$('driveProgressPct').textContent='!';
+    if($('driveProgressBar'))$('driveProgressBar').style.width='100%';
+    if($('driveProgressMeta'))$('driveProgressMeta').textContent=e.message||String(e);
+    throw e;
+  }finally{if(db)db.close()}
 }
 async function openLocalDraft(id){
   const source=deviceStorageLabel();
@@ -1710,10 +1717,23 @@ async function saveDraftWithoutPhotos(){
   const n=snapshotGroupsForProject().reduce((sum,g)=>sum+g.items.length,0);
   const ok=await showLocalSaveConfirm(n);
   if(!ok)return;
-  const b=$('driveSaveDraft');b.disabled=true;setDriveState('Đang lưu nháp tại máy...');
-  try{await saveLocalDraft();await finalizeCompletedSession()}
-  catch(e){setDriveState('Chưa lưu được nháp tại máy: '+e.message,false);msg('Lỗi lưu nháp tại máy: '+e.message,true)}
-  finally{b.disabled=false}
+  const b=$('driveSaveDraft');b.disabled=true;
+  const box=$('driveProgress');if(box)box.classList.remove('hidden');
+  if($('driveProgressText'))$('driveProgressText').textContent='Đang bắt đầu lưu tại máy…';
+  if($('driveProgressPct'))$('driveProgressPct').textContent='0%';
+  if($('driveProgressBar'))$('driveProgressBar').style.width='0%';
+  if($('driveProgressMeta'))$('driveProgressMeta').textContent='Vui lòng chờ, không đóng tab trong lúc lưu.';
+  setDriveState('Đang lưu nháp tại máy…');msg('Đang lưu hồ sơ tại máy… vui lòng chờ.',true);
+  try{
+    await saveLocalDraft();
+    const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||''):($('gdv').value||'');
+    if(gdv){try{localStorage.setItem('pti093_gdv',gdv)}catch(e){}}
+    // Chỉ dọn AUTO-DRAFT; giữ ID local để lần lưu sau cập nhật đúng bản local.
+    await clearAutoDraft();
+  }catch(e){
+    setDriveState('Chưa lưu được nháp tại máy: '+e.message,false);
+    msg('❌ Lưu tại máy thất bại: '+e.message,true);
+  }finally{b.disabled=false}
 }
 async function createDriveRecord(){
   if(state.driveRecordId){try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
