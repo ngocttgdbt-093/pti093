@@ -612,7 +612,7 @@
         try{
           updateUploadProgress('Đang bắt đầu');
       
-          // V22: tối đa 3 ảnh cùng xử lý. Không fire-and-forget; mỗi ảnh vẫn phải xác nhận.
+          // V24: tối đa 5 ảnh cùng xử lý. Không fire-and-forget; mỗi ảnh vẫn phải xác nhận.
           for(let start=0;start<unique.length;start+=DRIVE_CONCURRENCY){
             const batch=unique.slice(start,start+DRIVE_CONCURRENCY);
             setDriveState('Đang xử lý '+Math.min(start+1,total)+'-'+Math.min(start+batch.length,total)+'/'+total+' ảnh · đã xác nhận '+sent+'/'+total+'...');
