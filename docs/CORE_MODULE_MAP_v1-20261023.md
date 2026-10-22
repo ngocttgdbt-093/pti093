@@ -59,14 +59,15 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 3. The user manually tested the existing 093 F5/reload recovery 10/10 times successfully on 2026-10-22. Treat this as the known-good behavioral baseline.
 4. DOCX/Word temporary draft storage and its ZIP/XML helper modules are retired. Do not reintroduce them as a draft mechanism.
 5. Local Save Core must not call Drive case-upload functions. Drive Fusion remains 093-specific and retains concurrency 5 and per-file upload-state tracking.
+6. After PDF, Drive, or local save has succeeded, a subsequent AUTO-DRAFT cleanup failure must be reported as a separate cleanup warning, never as a false export/save failure.
 6. Do not change `main`, deploy production, or modify the separate PTI repository during this refactor without a separate explicit release decision.
 
 ## Validation status — updated 2026-10-23
 
-- Full GitHub Actions validation on code head `6f848f40884fd6a7cc13646f077caea027ea33ce`: run **#1047** passed. This documentation refresh is the only change since that code validation.
+- Full GitHub Actions validation on code head `52da46044f08ce8e06383b9259c592b751e3b83c`: run **#1067** passed. The following module-map-only documentation refresh is separately validated by CI.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - Static reference audit confirms `index.html` has zero inline JavaScript blocks; all 53 local `src`/`href` references resolve to repository files with no duplicate local references.
 - The DOCX/ZIP draft path removal contract passes. The automatic draft remains IndexedDB-based with the existing `pti093_local_drafts_v1`, `AUTO-DRAFT`, and `pti093_work_session_id` contracts.
 - Direct comparison of `pti093UploadAll` on `main` with `fusion/drive.js` found the normalized executable function body matched; only a comment was corrected. The Drive Fusion contract test explicitly asserts concurrency 5 and awaited per-file processing.
-- GitHub's branch comparison reports 494 commits ahead of `main`; keep this PR draft-only and review/squash the branch history before any release.
+- GitHub's branch comparison reports hundreds of commits ahead of `main`; keep this PR draft-only and review/squash the branch history before any release.
 - Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets. The PR remains draft-only; no merge or production deployment is authorized.
