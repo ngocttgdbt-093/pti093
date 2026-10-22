@@ -341,3 +341,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Added a real Chromium fixture/test for empty and populated states and the edit callback. The full-app smoke test also verifies the Group List Skin is loaded.
 - GitHub Actions run **#585** (`39830216365`) completed successfully with the group-list UI test and the full browser/Core/Fusion regression suite.
 - App Core is now 31,422 bytes. The large thumbnail-grid renderer is still in App Core and remains a candidate for a carefully tested Skin extraction; no production changes have been made.
+
+
+## Classic Image Grid Skin extraction — v2-20261023.23.1
+
+- Moved thumbnail rendering and its presentation controls into `skin/classic-image-grid.js`: thumbnail cards, image rotation display, action buttons, caption textareas, caption Tab navigation, and enable/disable states for Clear/Save Next/Finish.
+- Core behavior remains delegated through callbacks: replace/insert selection, rotate and delete state changes, metadata-only caption saves, image-dirty saves, image viewer, and reorder controller.
+- Added a Chromium fixture/test for thumbnail order and labels, captions, Tab navigation, action callback delegation, rotation, deletion, and button states. Full-app smoke test verifies the Image Grid Skin is loaded.
+- GitHub Actions run **#605** (`39830736157`) completed successfully, including the expanded Skin browser suite, real IndexedDB draft recovery/session isolation, image reorder, full app startup/date mask, and Core/Fusion tests.
+- App Core is now approximately 29.8 KB (from 46.5 KB at the start of this series). This refactor is still on the isolated test branch; manual acceptance with real photos and device-specific touch interaction remains open.
