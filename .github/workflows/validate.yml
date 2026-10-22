@@ -51,7 +51,7 @@ jobs:
 
       - name: Check extracted Drive Fusion module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
-        run: node --check fusion/drive-save.js
+        run: node --check fusion/drive.js
       - name: Test extracted Drive Fusion module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/drive-fusion.test.js
