@@ -43,7 +43,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
 (async()=>{
   const item={file:{name:'damage.jpg',type:'image/jpeg',lastModified:1,size:4},driveFileId:'DRIVE-FILE-1',driveFileName:'damage.jpg',driveUploadKey:'upload-key'};
   const failureState={groups:[],current:{title:'Thiệt hại',items:[item]},localDraftId:'LOCAL-OLD',driveRecordId:'DRIVE-CASE-1',orientation:'portrait',per:6};
-  const failureElements={};
+  const failureElements={driveId:{value:'',textContent:'Hồ sơ: DRIVE-CASE-1',disabled:false,style:{},classList:{add(){},remove(){}}}};
   const failureDeps={
     state:failureState,
     $:id=>failureElements[id]||(failureElements[id]={value:'',textContent:'',disabled:false,style:{},classList:{add(){},remove(){}}}),
@@ -58,6 +58,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   const failureApi=global.PTILocalSaveCore.install(failureDeps);
   await assert.rejects(failureApi.saveLocalDraft(),/IndexedDB unavailable/);
   assert.equal(failureState.driveRecordId,'DRIVE-CASE-1','failed local save must preserve the active Drive case');
+  assert.equal(failureElements.driveId.textContent,'Hồ sơ: DRIVE-CASE-1','failed local save must not display an ID for a record that was never saved');
   assert.equal(failureState.localDraftId,'LOCAL-OLD','failed local save must preserve the previous local ID');
   assert.equal(item.driveFileId,'DRIVE-FILE-1','failed local save must not erase image Drive references');
   assert.equal(item.driveUploadKey,'upload-key','failed local save must preserve upload tracking metadata');
