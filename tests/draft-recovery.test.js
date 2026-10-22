@@ -36,7 +36,7 @@ const storeApi = global.PTILocalDraftStore.install({dbName: 'pti093_local_drafts
 const api = global.PTI093DraftRecovery.install({...deps, ...storeApi});
 for (const name of [
   'scheduleAutoDraftSave', 'saveAutoDraft', 'finalizeCompletedSession',
-  'clearAutoDraft', 'restoreAutoDraft', 'clearAutoDraftTimer'
+  'clearAutoDraft', 'restoreAutoDraft', 'clearAutoDraftTimer', 'bindLifecycle'
 ]) {
   assert.equal(typeof api[name], 'function', name + ' should be exported');
 }
@@ -102,14 +102,14 @@ for (const contract of [
   'window.PTILocalSaveCore.install(',
   'window.PTI093LocalOpenCore.install(',
   'window.PTI093DriveFusion.install(',
-  'const {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery',
-  "document.addEventListener('visibilitychange'",
-  "window.addEventListener('pagehide'"
+  'const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery'
 ]) {
   assert.ok(appCore.includes(contract), 'App integration contract should remain: ' + contract);
 }
 assert.ok(source.includes("const PTI093_SESSION_KEY='pti093_work_session_id'"), 'The session key must remain stable');
 assert.ok(source.includes("const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT'"), 'The automatic draft ID must remain stable');
+assert.ok(source.includes("document.addEventListener('visibilitychange'"), 'Draft Recovery Core should own visibility lifecycle binding');
+assert.ok(source.includes("window.addEventListener('pagehide'"), 'Draft Recovery Core should own pagehide lifecycle binding');
 console.log('Draft-recovery integration wiring contract passed.');
 
 assert.ok(!html.includes('docx-builder.js') && !html.includes('zip-utils.js'), 'Retired DOCX draft and ZIP utility modules must not load');
