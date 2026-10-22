@@ -18,7 +18,10 @@
           setOpenLoad(source,0,0,'Không thể đọc bản lưu tại máy: '+(error&&error.message?error.message:String(error)));
           throw error;
         }finally{if(db)db.close()}
-        if(!meta)throw new Error('Không tìm thấy bản nháp tại máy này.');
+        if(!meta){
+          setOpenLoad(source,0,0,'Không tìm thấy bản lưu tại máy này.');
+          throw new Error('Không tìm thấy bản nháp tại máy này.');
+        }
         const imageMap=new Map((images||[]).map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
         const groups=[];
         let missing=0;
