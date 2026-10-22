@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093DriveFusion = {
     install: function(deps){
-      const {state, $, msg, setDriveState, setOpenLoad, getAllGroups, snapshotGroupsForProject, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
+      const {state, $, msg, setDriveState, setOpenLoad, finishOpenLoad, getAllGroups, snapshotGroupsForProject, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
       const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/exec';
       
       
@@ -197,13 +197,7 @@
       
       
       
-      function finishOpenLoad(source,total){
-        const box=$('openLoadBox'),bar=$('openLoadBar'),txt=$('openLoadText'),pct=$('openLoadPct'),meta=$('openLoadMeta');
-        if(!box)return;
-        box.classList.remove('hidden');bar.style.width='100%';pct.textContent='100%';
-        txt.textContent='✓ Đã tải hoàn tất từ '+source;
-        meta.textContent='Hoàn tất '+(Number(total)||0)+' ảnh · Có thể tiếp tục chỉnh sửa.';
-      }
+      
       
       function recordMatchesQuery(row,query){
         const fields=[row.caseNumber,row.maHoSo,row.bks,row.gdv,row.adjuster,row.status];
@@ -720,7 +714,7 @@
           return {sent,total,failures};
         }
       }
-      return {openRecordFromDrive, finishOpenLoad, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll};
+      return {openRecordFromDrive, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll};
     }
   };
 })(window);
