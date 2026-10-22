@@ -212,7 +212,7 @@ $('backEdit').onclick=()=>{
 
 
 
-$('driveSaveDraft').onclick=saveDraftWithoutPhotos;
+
 $('newCase').onclick=async()=>{const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||''):$('gdv').value;if(gdv)localStorage.setItem('pti093_gdv',gdv);$('newCase').disabled=true;try{await clearAutoDraft()}catch(e){console.warn(e)}location.reload()};
 
 /* ===== PTI093 GOOGLE DRIVE - GIAI ĐOẠN 1: TẠO RECORD ===== */
@@ -311,6 +311,7 @@ const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDa
 const {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery;
 const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
 const {saveLocalDraft,saveDraftWithoutPhotos}=localSaveCore;
+$('driveSaveDraft').onclick=saveDraftWithoutPhotos;
 const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad});
 const {openLocalDraft}=localOpenCore;
 
