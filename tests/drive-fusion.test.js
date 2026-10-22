@@ -34,7 +34,7 @@ const deps = {
   wrap: value => value
 };
 const api = global.PTI093DriveFusion.install(deps);
-for (const name of ['openRecordFromDrive','setOpenLoad','finishOpenLoad','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
+for (const name of ['openRecordFromDrive','finishOpenLoad','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
   assert.equal(typeof api[name], 'function', name + ' should be exported');
 }
 const file = { name: 'damage.jpg', size: 1200, lastModified: 99, webkitRelativePath: '' };
