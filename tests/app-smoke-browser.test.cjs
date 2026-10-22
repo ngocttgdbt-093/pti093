@@ -60,7 +60,7 @@ const {chromium}=require('playwright');
     const downloadPromise=page.waitForEvent('download',{timeout:20000});
     await page.locator('#pdf').click();
     const download=await downloadPromise;
-    assert.match(download.suggestedFilename(),/\\.pdf$/i,'preview pages should reach the PDF export path');
+    assert.ok(download.suggestedFilename().toLowerCase().endsWith('.pdf'),'preview pages should reach the PDF export path');
     assert.deepEqual(pageErrors,[],'the full app should start without uncaught JavaScript errors');
     console.log('Full app Chromium smoke test passed: module loading, initial six-image layout, and date mask.');
   }finally{await browser.close();}
