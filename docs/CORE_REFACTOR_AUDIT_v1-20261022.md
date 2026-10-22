@@ -384,3 +384,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Added a Chromium test for dragenter/dragleave styling, dropped files, file picker/folder picker delegation, and resetting the input after selection. The full-app smoke test verifies File Intake Skin loads.
 - GitHub Actions run **#672** (`39832255365`) completed successfully with the expanded browser suite and all Core/Fusion checks.
 - The 093-specific GĐV list and custom-name selection are now in `fusion/gdv-093.js`; the shared search and image-ingest logic remain in Core. App Core has decreased to 26,094 bytes in the latest source snapshot, compared with 46,529 bytes at the start of this refactor.
+
+
+## Latest branch verification checkpoint — v2-20261023.28
+
+- Re-read the branch's current `index.html` and `core/app-core.js`: all newly extracted Skin/Fusion/Core modules are loaded before App Core; the main inline implementations for GĐV selection, image ingestion, local-save presentation, load-progress presentation, image viewer, and PDF warning are no longer in App Core. Small wrapper functions for layout/group-list rendering remain intentionally as Skin adapters.
+- Current App Core source: **25,112 bytes / 268 lines**, versus 46,529 bytes at the initial audit baseline (about 46% smaller by byte count; not a runtime performance claim).
+- Latest full validation workflow, **#679** (`39832377132`), completed successfully after the File Intake Skin and Image Ingest changes.
+- Current acceptance boundary remains: test branch only; no merge/deployment, no production `main` changes, and no PTI repository changes. Full manual testing with the user's actual photo set and a physical touch device is still pending.
