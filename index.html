@@ -35,7 +35,7 @@
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
 <div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v59-20261020.1</span></div>
 </div>
-<script src="./core/gdv-search.js"></script><script src="./core/workspace.js"></script><script src="./core/zip-utils.js"></script><script src="./core/pdf-builder.js"></script><script src="./core/local-draft-store.js"></script><script src="./core/draft-recovery.js"></script><script src="./core/local-save.js"></script><script src="./core/local-open.js"></script><script src="./fusion/drive.js"></script><script>
+<script src="./core/gdv-search.js"></script><script src="./core/workspace.js"></script><script src="./core/zip-utils.js"></script><script src="./core/pdf-builder.js"></script><script src="./core/image-canvas.js"></script><script src="./core/local-draft-store.js"></script><script src="./core/draft-recovery.js"></script><script src="./core/local-save.js"></script><script src="./core/local-open.js"></script><script src="./fusion/drive.js"></script><script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
@@ -44,6 +44,8 @@ const getAllGroups=()=>workspaceCore.getAllGroups(state);
 const snapshotGroupsForProject=()=>workspaceCore.snapshotGroupsForProject(state);
 const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
 const {pagePixels,jpegQuality,makeCanvas,pdfBytesFromCanvases,resamplePdfCanvases,pdfPackSize,makePdfAt,buildAdaptivePdf,splitPdfBytes}=pdfBuilder;
+const imageCanvasCore=window.PTI093ImageCanvasCore.install({state,$,pagePixels,makeCanvas,formatDateDMY,getDateISO,getLogoSrc:()=>logoSrc,getSelectedGdvCache:()=>selectedGdvCache});
+const {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage}=imageCanvasCore;
 const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,textFile}=window.PTISharedCore;
 function formatDateDMY(value){const v=String(value||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}return v;}
 function getDateISO(){const v=String($('date').value||'').trim();let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m){const d=m[1].padStart(2,'0'),mo=m[2].padStart(2,'0'),y=m[3];const dt=new Date(Number(y),Number(mo)-1,Number(d));if(dt.getFullYear()===Number(y)&&dt.getMonth()===Number(mo)-1&&dt.getDate()===Number(d))return `${y}-${mo}-${d}`;return '';}if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;return '';}
@@ -139,7 +141,7 @@ $('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.i
 /* Shared workspace group helper is in core/workspace.js */
 /* Shared workspace snapshot helper is in core/workspace.js */
 // counts
-function layoutDims(){const n=state.per;let cols,rows;if(n===1){cols=1;rows=1}else if(n===2){cols=2;rows=1}else if(n===3){cols=3;rows=1}else if(n===4){cols=2;rows=2}else if(n===6){cols=state.orientation==='portrait'?2:3;rows=state.orientation==='portrait'?3:2}else{cols=state.orientation==='portrait'?2:4;rows=state.orientation==='portrait'?4:2}return {cols,rows}}
+
 function renderLayout(){const box=$('layoutPreview'),txt=$('layoutText');if(!box)return;const d=layoutDims();box.style.gridTemplateColumns=`repeat(${d.cols},1fr)`;box.innerHTML='';for(let i=0;i<state.per;i++){const c=document.createElement('div');c.className='layoutcell';c.textContent=i+1;box.appendChild(c)}txt.textContent=`${state.per} ảnh · ${state.orientation==='portrait'?'A4 dọc':'A4 ngang'} · ${d.cols} × ${d.rows}`;}
 [1,2,3,4,6,8].forEach(n=>{const b=document.createElement('button');b.className='opt'+(n===6?' on':'');b.textContent=n;b.onclick=()=>{state.per=n;document.querySelectorAll('#counts .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)};$('counts').appendChild(b)});
 document.querySelectorAll('#orient .opt').forEach(b=>b.onclick=()=>{state.orientation=b.dataset.o;document.querySelectorAll('#orient .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)});
@@ -149,44 +151,12 @@ renderLayout();
 
 
 
-function loadImage(f){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=URL.createObjectURL(f)})}
-const logoSrc=document.querySelector('.logo').src;function loadLogo(){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=logoSrc})}
-function wrap(ctx,text,max,font){if(!text)return[];ctx.font=`400 ${font}px Arial`;const words=text.split(/\s+/),out=[];let line='';for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width<=max)line=t;else{if(line)out.push(line);line=w}}if(line)out.push(line);return out}
+
+const logoSrc=document.querySelector('.logo').src;
+
 let selectedGdvCache='';
-function drawContainRotated(ctx,img,cx,cy,maxW,maxH,angle){const a=((angle||0)%360+360)%360;const swap=(a===90||a===270);const rw=swap?img.height:img.width,rh=swap?img.width:img.height;const sc=Math.min(maxW/rw,maxH/rh),dw=img.width*sc,dh=img.height*sc;ctx.save();ctx.translate(cx,cy);ctx.rotate(a*Math.PI/180);ctx.drawImage(img,-dw/2,-dh/2,dw,dh);ctx.restore();}
-async function drawPage(group,pageItems,pageNo,groupPageNo,groupPages,groupStartIndex=0,partLabel=''){
-  // Giữ cố định bố cục theo số ảnh/trang mà GĐV đã chọn.
-  // Trang cuối thiếu ảnh vẫn giữ nguyên số cột/hàng và đặt ảnh từ vị trí đầu tiên.
-  // Ví dụ chọn 6 ảnh/trang (A4 dọc = 2x3): trang cuối có 2 ảnh sẽ nằm ở vị trí 1,2 của lưới 2x3.
-  const numberBase=Number.isFinite(groupStartIndex)?groupStartIndex:0;
-  const landscape=state.orientation==='landscape',px=pagePixels(),W=px.W,H=px.H;
-  const c=makeCanvas(W,H),ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
-  const m=45,footer=70,showHeader=(groupPageNo===1),header=showHeader?135:0;
-  if(showHeader){
-    ctx.fillStyle='#00854a';ctx.fillRect(0,0,W,header);
-    const logo=await loadLogo();const logoW=125,logoH=53;ctx.drawImage(logo,m,18,logoW,logoH);
-    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 34px Arial';ctx.fillText(group.title,W/2,55);if(partLabel){ctx.font='700 18px Arial';ctx.fillText('Bản ảnh '+partLabel,W/2,77);}
-    ctx.font='400 19px Arial';let sub=[$('bks').value.trim(),$('hoso').value.trim(),formatDateDMY(getDateISO()),$('garage').value.trim()].filter(Boolean).join(' · ');ctx.fillText(sub,W/2,88);
-    ctx.font='400 16px Arial';ctx.fillText('TT CH&GĐ MB tại Hải Phòng (093)',W/2,116);
-  }
-  // Bố cục luôn lấy theo state.per, không lấy theo số ảnh còn lại của trang cuối.
-  // 6 ảnh: ngang 3x2, dọc 2x3. 8 ảnh: ngang 4x2, dọc 2x4.
-  const layout=layoutDims();
-  const cols=layout.cols,rows=layout.rows,gap=18;
-  const areaX=m,areaY=header+22,areaW=W-2*m,areaH=H-header-footer-30;
-  const cellW=(areaW-gap*(cols-1))/cols,cellH=(areaH-gap*(rows-1))/rows;
-  for(let i=0;i<pageItems.length;i++){
-    const it=pageItems[i],r=Math.floor(i/cols),col=i%cols,x=areaX+col*(cellW+gap),y=areaY+r*(cellH+gap);
-    const capH=it.caption?78:28,imgX=x+5,imgY=y+5,imgW=cellW-10,imgH=cellH-capH-10;
-    ctx.fillStyle='#f8faf9';ctx.fillRect(x,y,cellW,cellH);ctx.strokeStyle='#cbd8d1';ctx.strokeRect(x,y,cellW,cellH);
-    const img=await loadImage(it.file);
-    drawContainRotated(ctx,img,imgX+imgW/2,imgY+imgH/2,imgW,imgH,it.rotate||0);
-    ctx.fillStyle='#00854a';ctx.beginPath();ctx.arc(x+22,y+22,14,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 15px Arial';ctx.fillText(numberBase+i+1,x+22,y+27);
-    ctx.textAlign='center';ctx.fillStyle='#222';ctx.font='400 19px Arial';const lines=wrap(ctx,it.caption,cellW-24,19),lineH=23,startY=y+cellH-capH+22;lines.slice(0,3).forEach((ln,k)=>ctx.fillText(ln,x+cellW/2,startY+k*lineH));ctx.textAlign='left';
-  }
-  ctx.fillStyle='#777';ctx.font='400 15px Arial';ctx.textAlign='left';ctx.fillText('PTI',m,H-25);ctx.textAlign='center';ctx.fillText(`GĐV: ${selectedGdvCache}`,W/2,H-25);ctx.textAlign='right';ctx.fillText(`${partLabel?'Bản ảnh '+partLabel+' · ':''}Trang ${pageNo} · ${groupPageNo}/${groupPages}`,W-m,H-25);
-  return c;
-}
+
+
 
 async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.display='none';$('newCase').style.display='none';hidePdfWarning();const groups=getAllGroups();if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}const pages=[],defs=[];let no=1;for(const gr of groups){const total=Math.ceil(gr.items.length/state.per);for(let i=0;i<gr.items.length;i+=state.per){
       const pageItems=gr.items.slice(i,i+state.per);
