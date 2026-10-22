@@ -86,8 +86,10 @@ function scheduleAutoDraftSave(imagesDirty=true){
           // Xóa định danh phiên hiện tại khỏi bộ nhớ phiên; hồ sơ thật trên Drive/Local
           // vẫn giữ nguyên và có thể tìm/mở lại từ chức năng Tìm hồ sơ.
           state.localDraftId='';
+          return true;
         }catch(e){
           console.warn('Không thể dọn bản nháp sau khi hoàn tất:',e);
+          return false;
         }
       }
       
