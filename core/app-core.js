@@ -88,7 +88,7 @@ let selectedGdvCache='';
 
 
 
-$('pdf').onclick=()=>pdfExportController.exportStandardPdf($('pdf'));
+pdfExportController.bindControls();
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
 gdvFusion.bindSelectionPersistence((...args)=>scheduleAutoDraftSave(...args));
 
