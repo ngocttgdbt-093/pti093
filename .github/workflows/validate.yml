@@ -63,6 +63,23 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/draft-recovery.test.js
 
+      - name: Install Playwright for real-browser draft recovery test
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Test draft recovery in real Chromium with IndexedDB
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: |
+          python3 -m http.server 4173 >/tmp/pti093-test-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:4173/tests/draft-recovery-browser.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/draft-recovery-browser.test.cjs
+
       - name: Check shared Core local-save module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check core/local-save.js
