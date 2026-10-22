@@ -6,17 +6,18 @@
       const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
       // Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
       const PTI093_SESSION_KEY='pti093_work_session_id';
-      let PTI093_SESSION_ID=sessionStorage.getItem(PTI093_SESSION_KEY)||'';
-      if(!PTI093_SESSION_ID){PTI093_SESSION_ID=(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));sessionStorage.setItem(PTI093_SESSION_KEY,PTI093_SESSION_ID);}
+      let PTI093_SESSION_ID='';
+      // Storage có thể bị chặn trong chế độ riêng tư/chính sách trình duyệt; không để lỗi này chặn khởi động Core.
+      try{PTI093_SESSION_ID=global.sessionStorage.getItem(PTI093_SESSION_KEY)||''}catch(e){}
+      if(!PTI093_SESSION_ID){
+        PTI093_SESSION_ID=(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));
+        try{global.sessionStorage.setItem(PTI093_SESSION_KEY,PTI093_SESSION_ID)}catch(e){}
+      }
       let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false,autoDraftImageRevision=0,autoDraftResetting=false;
       function clearAutoDraftTimer(){clearTimeout(autoDraftTimer)}
-      /* Storage adapter supplied by core/local-draft-store.js */
+/* Storage adapter supplied by core/local-draft-store.js */
       
-      /* Storage adapter supplied by core/local-draft-store.js */
-      
-      /* Storage adapter supplied by core/local-draft-store.js */
-      
-      function scheduleAutoDraftSave(imagesDirty=true){
+function scheduleAutoDraftSave(imagesDirty=true){
         if(autoDraftRestoring||autoDraftResetting)return;
         if(imagesDirty){autoDraftImagesDirty=true;autoDraftImageRevision++}
         clearTimeout(autoDraftTimer);
@@ -129,7 +130,7 @@
             await clearAutoDraft();
             state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
             state.driveRecordId='';state.localDraftId='';state.pages=[];state.pageDefs=[];
-            sessionStorage.removeItem('pti093_driveRecordId');
+            try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
             $('bks').value='';$('hoso').value='';setDateInput('');$('garage').value='';
             $('title').value=state.current.title;render();renderLayout();
             setDriveState('Phiên mới — chưa có ảnh hoặc thông tin hồ sơ cũ.');
@@ -171,7 +172,10 @@
           state.current=currentGroup||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
           state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';
           state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
-          if(state.driveRecordId){sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId)}
+          if(state.driveRecordId){
+            try{global.sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId)}catch(e){}
+            try{global.localStorage.setItem('pti093_driveRecordId',state.driveRecordId)}catch(e){}
+          }
           $('title').value=state.current.title||meta.currentTitle||'Bản ảnh chi tiết thiệt hại';
           if(state.driveRecordId){$('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden')}
           render();renderLayout();autoDraftImagesDirty=false;
