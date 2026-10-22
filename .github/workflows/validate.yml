@@ -48,3 +48,10 @@ jobs:
       - name: Test shared GĐV search Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/gdv-search.test.js
+
+      - name: Check extracted Drive Fusion module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check fusion/drive-save.js
+      - name: Test extracted Drive Fusion module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/drive-fusion.test.js
