@@ -46,7 +46,8 @@ const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
-async function addFiles(fs){const candidates=[];for(const f of fs){if(!f.type.startsWith('image/')&&!exts.test(f.name))continue;const key=f.name+'|'+f.size+'|'+f.lastModified;if(!state.current.items.some(x=>x.key===key))candidates.push({file:f,key,caption:state.filenameCaption?fileBaseName(f.name):'',addSeq:++state.addSeq,rotate:0})}if(!candidates.length){msg('Không có ảnh mới để thêm.',true);return}state.current.items.push(...candidates);render();scheduleAutoDraftSave(true);msg(`Đã nhận ${candidates.length} ảnh. Thứ tự giữ nguyên theo thứ tự GĐV thêm ảnh.`,true)}
+const imageIngest=window.PTI093ImageIngest.install({state,exts,fileBaseName,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),render:()=>render(),msg});
+const {addFiles}=imageIngest;
 $('clear').onclick=()=>{if(!state.current.items.length)return;if(!confirm('Xóa toàn bộ ảnh của nội dung đang làm?'))return;state.current.items=[];render();scheduleAutoDraftSave(true);msg('Đã xóa ảnh của nội dung hiện tại.',true)};
 $('files').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
 $('folder').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
