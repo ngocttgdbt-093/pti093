@@ -483,3 +483,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - App Core is now **9,140 bytes** in the latest fetched source, about **80.4% smaller** than the 46,529-byte baseline recorded earlier. This is a source-size comparison only, not a runtime speed claim.
 - GitHub Actions runs **#920** (`39837180756`) and **#921** (`39837187559`) both completed successfully on head `afc1c1645e84b12702adf3ae88534e58a66a90ea`. The full workflow includes real Chromium draft recovery, image reordering, app smoke/PDF download, and the module/skin/fusion tests.
 - No merge or deployment was performed; `main` and the PTI repository remain unchanged. Manual acceptance on the user's actual PC/iPhone and case images remains an explicit release gate.
+
+
+## Full-screen Preview Modal Skin extraction — v2-20261023.29
+
+- Moved the `pcPreviewModalLogic` inline block into `skin/preview-modal.js` at the same script position, preserving the current DOM moves, footer action placement, feedback/progress relocation, Escape/close handling, and return-to-edit behavior.
+- Extended the full-app Chromium smoke test to verify the modal close API is available, the overlay opens with `aria-modal=true` after preview generation, PDF download still works, and the close control exits the overlay.
+- GitHub Actions runs **#928** (`39837478100`) and **#929** (`39837484196`) both completed successfully on head `d1af91bf1498625724b961a285151396f1c83d5d`. The full-app browser smoke and real IndexedDB recovery tests passed after the extraction.
+- This was a behavior-preserving relocation to the Skin layer; the preview rendering/PDF generation algorithms were not rewritten. The remaining modern image-gallery and legacy Drive recovery inline blocks are still present and should be assessed separately before moving.
+- No merge or deployment; production `main` and the separate PTI repository remain unchanged.
