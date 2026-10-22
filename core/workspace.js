@@ -12,5 +12,16 @@
     }
     return groups.filter(g=>g.items&&g.items.length);
   }
-  global.PTIWorkspaceCore = Object.assign(global.PTIWorkspaceCore||{}, {getAllGroups,snapshotGroupsForProject});
+  function commitCurrent(state){
+    if(!state.current.items.length)return null;
+    const group={title:state.current.title,items:state.current.items};
+    if(state.editing>=0){state.groups.splice(state.editing,0,group);state.editing=-1;}
+    else{
+      const last=state.groups[state.groups.length-1];
+      if(last&&last.title===group.title)last.items.push(...group.items);
+      else state.groups.push(group);
+    }
+    return group;
+  }
+  global.PTIWorkspaceCore = Object.assign(global.PTIWorkspaceCore||{}, {getAllGroups,snapshotGroupsForProject,commitCurrent});
 })(window);
