@@ -4,10 +4,14 @@
     install: function(deps){
       const {$,clearAutoDraft,localStorage,location,console,msg}=deps;
       async function startNewCase(){
+        let storedCustomGdv='';
+        if($('gdv').value==='Nhập tên khác'&&!$('gdv').dataset.custom){
+          try{storedCustomGdv=localStorage.getItem('pti093_gdv_custom')||''}catch(e){}
+        }
         const gdv=$('gdv').value==='Nhập tên khác'
-          ? ($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||'')
+          ? ($('gdv').dataset.custom||storedCustomGdv)
           : ($('gdv').value||'');
-        if(gdv)localStorage.setItem('pti093_gdv',gdv);
+        if(gdv){try{localStorage.setItem('pti093_gdv',gdv)}catch(e){}}
         const button=$('newCase');
         button.disabled=true;
         try{
