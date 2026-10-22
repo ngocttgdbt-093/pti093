@@ -218,3 +218,10 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Moved the manual `openLocalDraft` flow into `core/local-open.js`, installed after the draft-store/recovery modules and before Drive Fusion. The Drive module receives the same `openLocalDraft` adapter; the local-open implementation itself remains independent of Drive Fusion.
 - Kept `setDriveState`, `setOpenLoad`, `finishOpenLoad`, and `snapshotGroupsForProject` in the shared app/Core layer because manual local save/open also uses them. Drive Fusion receives those helpers as explicit dependencies rather than owning them.
 - Added `tests/local-open.test.js` and a workflow step. A mocked IndexedDB test in the available runtime passed checks for restored form fields, local ID/no Drive ID, image order/caption/rotation, progress completion, render/layout, and database closure. This is not a real-browser IndexedDB/F5 test.
+
+## Full source/module CI result — v1-20261022.8
+
+- GitHub Actions run **#345** (`39818597073`) completed successfully on the isolated test branch. All steps passed: inline JavaScript syntax, draft-recovery source contract, GĐV search, local draft store/recovery, local-save, local-open, Drive Fusion, workspace snapshot, ZIP/XML, and PDF Builder.
+- The first run after adding local-open coverage exposed a missing `window.scrollTo` stub in the Node test fixture. The browser code expects that standard browser API; the test fixture was corrected, and run #345 passed.
+- This is a green source/module CI gate, not full browser acceptance. The IndexedDB implementation is still not being exercised in a real browser session, and the user's 10/10 baseline test of the original 093 recovery still needs to be repeated against the test build.
+- Production `main` remains untouched. Do not merge or publish to the live Pages site until the browser regression checks are complete.
