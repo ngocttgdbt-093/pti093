@@ -103,8 +103,14 @@
           try{storedCustomGdv=localStorage.getItem('pti093_gdv_custom')||''}catch(e){}
           const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||storedCustomGdv):($('gdv').value||'');
           if(gdv){try{localStorage.setItem('pti093_gdv',gdv)}catch(e){}}
-          // Chỉ dọn AUTO-DRAFT; giữ ID local để lần lưu sau cập nhật đúng bản local.
-          await clearAutoDraft();
+          // Dọn AUTO-DRAFT là bước hậu xử lý riêng: nếu dọn lỗi, không được báo nhầm bản local vừa ghi là thất bại.
+          try{
+            await clearAutoDraft();
+          }catch(cleanupError){
+            const detail=cleanupError&&cleanupError.message?cleanupError.message:String(cleanupError);
+            setDriveState('Đã lưu hồ sơ tại máy, nhưng chưa dọn được nháp tự động: '+detail,false);
+            msg('⚠️ Hồ sơ đã lưu tại máy thành công. Chưa dọn được nháp tự động; hãy tải lại trang sau khi kiểm tra hồ sơ đã lưu.',true);
+          }
         }catch(e){
           setDriveState('Chưa lưu được nháp tại máy: '+e.message,false);
           msg('❌ Lưu tại máy thất bại: '+e.message,true);
