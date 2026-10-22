@@ -75,6 +75,18 @@ const moduleScripts = [
 const scriptPositions = moduleScripts.map(src => html.indexOf('src="' + src + '"'));
 assert.ok(scriptPositions.every(pos => pos >= 0), 'index.html should load every extracted storage/Core/Fusion module');
 assert.ok(scriptPositions.every((pos, i) => i === 0 || pos > scriptPositions[i - 1]), 'Store, recovery, local save/open, and Drive Fusion scripts must load in dependency order');
+const builderScripts = [
+  './core/zip-utils.js',
+  './core/docx-builder.js',
+  './core/file-delivery.js',
+  './core/pdf-builder.js',
+  './core/image-canvas.js',
+  './core/preview-builder.js',
+  './core/app-core.js'
+];
+const builderPositions = builderScripts.map(src => html.indexOf('src="' + src + '"'));
+assert.ok(builderPositions.every(pos => pos >= 0), 'index.html should load every extracted builder/controller module');
+assert.ok(builderPositions.every((pos, i) => i === 0 || pos > builderPositions[i - 1]), 'Shared builders must load before app-core.js in dependency order');
 for (const contract of [
   "window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'})",
   'window.PTI093DraftRecovery.install(',
