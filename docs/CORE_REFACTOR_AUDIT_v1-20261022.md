@@ -231,3 +231,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - GitHub Actions run **#347** (`39818695639`) completed successfully after adding the local-open test to CI. The job reports success with 22 successful steps and no failed steps.
 - This is the latest verified automated gate for the current Core/Fusion source. The test fixture now stubs `window.scrollTo`; no application behavior was changed to accommodate the test environment.
 - Remaining gate is real-browser acceptance only: open a test build, load images, save locally, reload/F5 and confirm draft recovery, open a saved local case, preview/export PDF and verify the app still starts in Classic. No production deploy or merge has been performed.
+
+
+## Image Canvas Core extraction — v8-20261022
+
+- Extracted `layoutDims`, image/logo loading, text wrapping, rotated contain drawing, and the shared A4 page renderer into `core/image-canvas.js`. The module receives the PDF canvas/size helpers and app-specific title/date/GĐV values through explicit adapters.
+- The app installs this module immediately after PDF Builder initialization, before the first layout/render call. Existing render, preview, DOCX, and PDF flows continue to call the same helper names through returned aliases.
+- Added `tests/image-canvas.test.js` and CI checks. Mocked-canvas validation passed for portrait/landscape grids, text wrapping, image/logo load promises, A4 dimensions, caption/GĐV labels, draw calls, and rotation. The five inline app scripts and external modules parsed successfully in the available runtime.
+- Remaining acceptance gate is still real-browser regression: actual image selection/drag ordering, Classic default, local save and F5/reload restore, preview, PDF/Word output and downloads in Edge/Chrome. No production deployment or merge was performed.
