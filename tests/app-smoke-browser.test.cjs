@@ -34,14 +34,15 @@ const {chromium}=require('playwright');
         fileIntakeSkin:!!window.PTI093ClassicFileIntakeSkin,
         previewSkin:!!window.PTI093ClassicPreviewSkin,
         groupWorkflow:!!window.PTI093GroupWorkflow,
-        driveBindings:typeof document.getElementById('driveSearchBtn').onclick==='function' && typeof document.getElementById('driveSaveProject').onclick==='function' && typeof document.getElementById('driveCreate').onclick==='function'
+        driveBindings:typeof document.getElementById('driveSearchBtn').onclick==='function' && typeof document.getElementById('driveSaveProject').onclick==='function' && typeof document.getElementById('driveCreate').onclick==='function',
+        sessionActions:!!window.PTI093SessionActions && typeof document.getElementById('newCase').onclick==='function'
       }
     }));
     assert.equal(initial.counts,6,'six image-count choices should be rendered');
     assert.equal(initial.layoutCells,6,'default layout should show six image slots');
     assert.match(initial.layoutText,/6 ảnh/);
     assert.equal(initial.datePlaceholder,'dd/mm/yyyy');
-    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,imageEditing:true,fileIntakeSkin:true,previewSkin:true,groupWorkflow:true,driveBindings:true});
+    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,imageEditing:true,fileIntakeSkin:true,previewSkin:true,groupWorkflow:true,driveBindings:true,sessionActions:true});
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
     await page.locator('#files').setInputFiles({
