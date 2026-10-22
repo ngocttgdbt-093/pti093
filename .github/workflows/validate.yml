@@ -36,6 +36,10 @@ jobs:
           }
           NODE
 
+      - name: Audit local asset references and zero-inline-script boundary
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/local-references.test.js
+
       - name: Check Preview Modal Skin
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check skin/preview-modal.js
