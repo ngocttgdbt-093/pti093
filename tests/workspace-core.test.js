@@ -31,10 +31,24 @@ const editCommit = { groups: [{ title: 'A', items: [{ id: 1 }] }, { title: 'B', 
 core.commitCurrent(editCommit);
 assert.deepEqual(editCommit.groups.map(g => g.title), ['A', 'Sửa lại', 'B'], 'editing should reinsert at the original index');
 assert.equal(editCommit.editing, -1, 'editing marker should reset after commit');
+const editState = {
+  groups: [{ title: 'Đăng kiểm', items: [{ id: 8 }] }],
+  current: { title: 'Đang làm', items: [{ id: 9 }] },
+  filenameCaption: true, editing: -1, pages: [{ id: 'old-preview' }]
+};
+assert.equal(core.beginEditGroup(editState, 0), true);
+assert.equal(editState.current.title, 'Đăng kiểm');
+assert.deepEqual(editState.current.items.map(x => x.id), [8]);
+assert.equal(editState.groups.length, 0);
+assert.equal(editState.editing, 0);
+assert.equal(editState.filenameCaption, false);
+assert.deepEqual(editState.pages, []);
+assert.equal(core.beginEditGroup(editState, 99), false, 'missing group index should be rejected safely');
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 const appCore = fs.readFileSync('core/app-core.js', 'utf8');
 assert.ok(html.includes('src="./core/workspace.js"'), 'index.html should load workspace Core');
 assert.ok(appCore.includes('workspaceCore.snapshotGroupsForProject(state)'), 'App Core should bind the shared snapshot adapter');
 assert.ok(appCore.includes('workspaceCore.commitCurrent(state)'), 'App Core should delegate group commit behavior to Workspace Core');
+assert.ok(appCore.includes('workspaceCore.beginEditGroup(state,i)'), 'App Core should delegate edit-group state transition to Workspace Core');
 console.log('Shared workspace Core tests passed (snapshot and group-commit contracts).');
