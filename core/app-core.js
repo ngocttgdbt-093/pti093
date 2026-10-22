@@ -63,76 +63,31 @@ const imageEditing=window.PTI093ImageEditing.install({state,$,exts,fileBaseName,
 window.PTI093ClassicFileIntakeSkin.install({$,addFiles});
 function render(){return classicImageGridSkin.render()}function renderGroups(){return classicGroupListSkin.renderGroups()}
 
-
 /* Shared workspace group helper is in core/workspace.js */
 /* Shared workspace snapshot helper is in core/workspace.js */
-// counts
 
 function renderLayout(){return classicLayoutSkin.renderLayout()}
 // V39: render bố cục ngay sau khi tạo các nút lựa chọn, không phụ thuộc render() hoặc khôi phục bản nháp.
 // Nhờ đó vừa mở trang đã thấy đúng 6 ảnh A4 dọc (2 × 3), không cần bấm lại nút 6.
 renderLayout();
 
-
-
-
 const logoSrc=document.querySelector('.logo').src;
 
 let selectedGdvCache='';
-
-
-
-
-
-
-
-
 
 pdfExportController.bindControls();
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
 gdvFusion.bindSelectionPersistence((...args)=>scheduleAutoDraftSave(...args));
 
-
-
-
-
-
-/* ===== PTI093 GOOGLE DRIVE - GIAI ĐOẠN 1: TẠO RECORD ===== */
+/* Drive record/search/upload behavior is installed from fusion/drive.js below. */
 
 state.driveRecordId='';
-
-
-
-
-
 
 const normalizeRecordSearch=window.PTISharedCore.normalizeRecordSearch;
 const gdvInitials=window.PTISharedCore.gdvInitials;
 const gdvSearchMatches=window.PTISharedCore.gdvSearchMatches;
 const searchQueryVariants=query=>window.PTISharedCore.searchQueryVariants(query,PTI093_GDV_NAMES);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Draft session state moved to core/draft-recovery.js */
-/* Draft session state moved to core/draft-recovery.js */
-// Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
-/* Draft session state moved to core/draft-recovery.js */
 const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
 const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
 const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone});
@@ -146,26 +101,8 @@ const {openLocalDraft}=localOpenCore;
 const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 driveSaveFusion.bindControls();
 
-/* Draft session state moved to core/draft-recovery.js */
-/* Draft session state moved to core/draft-recovery.js */
-/* Draft session state moved to core/draft-recovery.js */
-/* Draft recovery is implemented in core/draft-recovery.js */
-/* Draft recovery is implemented in core/draft-recovery.js */
-/* Draft recovery is implemented in core/draft-recovery.js */
-
-/* Draft recovery is implemented in core/draft-recovery.js */
-/* Draft recovery is implemented in core/draft-recovery.js */
-// ===== KẾT THÚC PHIÊN LÀM VIỆC =====
-// Khi GĐV đã xuất PDF hoặc đã lưu hồ sơ (Drive/Local), bản nháp tự động
-// không còn cần để phục hồi lại ở lần mở app sau. Chỉ giữ lại GĐV để làm phiên mới.
-/* Draft recovery is implemented in core/draft-recovery.js */
-
-/* Draft recovery is implemented in core/draft-recovery.js */
-/* Draft recovery is implemented in core/draft-recovery.js */
+// Session lifecycle and autosave recovery are owned by core/draft-recovery.js.
 
 /* Classic Local Save UI is implemented in skin/classic-local-save.js */
-
-
-
 
 render();renderLayout();bindLifecycle();
