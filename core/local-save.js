@@ -72,8 +72,8 @@
         }catch(e){
           const idBox=$('driveId');
           if(idBox){
-            if(state.localDraftId){idBox.textContent='💻 ID hồ sơ local: '+state.localDraftId;idBox.classList.remove('hidden')}
-            else if(state.driveRecordId){idBox.textContent='Hồ sơ: '+state.driveRecordId;idBox.classList.remove('hidden')}
+            if(state.driveRecordId){idBox.textContent='Hồ sơ: '+state.driveRecordId;idBox.classList.remove('hidden')}
+            else if(state.localDraftId){idBox.textContent='💻 ID hồ sơ local: '+state.localDraftId;idBox.classList.remove('hidden')}
             else{idBox.classList.add('hidden')}
           }
           const box=$('driveProgress');if(box)box.classList.remove('hidden');
