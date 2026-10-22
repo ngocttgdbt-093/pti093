@@ -41,9 +41,13 @@
           if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
         });
         if(!String(id).startsWith('LOCAL-')){
-          state.driveRecordId=id;sessionStorage.setItem('pti093_driveRecordId',id);localStorage.setItem('pti093_driveRecordId',id);
+          state.driveRecordId=id;
+          try{global.sessionStorage.setItem('pti093_driveRecordId',id)}catch(e){}
+          try{global.localStorage.setItem('pti093_driveRecordId',id)}catch(e){}
         }else{
-          state.driveRecordId='';sessionStorage.removeItem('pti093_driveRecordId');localStorage.removeItem('pti093_driveRecordId');
+          state.driveRecordId='';
+          try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+          try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
         }
         state.localDraftId=id;
         $('bks').value=meta.bks||'';
