@@ -23,9 +23,10 @@ assert.equal(typeof api.saveLocalDraft, 'function');
 assert.equal(typeof api.saveDraftWithoutPhotos, 'function');
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
+const appCore = fs.readFileSync('core/app-core.js', 'utf8');
 const source = fs.readFileSync('core/local-save.js', 'utf8');
 assert.ok(html.includes('src="./core/local-save.js"'), 'index.html should load the local-save Core module');
-assert.ok(html.includes('PTILocalSaveCore.install'), 'App should install the local-save Core module');
+assert.ok(appCore.includes('window.PTILocalSaveCore.install('), 'App should install the local-save Core module from core/app-core.js');
 assert.ok(!html.includes('async function saveLocalDraft('), 'Manual local-save should be outside index.html');
 assert.ok(!html.includes('async function saveDraftWithoutPhotos('), 'Local draft button orchestration should be outside index.html');
 for (const forbidden of ['PTI093_API', 'pti093UploadAll(', 'saveProjectToDrive(']) {
