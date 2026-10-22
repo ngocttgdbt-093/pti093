@@ -408,3 +408,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Expanded `tests/docx-builder.test.js` to verify rotated landscape image dimensions, canvas translation/rotation, draw geometry, JPEG quality, and output bytes.
 - GitHub Actions run **#702** (`39832769671`) completed successfully with the DOCX image-processing regression and all existing module/browser checks.
 - This keeps DOCX-specific image transformation next to DOCX packaging rather than in the main App Core; no change to production deployment or PTI.
+
+
+## High-quality PDF export controller extraction — v2-20261023.11
+
+- Moved the high-quality PDF export orchestration from App Core into `core/pdf-export-controller.js`: duplicate-run guard, button/checkbox locking, progress updates, multi-file delivery, completion message, and error recovery.
+- PDF splitting remains in `core/pdf-export.js`, while actual platform-specific file delivery remains in `core/file-delivery.js`. The controller receives both as injected dependencies.
+- Added `tests/pdf-export-controller.test.js` for no-pages handling, multi-part export, progress state, and error recovery. GitHub Actions run **#710** (`39832981323`) passed.
+- The latest App Core snapshot measured 22,541 bytes at this extraction point. This is another reduction in orchestration size; no production or PTI deployment occurred.
