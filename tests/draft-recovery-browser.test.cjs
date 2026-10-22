@@ -26,6 +26,12 @@ const { chromium } = require('playwright');
     const counts=await page.evaluate(()=>window.testHarness.cleanup());
     assert.deepEqual(counts,{drafts:0,images:0});
 
+    await page.evaluate(()=>window.testHarness.seedOrphanImages());
+    assert.deepEqual(await page.evaluate(()=>window.testHarness.countDraftRows()),{drafts:0,images:1});
+    await page.evaluate(()=>window.testHarness.api.restoreAutoDraft());
+    assert.deepEqual(await page.evaluate(()=>window.testHarness.countDraftRows()),{drafts:0,images:0},
+      'orphaned image rows should be cleaned when AUTO-DRAFT metadata is missing');
+
     const failureRecovery=await page.evaluate(()=>window.testHarness.cleanupFailureRecovery());
     assert.deepEqual(failureRecovery,{rejected:true,autosaveRecovered:true});
     const recoveredCleanup=await page.evaluate(()=>window.testHarness.cleanup());
