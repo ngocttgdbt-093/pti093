@@ -586,7 +586,7 @@
       
         // Không còn nút upload riêng: upload được thực hiện trong "Tạo & lưu hồ sơ" và "Lưu thay đổi hồ sơ".
       
-        // Skin PTI: kế thừa mốc đã kiểm nghiệm ở 093 V24 — tối đa 5 ảnh đồng thời.
+        // GHÉP ẢNH 093: giữ nguyên mốc đã kiểm nghiệm ở V24 — tối đa 5 ảnh đồng thời.
         // Vẫn đợi từng ảnh hoàn tất và chỉ tăng bộ đếm sau khi máy chủ xác nhận.
         let sent=0;
         const total=unique.length;
