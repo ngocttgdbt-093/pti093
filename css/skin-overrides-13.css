@@ -1,0 +1,74 @@
+
+#ptiPreviewModal{position:fixed;inset:0;z-index:100100;background:#edf3fc;display:none;flex-direction:column;color:#17345f}
+/* V45: closing full-screen preview returns to the original three-column workspace.
+   Hide only the miniature page thumbnails; keep PDF and save controls available. */
+.wrap.preview-closed{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.wrap.preview-closed>.card:nth-of-type(3){display:block!important;min-width:0!important}
+.wrap.preview-closed>.card:nth-of-type(3) #previewInfo,
+.wrap.preview-closed>.card:nth-of-type(3) #preview{display:none!important}
+.wrap.preview-closed>.card:nth-of-type(3) .actions,
+.wrap.preview-closed>.card:nth-of-type(3) .driveBox{display:block!important}
+.wrap.preview-closed>.card:nth-of-type(3) .actions .btn,
+.wrap.preview-closed>.card:nth-of-type(3) .driveBox .btn{max-width:100%;margin:4px 3px 4px 0}
+@media(max-width:1000px){.wrap.preview-closed{grid-template-columns:1fr!important}}
+/* V48: show saved group images and captions beneath the editor after closing Preview. */
+.pcImageGallery #pcSavedGroupsGallery img{max-width:100%}
+.pcImageGallery #pcSavedGroupsGallery .btn{white-space:normal}
+.pcImageGallery #pcSavedGroupsGallery .muted{padding:10px;color:#64748b;line-height:1.6}
+@media(max-width:650px){.pcImageGallery #pcSavedGroupsGallery>div>div[style*="grid-template-columns"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+/* V47: clearer Drive upload progress, separate from local-PC image preparation. */
+#driveProgress{
+  margin-top:12px!important;padding:14px 15px!important;
+  border:1px solid #c9d8e8!important;border-radius:12px!important;
+  background:#f7faff!important;box-shadow:0 2px 7px rgba(28,67,116,.05)!important;
+}
+#driveProgress>div:first-child{
+  display:flex!important;align-items:center!important;gap:14px!important;
+  justify-content:space-between!important;flex-wrap:wrap!important;
+  font-size:14px!important;line-height:1.5!important;
+}
+#driveProgressText{display:block!important;flex:1 1 220px!important;font-weight:750!important;color:#17345f!important;line-height:1.5!important}
+#driveProgressPct{display:block!important;flex:0 0 auto!important;min-width:46px!important;text-align:right!important;font-size:17px!important;font-weight:850!important;color:#08784b!important}
+#driveProgress>div:nth-child(2){height:10px!important;margin-top:10px!important;background:#e5ebf3!important;border-radius:999px!important;overflow:hidden!important}
+#driveProgressBar{height:100%!important;border-radius:999px!important;background:linear-gradient(90deg,#1769e8,#48a0ff)!important;transition:width .25s ease!important}
+#driveProgressMeta{margin-top:9px!important;font-size:12px!important;line-height:1.65!important;color:#5c6f86!important;overflow-wrap:anywhere!important}
+#driveState{display:block!important;flex:1 1 100%!important;line-height:1.6!important;padding-top:3px!important;overflow-wrap:anywhere!important}
+#driveUploadMissing{margin-top:12px!important;padding:12px 14px!important;border-radius:10px!important;line-height:1.6!important;overflow-wrap:anywhere!important}
+@media(max-width:650px){#driveProgress{padding:12px!important}#driveProgressText{flex-basis:170px!important}#driveProgressMeta{font-size:11px!important}}
+#ptiPreviewModal.open{display:flex}
+#ptiPreviewModal .ppm-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:linear-gradient(110deg,#063b91,#0968e8 70%,#2d8bff);color:#fff;box-shadow:0 3px 12px #123d8530}
+#ptiPreviewModal .ppm-title{font-weight:800;font-size:17px}
+#ptiPreviewModal .ppm-close{border:1px solid #ffffff70;background:#ffffff18;color:#fff;border-radius:9px;padding:9px 14px;font-weight:700;cursor:pointer}
+#ptiPreviewModal .ppm-content{flex:1 1 auto;overflow:auto;padding:18px;min-height:0}
+#ptiPreviewModal .ppm-content>.card{max-width:1500px;margin:0 auto 16px;box-shadow:none}
+#ptiPreviewModal .ppm-content #preview{margin-top:12px!important}
+#ptiPreviewModal .ppm-content .preview{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important;align-items:start!important}#ptiPreviewModal .ppm-content .preview>*{width:100%!important;min-width:0!important;max-width:none!important}#ptiPreviewModal .ppm-content .preview img{max-width:100%;height:auto}
+#ptiPreviewModal .ppm-content .preview>div{max-width:none}
+#ptiPreviewModal .ppm-foot{flex:0 0 auto;padding:10px 16px;background:#fff;border-top:1px solid #d7e3f6}
+#ptiPreviewModal .ppm-actions{display:flex;flex-wrap:wrap;gap:9px;max-width:1500px;margin:0 auto}
+#ptiPreviewModal .ppm-actions .btn{min-width:150px}.ppm-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important}.ppm-actions>button{display:inline-flex!important;align-items:center;justify-content:center;min-width:0!important;min-height:48px;white-space:normal!important;text-align:center}.ppm-actions #driveState,.ppm-actions #driveId,.ppm-actions #driveProgress{display:none!important}
+@media(min-width:1000px){
+ .wrap{max-width:none!important;width:100%!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)!important;gap:14px!important;padding:0 14px!important}
+ .wrap>.card:nth-of-type(1) .form{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .wrap>.card:nth-of-type(1) .form .field:has(#garage){grid-column:1/-1!important}
+ .wrap>.card:nth-of-type(1) input,.wrap>.card:nth-of-type(1) select{width:100%;min-width:0}
+ .wrap>.card:nth-of-type(1){grid-column:1!important;grid-row:1!important}
+ .wrap>.card:nth-of-type(2){grid-column:2!important;grid-row:1!important}
+ .wrap>.card:nth-of-type(3){grid-column:3!important;grid-row:1!important;display:block!important}.wrap>.card:nth-of-type(3)>.hd{grid-column:auto}.wrap>.card:nth-of-type(3) #previewInfo,.wrap>.card:nth-of-type(3) #preview{grid-column:auto}.wrap>.card:nth-of-type(3) .driveBox{grid-column:auto}
+ .wrap>.pcImageGallery{grid-column:1/-1!important;grid-row:2!important}
+}
+.searchTable .recordOpenPrimary{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;visibility:visible!important;opacity:1!important;margin:9px 0 0!important;width:100%;min-width:130px;white-space:normal!important;overflow-wrap:anywhere;position:static!important;transform:none!important;padding:10px 12px!important;border-radius:10px!important;font-size:13px!important;line-height:1.35!important;font-weight:750!important;background:#eaf2ff!important;color:#1455ad!important;border:1px solid #b8d0ff!important;box-shadow:0 2px 7px #174d9414!important}
+.searchTable{width:100%;table-layout:auto}.searchTable th,.searchTable td{padding:12px 10px;vertical-align:middle;overflow-wrap:anywhere;white-space:normal}.searchTable th:nth-child(1),.searchTable td:nth-child(1){width:30%;min-width:210px}.searchTable th:nth-child(2),.searchTable td:nth-child(2){width:13%;min-width:90px}.searchTable th:nth-child(3),.searchTable td:nth-child(3){width:18%;min-width:130px}.searchTable th:nth-child(4),.searchTable td:nth-child(4){width:18%;min-width:135px}.searchTable th:nth-child(5),.searchTable td:nth-child(5){width:21%;min-width:140px}.searchTable td[data-label="Hồ sơ"]{min-width:210px}.searchTable .recordOpenPrimary{max-width:100%;min-width:150px;min-height:42px;font-size:14px!important;white-space:normal!important}
+.searchTable td[data-label="Thao tác"] .recordOpenPrimary{display:none!important}
+@media(max-width:999px){.wrap{display:block!important;max-width:850px!important;margin:12px auto 30px!important;padding:0 9px!important}.wrap>.card{margin-bottom:14px!important}}
+@media(max-width:999px){.searchTableWrap{overflow-x:visible}.searchTable,.searchTable tbody,.searchTable tr,.searchTable td{display:block;width:100%!important;min-width:0!important}.searchTable thead{display:none}.searchTable tbody tr{padding:8px 10px;border-bottom:1px solid #dbe7e0}.searchTable td{display:grid;grid-template-columns:minmax(95px,34%) minmax(0,1fr);gap:8px;border:0!important;padding:7px 4px!important;overflow-wrap:anywhere}.searchTable td:before{content:attr(data-label);font-weight:700;color:#176b4b}.searchTable td[data-label="Hồ sơ"]{display:block}.searchTable td[data-label="Hồ sơ"]:before{display:none}.searchTable .recordOpenPrimary{width:100%;max-width:320px}}
+@media(max-width:650px){
+ #ptiPreviewModal .ppm-head{padding:9px 12px}
+ #ptiPreviewModal .ppm-content{padding:10px}
+ #ptiPreviewModal .ppm-actions{display:block}
+ #ptiPreviewModal .ppm-actions .btn{width:100%;margin:4px 0}
+ .wrap{display:block!important;max-width:850px!important;margin:12px auto 30px!important;padding:0 9px!important}
+ .wrap>.card{margin-bottom:14px!important}
+ .searchTable .recordOpenPrimary{display:flex!important}
+ .searchTable td[data-label="Thao tác"]{display:none!important}
+}
