@@ -109,3 +109,10 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - Moved the save/create event binding until after the fusion installer returns, preventing access to uninitialized module aliases. Removed the duplicate create-handler assignment.
 - Added `tests/drive-fusion.test.js` and workflow steps for syntax and module contract checks. In this environment, 5/5 remaining inline script blocks parsed, the extracted module parsed, all 12 expected functions were exported, and the upload-key persistence checks passed with a browser-storage mock.
 - Scope note: this extraction covers the save/upload path. Drive search/open-record functions remain in the main app script and must be assessed separately before declaring the entire Drive fusion isolated. The local-draft lifecycle remains unchanged. CSS/JS source checks are not browser acceptance; no deployment was performed.
+
+## Dependency-wiring correction — v4-20261022.2
+
+- The extracted Drive saver now receives the original app-scoped helper functions explicitly: `getAllGroups`, `selectedGdv`, `scheduleAutoDraftSave`, `finalizeCompletedSession`, and `sha256HexBlob`, in addition to state/UI/API adapters. This preserves the original lexical dependencies after extraction.
+- The existing `DRIVE_CONCURRENCY=5` remains scoped inside the original uploader function; it was not replaced with a new global setting. The create/save handlers are bound only after the fusion installer has initialized its returned functions.
+- Follow-up source checks passed: 5/5 remaining inline scripts parse; the Drive module parses; the expected functions export; storage-key helpers pass mocked-storage checks; the two external CSS files are linked; and the original draft functions `scheduleAutoDraftSave`, `saveAutoDraft`, `clearAutoDraft`, `restoreAutoDraft`, and `finalizeCompletedSession` are byte-for-byte unchanged from main.
+- Remaining boundary work before Core can be called complete: Drive search/open-record functions are still in `index.html`; assess whether to isolate them as the read/search portion of the Drive fusion. Browser-level tests and completed GitHub Actions runs remain unverified.
