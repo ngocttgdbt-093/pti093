@@ -1419,7 +1419,7 @@ async function saveDraftWithoutPhotos(){
 window.pti093UploadAll = pti093UploadAll;
 /* Drive save function moved to fusion/drive-save.js */
 window.pti093UploadAll=pti093UploadAll;
-$('driveCreate').onclick=createDriveRecord;
+
 render();renderLayout();
 ['bks','hoso','gdv','date','garage'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>scheduleAutoDraftSave(false));el.addEventListener('change',()=>scheduleAutoDraftSave(false))});
 restoreAutoDraft();
