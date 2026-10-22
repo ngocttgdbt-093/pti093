@@ -11,6 +11,7 @@ global.localStorage = {
   setItem: (key, value) => store.set('local:' + key, String(value)),
   removeItem: key => store.delete('local:' + key)
 };
+require('../core/local-draft-store.js');
 require('../core/draft-recovery.js');
 assert.ok(global.PTI093DraftRecovery, 'Draft Recovery Core module should load');
 
@@ -31,9 +32,9 @@ const deps = {
   setDriveState: () => {},
   msg: () => {}
 };
-const api = global.PTI093DraftRecovery.install(deps);
+const storeApi = global.PTILocalDraftStore.install({dbName: 'pti093_local_drafts_v1'});
+const api = global.PTI093DraftRecovery.install({...deps, ...storeApi});
 for (const name of [
-  'openLocalDraftDB', 'localDraftTransactionDone', 'getLocalDrafts',
   'scheduleAutoDraftSave', 'saveAutoDraft', 'finalizeCompletedSession',
   'clearAutoDraft', 'restoreAutoDraft', 'clearAutoDraftTimer'
 ]) {
@@ -47,12 +48,15 @@ assert.ok(api.saveAutoDraft instanceof Function, 'Autosave API should remain cal
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 const source = fs.readFileSync('core/draft-recovery.js', 'utf8');
+const storeSource = fs.readFileSync('core/local-draft-store.js', 'utf8');
 assert.ok(html.includes('src="./core/draft-recovery.js"'), 'index.html should load the shared draft Core module');
 for (const marker of [
-  'pti093_local_drafts_v1', 'AUTO-DRAFT', 'async function saveAutoDraft',
+  'AUTO-DRAFT', 'async function saveAutoDraft',
   'async function restoreAutoDraft', 'async function clearAutoDraft',
   'async function finalizeCompletedSession'
 ]) {
   assert.ok(source.includes(marker), 'Draft lifecycle contract should remain: ' + marker);
 }
+assert.ok(storeSource.includes('pti093_local_drafts_v1') === false, 'DB name should be supplied through the store adapter configuration');
+assert.ok(typeof storeApi.openLocalDraftDB === 'function' && typeof storeApi.localDraftTransactionDone === 'function' && typeof storeApi.getLocalDrafts === 'function', 'Local Draft Store should export storage APIs');
 console.log('Shared Core draft-recovery tests passed (module API + session contract).');
