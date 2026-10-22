@@ -22,5 +22,5 @@ gridSkin=window.PTI093ClassicImageGridSkin.install({
  onDelete:i=>{gridCalls.push(['delete',i]);gridState.current.items.splice(i,1);gridSkin.render();gridSaves.push(true);},
  onCaptionChange:(item,value)=>{item.caption=value;gridSaves.push(false);}
 });
-window.gridSkin=gridSkin;
+window.gridSkin=gridSkin;window.gridSkin.render();
 </script></body></html>
