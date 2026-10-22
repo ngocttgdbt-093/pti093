@@ -269,3 +269,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Extracted the existing `fileBaseName`, `gdvShortName`, and `pdfFileName` rules into `core/file-naming.js`; application Core consumes the module API. The existing GĐV abbreviation map, plate sanitization, and PDF naming rules are retained.
 - Added `tests/file-naming.test.js`. GitHub Actions run **#426** (`39826955610`) completed successfully, including the File Naming and Date Utils tests and the Chromium IndexedDB regression.
 - The app's current test branch is still not deployed. These results are CI validation and isolated module/browser-fixture tests, not a full end-to-end acceptance of the production page with real user images.
+
+
+## Image Reorder Core extraction — v2-20261023.11
+
+- Extracted the existing thumbnail drag-and-drop and touch reorder controller into `core/image-reorder.js`: stable per-item drag IDs, DOM movement, synchronization back to `state.current.items`, draft-save scheduling, layout refresh, drag-style cleanup, and pointer/touch handling.
+- `core/app-core.js` now delegates drag ID assignment and thumbnail event binding to the module. The previous inline helper functions and per-thumbnail drag/pointer handlers were removed from the app controller; the event behavior was carried over.
+- Added `tests/image-reorder-browser.html` and `tests/image-reorder-browser.test.cjs`. The real Chromium regression simulates dragging the first thumbnail below the second and asserts DOM order, application-state order, dirty-draft scheduling, layout refresh, rerender, and cleanup of drag CSS classes.
+- GitHub Actions run **#441** (`39827235287`) completed successfully, including Image Reorder module syntax validation, File Naming and Date Utils tests, and the Chromium browser regression suite.
+- This confirms the extracted module contract and simulated reorder behavior in Chromium. A full manual check with real user photos and touch hardware remains a separate acceptance gate.
