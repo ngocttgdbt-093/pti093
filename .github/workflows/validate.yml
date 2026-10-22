@@ -32,3 +32,15 @@ jobs:
           if (!checked) throw new Error('Không có script nội bộ nào được kiểm tra');
           console.log('PTI093 JavaScript syntax: OK (' + checked + ' inline scripts)');
           NODE
+
+      - name: Check 093 draft-recovery source contract
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const required = ['pti093_local_drafts_v1', 'AUTO-DRAFT', 'function scheduleAutoDraftSave', 'async function saveAutoDraft', 'async function restoreAutoDraft', 'async function finalizeCompletedSession'];
+          const missing = required.filter(x => !html.includes(x));
+          if (missing.length) throw new Error('Thiếu thành phần hợp đồng lưu nháp: ' + missing.join(', '));
+          console.log('093 draft-recovery source contract: OK');
+          NODE
