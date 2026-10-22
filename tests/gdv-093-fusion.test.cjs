@@ -21,6 +21,19 @@ const {chromium}=require('playwright');
     assert.equal(result.promptCalls,2,'custom-name prompt should be skipped when a cached value exists');
     assert.equal(result.stored,'Nguyễn Văn B');
     assert.deepEqual(result.names,['Phạm Duy Thái','Đặng Xuân Linh','Nguyễn Tuấn Hưng','Đặng Xuân Diệu','Đặng Văn Hiên','Nguyễn Minh Ngọc']);
+    const persistence=await page.evaluate(()=>{
+      localStorage.removeItem('pti093_gdv');localStorage.removeItem('pti093_gdv_custom');
+      const select=document.getElementById('gdv');select.dataset.custom='';
+      window.gdvFusion.bindSelectionPersistence(()=>{window.autoSaveCalls=(window.autoSaveCalls||0)+1;});
+      select.value='Phạm Duy Thái';select.dispatchEvent(new Event('change'));
+      select.value='Nhập tên khác';window.promptValue='Nguyễn Văn C';
+      select.dispatchEvent(new Event('change'));
+      return {saved:localStorage.getItem('pti093_gdv'),custom:localStorage.getItem('pti093_gdv_custom'),dataset:select.dataset.custom,autoSaveCalls:window.autoSaveCalls};
+    });
+    assert.equal(persistence.saved,'Phạm Duy Thái');
+    assert.equal(persistence.custom,'Nguyễn Văn C');
+    assert.equal(persistence.dataset,'Nguyễn Văn C');
+    assert.equal(persistence.autoSaveCalls,2);
     console.log('093 GĐV Fusion tests passed: default selection, custom prompt, cached custom name, cancellation, and 093-only list.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
