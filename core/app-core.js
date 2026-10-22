@@ -30,8 +30,6 @@ const previewBuilder=window.PTI093PreviewBuilder.install({drawPage});
 const {buildPreview}=previewBuilder;
 const classicLayoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims,document});
 const classicGroupListSkin=window.PTI093ClassicGroupListSkin.install({state,$,document,onEditGroup:i=>editGroup(i)});
-const classicPdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({$,document,exportHighQualitySplit});
-const {hidePdfWarning,showPdfWarning}=classicPdfWarningSkin;
 const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
   state,$,document,URL,imageReorder,openImageViewer,renderGroups:()=>renderGroups(),
   scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,
@@ -43,6 +41,10 @@ const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
 });
 const pdfExportCore=window.PTI093PdfExportCore.install({state,PDF_SAFE_LIMIT,drawPage,makePdfAt,pagePixels,jpegQuality,pdfPackSize});
 const {splitHighQualityPdf}=pdfExportCore;
+const pdfExportController=window.PTI093PdfExportController.install({state,$,splitHighQualityPdf,exportPdfFile,msg,alert,setTimeout});
+const {exportHighQualitySplit}=pdfExportController;
+const classicPdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({$,document,exportHighQualitySplit});
+const {hidePdfWarning,showPdfWarning}=classicPdfWarningSkin;
 const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,textFile}=window.PTISharedCore;
 const docxBuilder=window.PTI093DocxBuilder.install({xmlEsc,formatDateDMY,loadImage,makeCanvas,dataUrlBytes});
 const {docxText,docxCaption,drawingXml,pageBreak,makeDocxFiles,imageForDocx}=docxBuilder;
@@ -89,30 +91,6 @@ function mib(n){return n/1048576}
 
 
 
-
-let pdfHighQualityRunning=false;
-async function exportHighQualitySplit(filenameBase,button,progress){
-  if(pdfHighQualityRunning)return;
-  if(!state.pages||!state.pages.length){msg('Không có trang PDF để xuất.',true);return}
-  pdfHighQualityRunning=true;if(button)button.disabled=true;
-  const checkbox=$('pdfHighQualityCheck');if(checkbox)checkbox.disabled=true;
-  const wrap=$('pdfHighProgressWrap'),label=$('pdfHighProgressLabel'),pct=$('pdfHighProgressPct'),bar=$('pdfHighProgressBar');
-  if(wrap)wrap.style.display='block';
-  const update=(percent,text)=>{const p=Math.max(0,Math.min(100,Math.round(percent)));if(progress)progress.textContent=text;if(label)label.textContent=text;if(pct)pct.textContent=p+'%';if(bar)bar.style.width=p+'%';msg(p+'% · '+text,true)};
-  try{
-    update(2,'Đang chuẩn bị xuất PDF chất lượng cao…');await new Promise(resolve=>setTimeout(resolve,40));
-    const parts=await splitHighQualityPdf(filenameBase,update);
-    if(!parts.length)throw new Error('Không tạo được tệp PDF nào.');
-    for(let i=0;i<parts.length;i++){
-      update(80+Math.round(i/parts.length*19),'Đang xuất tệp '+(i+1)+'/'+parts.length+' · '+parts[i].filename+' ('+mib(parts[i].blob.size).toFixed(2)+' MB)…');
-      await new Promise(resolve=>setTimeout(resolve,80));await exportPdfFile(parts[i].blob,parts[i].filename);
-      update(80+Math.round((i+1)/parts.length*19),'Đã gửi '+(i+1)+'/'+parts.length+' tệp PDF để lưu.');
-      await new Promise(resolve=>setTimeout(resolve,180));
-    }
-    update(100,'Hoàn tất gửi '+parts.length+' tệp PDF. Kiểm tra thư mục Tải xuống hoặc hộp thoại Chia sẻ.');
-  }catch(e){const message='Xuất PDF chất lượng cao bị gián đoạn: '+(e&&e.message?e.message:String(e))+'. Hãy kiểm tra các tệp đã lưu trước khi thử lại.';update(100,message);alert(message)}
-  finally{pdfHighQualityRunning=false;if(button)button.disabled=false;if(checkbox)checkbox.disabled=false}
-}
 
 // ===== Word draft (PC only) =====
 const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
