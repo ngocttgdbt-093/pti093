@@ -473,3 +473,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Latest full workflow validation on branch head `7b50452580baef8d24a7a33103b449ce3d8f935d` completed successfully in GitHub Actions runs **#893** (`39836510500`) and **#892** (`39836503576`); both report success. The run logs show the real Chromium IndexedDB draft recovery, image reorder, full-app smoke test, and all Core/Skin/Fusion unit/contract checks passed.
 - The obsolete DOCX/ZIP draft path remains removed. The branch still uses `pti093_local_drafts_v1`, `AUTO-DRAFT`, and the established session key for local draft recovery; Drive upload/save remains in the 093-only Fusion with its original concurrency and per-file tracking.
 - Current scope remains the 093 test branch only. No merge, production deployment, changes to `main`, or changes to the PTI repository. Actual PC/iPhone manual acceptance remains a separate release gate.
+
+
+## PDF and Local Save control ownership; App Core cleanup — v2-20261023.28
+
+- Moved the standard PDF button binding into `core/pdf-export-controller.js`. The controller now owns the `#pdf` click handler and receives the button element directly, avoiding duplicate UI wiring in App Core. Extended its unit test to exercise the actual binding and standard export path.
+- Moved the `#driveSaveDraft` click binding into `core/local-save.js`, where the local-save confirmation, persistence, status/progress, and cleanup flow already live. Added a regression assertion that the Core installs the control handler. This button continues to save locally; this change does not add a Drive case-save path to local-save Core.
+- Removed unused aliases from `core/app-core.js` for helpers no longer called after extraction, and removed unused installer-result variables for modules whose install call performs its own control binding. No application algorithms or draft-storage identifiers were changed.
+- App Core is now **9,140 bytes** in the latest fetched source, about **80.4% smaller** than the 46,529-byte baseline recorded earlier. This is a source-size comparison only, not a runtime speed claim.
+- GitHub Actions runs **#920** (`39837180756`) and **#921** (`39837187559`) both completed successfully on head `afc1c1645e84b12702adf3ae88534e58a66a90ea`. The full workflow includes real Chromium draft recovery, image reordering, app smoke/PDF download, and the module/skin/fusion tests.
+- No merge or deployment was performed; `main` and the PTI repository remain unchanged. Manual acceptance on the user's actual PC/iPhone and case images remains an explicit release gate.
