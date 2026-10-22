@@ -89,17 +89,23 @@
       }
       
       async function clearAutoDraft(){
-        autoDraftResetting=true;clearTimeout(autoDraftTimer);
-        while(autoDraftSaving)await new Promise(resolve=>setTimeout(resolve,50));
-        const db=await openLocalDraftDB();
+        autoDraftResetting=true;
+        clearTimeout(autoDraftTimer);
         try{
-          const tx=db.transaction(['drafts','draftImages'],'readwrite');
-          tx.objectStore('drafts').delete(PTI093_AUTO_DRAFT_ID);
-          const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
-          req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
-          await localDraftTransactionDone(tx);
-        }finally{db.close()}
-        autoDraftImagesDirty=true;autoDraftResetting=false;
+          while(autoDraftSaving)await new Promise(resolve=>setTimeout(resolve,50));
+          const db=await openLocalDraftDB();
+          try{
+            const tx=db.transaction(['drafts','draftImages'],'readwrite');
+            tx.objectStore('drafts').delete(PTI093_AUTO_DRAFT_ID);
+            const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
+            req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
+            await localDraftTransactionDone(tx);
+          }finally{db.close()}
+          autoDraftImagesDirty=true;
+        }finally{
+          // Never leave autosave permanently disabled if IndexedDB open/delete fails.
+          autoDraftResetting=false;
+        }
       }
       
       async function restoreAutoDraft(){
