@@ -28,7 +28,7 @@ const {chromium}=require('playwright');
     assert.equal(initial.layoutCells,6,'default layout should show six image slots');
     assert.match(initial.layoutText,/6 ảnh/);
     assert.equal(initial.datePlaceholder,'dd/mm/yyyy');
-    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,docx:true,pdf:true,canvas:true});
+    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,docx:true,pdf:true,canvas:true,localSaveSkin:true});
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
     assert.deepEqual(pageErrors,[],'the full app should start without uncaught JavaScript errors');
