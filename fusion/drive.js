@@ -2,7 +2,24 @@
   'use strict';
   global.PTI093DriveFusion = {
     install: function(deps){
-      const {state, $, msg, setDriveState, snapshotGroupsForProject, buildProjectData, PTI093_API, getAllGroups, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
+      const {state, $, msg, getAllGroups, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
+      const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/exec';
+      function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textContent=t;s.className='driveState'+(ok?'':' driveWarn')}
+      
+      function snapshotGroupsForProject(){
+        const groups=state.groups.map(g=>({title:g.title,items:(g.items||[]).slice()}));
+        if(state.current&&state.current.items&&state.current.items.length){
+          const g={title:state.current.title,items:state.current.items.slice()};
+          const last=groups[groups.length-1];
+          if(last&&last.title===g.title)last.items.push(...g.items);else groups.push(g);
+        }
+        return groups.filter(g=>g.items&&g.items.length);
+      }
+      
+      function buildProjectData(){
+        return {version:'PTI093-1.2',recordId:state.driveRecordId||'',caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),date:getDateISO(),garage:($('garage').value||'').trim(),maHoSo:($('hoso').value||'').trim(),gdv:selectedGdv(),status:state.localDraftId?'Ảnh lưu tại máy':'Đang xử lý',storageType:state.localDraftId?'local':'drive',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},sections:snapshotGroupsForProject().map(g=>({title:g.title,items:g.items.map((it,idx)=>({fileId:it.driveFileId||'',fileName:it.driveFileName||((it.file&&it.file.name)||''),clientKey:it.key||'',uploadKey:it.driveUploadKey||'',caption:it.caption||'',rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||idx+1}))})),updatedAt:new Date().toISOString()};
+      }
+
       async function optimizeDriveImage(file){
         // Tối ưu ẢNH TRƯỚC KHI GỬI DRIVE để giảm mạnh dung lượng nhưng vẫn đủ rõ cho giám định.
         // Mục tiêu: cạnh dài tối đa 1920px, JPEG quality 0.78.
@@ -720,7 +737,7 @@
           return {sent,total,failures};
         }
       }
-      return {openRecordFromDrive, setOpenLoad, finishOpenLoad, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll};
+      return {setDriveState, openRecordFromDrive, setOpenLoad, finishOpenLoad, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll};
     }
   };
 })(window);
