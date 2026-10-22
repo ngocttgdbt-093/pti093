@@ -35,7 +35,7 @@
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
 <div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v59-20261020.1</span></div>
 </div>
-<script src="./core/gdv-search.js"></script><script src="./core/workspace.js"></script><script src="./core/zip-utils.js"></script><script src="./core/pdf-builder.js"></script><script src="./core/local-draft-store.js"></script><script src="./core/draft-recovery.js"></script><script src="./core/local-save.js"></script><script src="./fusion/drive.js"></script><script>
+<script src="./core/gdv-search.js"></script><script src="./core/workspace.js"></script><script src="./core/zip-utils.js"></script><script src="./core/pdf-builder.js"></script><script src="./core/local-draft-store.js"></script><script src="./core/draft-recovery.js"></script><script src="./core/local-save.js"></script><script src="./core/local-open.js"></script><script src="./fusion/drive.js"></script><script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
@@ -494,6 +494,9 @@ const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDa
 const {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery;
 const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
 const {saveLocalDraft,saveDraftWithoutPhotos}=localSaveCore;
+const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad});
+const {openLocalDraft}=localOpenCore;
+
 const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 const {openRecordFromDrive,recordMatchesQuery,recordTime,sameLocalDriveRecord,searchDriveRecords,saveProjectToDrive,driveImageKey,getDriveUploadedKeys,saveDriveUploadedKeys,getDrivePendingUploadKey,saveDrivePendingUploadKey,prepareDriveItem,waitForUploadStatus,sendDrivePayload,renderDriveUploadFailures,createDriveRecord,pti093UploadAll}=driveSaveFusion;
 window.pti093UploadAll=pti093UploadAll;
@@ -538,64 +541,7 @@ function renderLocalSaveFeedback(id,pct,label,detail='',failed=false){
   const detailEl=document.getElementById('ptiLocalSaveDetail');if(detailEl)detailEl.textContent=detail;
 }
 /* Manual local-save flow is implemented in core/local-save.js */
-async function openLocalDraft(id){
-  const source=deviceStorageLabel();
-  setOpenLoad(source,0,0,'Đang đọc bản lưu ảnh từ '+source+'...');
-  setDriveState('Đang tải ảnh từ '+source+'...');
-  const db=await openLocalDraftDB();
-  let meta,images;
-  try{
-    [meta,images]=await Promise.all([
-      new Promise((resolve,reject)=>{const r=db.transaction('drafts','readonly').objectStore('drafts').get(id);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}),
-      new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),r=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(id));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})
-    ]);
-  }finally{db.close()}
-  if(!meta)throw new Error('Không tìm thấy bản nháp tại máy này.');
-  const imageMap=new Map((images||[]).map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
-  const groups=[];
-  let missing=0;
-  const expectedImages=(meta.sections||[]).reduce((n,g)=>n+((g.items||[]).length),0);
-  let loadedCount=0;
-  setOpenLoad(source,0,expectedImages,expectedImages?'Đang tải ảnh từ '+source+' vào ứng dụng...':'Bản lưu không có ảnh.');
-  (meta.sections||[]).forEach((g,si)=>{
-    const items=[];
-    (g.items||[]).forEach((it,ii)=>{
-      const stored=imageMap.get(si+':'+ii);
-      if(!stored||!stored.file){missing++;return}
-      const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
-      loadedCount++;
-      setOpenLoad(source,loadedCount,expectedImages,'Đang tải ảnh '+loadedCount+'/'+expectedImages+' từ '+source+'...');
-      items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++state.addSeq),driveFileId:'',driveFileName:'',driveUploadKey:''});
-    });
-    if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
-  });
-  if(!String(id).startsWith('LOCAL-')){
-    state.driveRecordId=id;sessionStorage.setItem('pti093_driveRecordId',id);localStorage.setItem('pti093_driveRecordId',id);
-  }else{
-    state.driveRecordId='';sessionStorage.removeItem('pti093_driveRecordId');localStorage.removeItem('pti093_driveRecordId');
-  }
-  state.localDraftId=id;
-  $('bks').value=meta.bks||'';
-  $('hoso').value=meta.caseNumber||'';
-  setDateInput(meta.date||'');
-  $('garage').value=meta.garage||'';
-  const gdv=meta.gdv||'';
-  if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
-  else if(gdv){$('gdv').value='Nhập tên khác';$('gdv').dataset.custom=gdv}
-  const settings=meta.settings||{};
-  if(settings.orientation)state.orientation=settings.orientation;
-  if(settings.imagesPerPage){state.per=Number(settings.imagesPerPage);document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per))}
-  document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
-  state.groups=groups.slice(1);state.current=groups[0]||{title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
-  state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
-  $('title').value=state.current.title;
-  $('driveId').textContent='💻 Bản lưu tại máy: '+id;$('driveId').classList.remove('hidden');
-  finishOpenLoad(source,groups.reduce((n,g)=>n+g.items.length,0));
-  setDriveState('✓ Đã tải hoàn tất ảnh từ '+source+' · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
-  render();renderLayout();
-  msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
-  window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
-}
+
 function showLocalSaveConfirm(n){
   return new Promise(resolve=>{
     const overlay=document.createElement('div');overlay.className='localSaveOverlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
