@@ -40,16 +40,27 @@ jobs:
           const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
           const core = fs.readFileSync('core/draft-recovery.js', 'utf8');
-          const required = ['pti093_local_drafts_v1', 'AUTO-DRAFT', 'function scheduleAutoDraftSave', 'async function saveAutoDraft', 'async function restoreAutoDraft', 'async function finalizeCompletedSession'];
+          const store = fs.readFileSync('core/local-draft-store.js', 'utf8');
+          const required = ['AUTO-DRAFT', 'function scheduleAutoDraftSave', 'async function saveAutoDraft', 'async function restoreAutoDraft', 'async function finalizeCompletedSession'];
           const missing = required.filter(x => !core.includes(x));
           if (missing.length) throw new Error('Thiếu thành phần hợp đồng lưu nháp trong Core: ' + missing.join(', '));
           if (!html.includes('src="./core/draft-recovery.js"')) throw new Error('index.html chưa nạp core/draft-recovery.js');
+          if (!html.includes('src="./core/local-draft-store.js"')) throw new Error('index.html chưa nạp core/local-draft-store.js');
+          if (!html.includes("dbName:'pti093_local_drafts_v1'")) throw new Error('Tên kho lưu nháp 093 đã bị thay đổi');
+          if (!store.includes('function openLocalDraftDB') || !store.includes('function localDraftTransactionDone') || !store.includes('function getLocalDrafts')) throw new Error('Thiếu API kho lưu nháp dùng chung');
           console.log('093 draft-recovery source contract: OK');
           NODE
 
       - name: Test shared GĐV search Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/gdv-search.test.js
+
+      - name: Check shared Core local draft store
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/local-draft-store.js
+      - name: Test shared Core local draft store and recovery
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/draft-recovery.test.js
 
       - name: Check shared Core draft recovery module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
