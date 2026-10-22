@@ -9,13 +9,13 @@ const state = {
     { title: 'Rỗng', items: [] },
     { title: 'Giấy tờ', items: [{ id: 3 }] }
   ],
-  current: { title: 'Thiệt hại', items: [{ id: 2 }] }
+  current: { title: 'Giấy tờ', items: [{ id: 4 }] }
 };
 assert.equal(core.getAllGroups(state).length, 2);
 const snapshot = core.snapshotGroupsForProject(state);
 assert.deepEqual(snapshot.map(g => g.title), ['Thiệt hại', 'Giấy tờ']);
-assert.deepEqual(snapshot[0].items.map(x => x.id), [1, 2]);
-assert.deepEqual(snapshot[1].items.map(x => x.id), [3]);
+assert.deepEqual(snapshot[0].items.map(x => x.id), [1]);
+assert.deepEqual(snapshot[1].items.map(x => x.id), [3, 4]);
 assert.equal(state.groups[0].items.length, 1, 'Snapshot must not mutate working group arrays');
 assert.equal(state.current.items.length, 1, 'Snapshot must not mutate current items');
 assert.deepEqual(core.snapshotGroupsForProject({ groups: [], current: { title: 'Empty', items: [] } }), []);
