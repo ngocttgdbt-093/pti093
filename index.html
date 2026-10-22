@@ -524,10 +524,8 @@ function searchQueryVariants(query){
 /* Draft session state moved to core/draft-recovery.js */
 // Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
 /* Draft session state moved to core/draft-recovery.js */
-const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
-const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
-const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone,getLocalDrafts});
-const {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery;
+const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg});
+const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts,scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery;
 const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,setOpenLoad,getAllGroups,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 const {openRecordFromDrive,finishOpenLoad,recordMatchesQuery,recordTime,sameLocalDriveRecord,searchDriveRecords,saveProjectToDrive,driveImageKey,getDriveUploadedKeys,saveDriveUploadedKeys,getDrivePendingUploadKey,saveDrivePendingUploadKey,prepareDriveItem,waitForUploadStatus,sendDrivePayload,renderDriveUploadFailures,createDriveRecord,pti093UploadAll}=driveSaveFusion;
 window.pti093UploadAll=pti093UploadAll;
