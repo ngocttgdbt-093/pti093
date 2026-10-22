@@ -18,7 +18,6 @@ const {chromium}=require('playwright');
         date:!!window.PTI093DateUtils,
         naming:!!window.PTI093FileNaming,
         reorder:!!window.PTI093ImageReorder,
-        docx:!!window.PTI093DocxBuilder,
         pdf:!!window.PTI093PdfBuilder,
         canvas:!!window.PTI093ImageCanvasCore,
         localSaveSkin:!!window.PTI093ClassicLocalSaveSkin,
@@ -38,7 +37,7 @@ const {chromium}=require('playwright');
     assert.equal(initial.layoutCells,6,'default layout should show six image slots');
     assert.match(initial.layoutText,/6 ảnh/);
     assert.equal(initial.datePlaceholder,'dd/mm/yyyy');
-    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,docx:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,fileIntakeSkin:true});
+    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,fileIntakeSkin:true});
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
     assert.deepEqual(pageErrors,[],'the full app should start without uncaught JavaScript errors');
