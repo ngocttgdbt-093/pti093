@@ -97,6 +97,13 @@ jobs:
           node tests/classic-pdf-warning-skin.test.cjs
           node tests/gdv-093-fusion.test.cjs
 
+      - name: Check Image Ingest Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/image-ingest.js
+      - name: Test Image Ingest Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/image-ingest.test.js
+
       - name: Check extracted Image Reorder Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check core/image-reorder.js
