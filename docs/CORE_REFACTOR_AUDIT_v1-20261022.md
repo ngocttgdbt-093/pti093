@@ -239,3 +239,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - The app installs this module immediately after PDF Builder initialization, before the first layout/render call. Existing render, preview, DOCX, and PDF flows continue to call the same helper names through returned aliases.
 - Added `tests/image-canvas.test.js` and CI checks. Mocked-canvas validation passed for portrait/landscape grids, text wrapping, image/logo load promises, A4 dimensions, caption/GĐV labels, draw calls, and rotation. The five inline app scripts and external modules parsed successfully in the available runtime.
 - Remaining acceptance gate is still real-browser regression: actual image selection/drag ordering, Classic default, local save and F5/reload restore, preview, PDF/Word output and downloads in Edge/Chrome. No production deployment or merge was performed.
+
+
+## DOCX Builder Core extraction and current CI confirmation — v2-20261023.5
+
+- Extracted the DOCX XML construction helpers `docxText`, `docxCaption`, `drawingXml`, `pageBreak`, and `makeDocxFiles` into `core/docx-builder.js`. The app initializes the module using the existing XML escaping and date-format helpers; the original DOCX metadata, captions, page sizing, media relationship IDs, and package XML behavior are preserved.
+- Updated `index.html` to load DOCX Builder after ZIP/XML utilities and before the application controller. `core/app-core.js` now consumes the returned API instead of defining those five helpers inline.
+- Added `tests/docx-builder.test.js` and CI syntax/test steps for the new module. GitHub Actions run **#385** (`39825363945`) completed successfully for head `1c546af52cabb6144c6d4e0f0e59adc499168138`; the DOCX Builder check and test, along with all existing workflow steps, passed.
+- This is automated source/module validation, not a real-browser DOCX export/import acceptance test. The existing draft-recovery tests still use mocked storage/API wiring and do not prove real IndexedDB persistence across F5. The user's 10/10 recovery baseline remains the expected behavior to preserve.
+- The branch remains isolated: no changes to production `main`, no deployment, and no PTI repository changes. Browser acceptance remains open because the available browser connector can inspect tabs but cannot interact with the local browser, and no isolated Pages test deployment is available from the current workflow.
+- Next: continue mapping and modularizing remaining application-specific rendering/export orchestration in small units, while preserving original helper behavior and adding tests per module. Do not merge or publish until the real-browser regression gate is completed.
