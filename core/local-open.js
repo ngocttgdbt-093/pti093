@@ -7,14 +7,17 @@
         const source=deviceStorageLabel();
         setOpenLoad(source,0,0,'Đang đọc bản lưu ảnh từ '+source+'...');
         setDriveState('Đang tải ảnh từ '+source+'...');
-        const db=await openLocalDraftDB();
-        let meta,images;
+        let db,meta,images;
         try{
+          db=await openLocalDraftDB();
           [meta,images]=await Promise.all([
             new Promise((resolve,reject)=>{const r=db.transaction('drafts','readonly').objectStore('drafts').get(id);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}),
             new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),r=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(id));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})
           ]);
-        }finally{db.close()}
+        }catch(error){
+          setOpenLoad(source,0,0,'Không thể đọc bản lưu tại máy: '+(error&&error.message?error.message:String(error)));
+          throw error;
+        }finally{if(db)db.close()}
         if(!meta)throw new Error('Không tìm thấy bản nháp tại máy này.');
         const imageMap=new Map((images||[]).map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
         const groups=[];
