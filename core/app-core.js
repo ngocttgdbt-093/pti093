@@ -8,6 +8,7 @@ const workspaceCore=window.PTIWorkspaceCore;
 const getAllGroups=()=>workspaceCore.getAllGroups(state);
 const fileNaming=window.PTI093FileNaming.install({getAllGroups,$,selectedGdv});
 const {fileBaseName,gdvShortName,pdfFileName}=fileNaming;
+const imageReorder=window.PTI093ImageReorder.install({state,$,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),renderLayout:()=>renderLayout(),render:()=>render()});
 const snapshotGroupsForProject=()=>workspaceCore.snapshotGroupsForProject(state);
 const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
 const {pagePixels,jpegQuality,makeCanvas,pdfBytesFromCanvases,resamplePdfCanvases,pdfPackSize,makePdfAt,buildAdaptivePdf,splitPdfBytes}=pdfBuilder;
@@ -29,70 +30,8 @@ $('folder').addEventListener('change',e=>{addFiles([...e.target.files]);e.target
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.add('drag')}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave')drop.classList.remove('drag') }));
 drop.addEventListener('drop',e=>{drop.classList.remove('drag');addFiles([...e.dataTransfer.files])});
-let pti093DragId='',pti093DragMoved=false,pti093TouchTimer=null,pti093TouchStartX=0,pti093TouchStartY=0,pti093TouchSource=null;
-function pti093EnsureDragId(it){
-  if(!it.__pti093DragId)it.__pti093DragId='drag-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9);
-  return it.__pti093DragId;
-}
-function pti093MoveThumbDom(source,target,e){
-  if(!source||!target||source===target)return;
-  const r=target.getBoundingClientRect();
-  const before=(e&&e.clientY!==undefined?e.clientY:0) < r.top+r.height/2;
-  target.parentNode.insertBefore(source,before?target:target.nextSibling);
-  pti093DragMoved=true;
-}
-function pti093SyncOrderFromDOM(){
-  const nodes=[...$('grid').querySelectorAll('.thumb[data-drag-id]')];
-  if(!nodes.length)return false;
-  const map=new Map(state.current.items.map(it=>[pti093EnsureDragId(it),it]));
-  const ordered=[];
-  nodes.forEach(n=>{const it=map.get(n.dataset.dragId);if(it)ordered.push(it)});
-  if(ordered.length!==state.current.items.length)return false;
-  const changed=ordered.some((it,i)=>it!==state.current.items[i]);
-  if(changed){
-    state.current.items=ordered;
-    scheduleAutoDraftSave(true);
-    renderLayout();
-  }
-  return changed;
-}
-function pti093ClearDragStyles(){
-  $('grid').querySelectorAll('.thumb.dragging,.thumb.dragOver').forEach(x=>x.classList.remove('dragging','dragOver'));
-}
-function pti093FinishDrag(){
-  clearTimeout(pti093TouchTimer);pti093TouchTimer=null;
-  if(pti093TouchSource)pti093TouchSource.classList.remove('dragging');
-  pti093ClearDragStyles();
-  if(pti093DragId&&pti093DragMoved)pti093SyncOrderFromDOM();
-  pti093DragId='';pti093DragMoved=false;pti093TouchSource=null;
-  render();
-}
-function render(){const g=$('grid');g.innerHTML='';state.current.items.forEach((it,i)=>{it.rotate=((it.rotate||0)%360+360)%360;const d=document.createElement('div');d.className='thumb';d.dataset.dragId=pti093EnsureDragId(it);d.title='Kéo ảnh để đổi thứ tự';d.draggable=true;
-d.addEventListener('dragstart',e=>{pti093DragId=d.dataset.dragId;pti093DragMoved=false;d.classList.add('dragging');try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',pti093DragId)}catch(_){}});
-d.addEventListener('dragover',e=>{e.preventDefault();if(!pti093DragId||pti093DragId===d.dataset.dragId)return;d.classList.add('dragOver');const source=g.querySelector('.thumb[data-drag-id="'+CSS.escape(pti093DragId)+'"]');if(source)pti093MoveThumbDom(source,d,e)});
-d.addEventListener('dragleave',()=>d.classList.remove('dragOver'));
-d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('dragOver');pti093FinishDrag()});
-d.addEventListener('dragend',()=>pti093FinishDrag());
-d.addEventListener('pointerdown',e=>{
-  if(e.pointerType!=='touch'||e.target.closest('button,textarea,input,select'))return;
-  pti093TouchStartX=e.clientX;pti093TouchStartY=e.clientY;pti093TouchSource=d;pti093DragId=d.dataset.dragId;pti093DragMoved=false;
-  clearTimeout(pti093TouchTimer);
-  pti093TouchTimer=setTimeout(()=>{if(!pti093TouchSource)return;pti093TouchSource.classList.add('dragging');try{pti093TouchSource.setPointerCapture(e.pointerId)}catch(_){}},380);
-});
-d.addEventListener('pointermove',e=>{
-  if(e.pointerType!=='touch'||!pti093TouchSource)return;
-  const dx=e.clientX-pti093TouchStartX,dy=e.clientY-pti093TouchStartY;
-  if(!pti093TouchSource.classList.contains('dragging')){if(Math.hypot(dx,dy)>10){clearTimeout(pti093TouchTimer);pti093TouchTimer=null;pti093TouchSource=null;pti093DragId=''}return}
-  e.preventDefault();pti093DragMoved=true;
-  const el=document.elementFromPoint(e.clientX,e.clientY),target=el&&el.closest?el.closest('.thumb'):null;
-  if(!target||target===pti093TouchSource||!g.contains(target))return;
-  pti093ClearDragStyles();pti093TouchSource.classList.add('dragging');target.classList.add('dragOver');
-  const r=target.getBoundingClientRect(),before=e.clientY<r.top+r.height/2;
-  target.parentNode.insertBefore(pti093TouchSource,before?target:target.nextSibling);
-});
-d.addEventListener('pointerup',e=>{if(e.pointerType==='touch'&&pti093TouchSource===d){e.preventDefault();pti093FinishDrag()}});
-d.addEventListener('pointercancel',e=>{if(e.pointerType==='touch'&&pti093TouchSource===d)pti093FinishDrag()});
-const imgBox=document.createElement('div');imgBox.className='imgBox';const im=document.createElement('img');im.src=URL.createObjectURL(it.file);im.style.transform=`rotate(${it.rotate}deg)`;im.onload=()=>URL.revokeObjectURL(im.src);imgBox.appendChild(im);const n=document.createElement('span');n.className='n';n.textContent=i+1;const actions=document.createElement('div');actions.className='thumbActions';const rb=document.createElement('button');rb.className='replace';rb.textContent='🖼 Thay';rb.title='Thay ảnh, giữ nguyên vị trí';rb.onclick=()=>{state.replaceIndex=i;$('replaceFile').click()};const rot=document.createElement('button');rot.className='rotate';rot.textContent='↻ Xoay';rot.title='Xoay ảnh 90°';rot.onclick=()=>{it.rotate=(it.rotate+90)%360;render();scheduleAutoDraftSave(true);msg(`Ảnh số ${i+1} đã xoay ${it.rotate}°.`,true)};const ins=document.createElement('button');ins.className='insert';ins.textContent='＋ Thêm';ins.title='Chèn ảnh mới ngay sau ảnh này';ins.onclick=()=>{state.insertIndex=i;$('insertFile').click()};const vw=document.createElement('button');vw.className='view';vw.textContent='👁️ Xem';vw.title='Xem ảnh kích thước lớn';vw.onclick=()=>openImageViewer(it,i);const b2=document.createElement('button');b2.className='del2';b2.textContent='🗑️ Xóa';b2.title='Xóa ảnh';b2.onclick=()=>{state.current.items.splice(i,1);render();scheduleAutoDraftSave(true)};actions.append(rb,rot,ins,vw,b2);const ta=document.createElement('textarea');ta.placeholder='Thuyết minh ảnh (tùy chọn)…';ta.value=it.caption;ta.oninput=()=>{it.caption=ta.value;scheduleAutoDraftSave(false)};ta.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const captions=[...g.querySelectorAll('.thumb textarea')],index=captions.indexOf(ta),next=index+(e.shiftKey?-1:1);if(next>=0&&next<captions.length){e.preventDefault();captions[next].focus()}});d.append(imgBox,n,actions,ta);g.appendChild(d)});const has=state.current.items.length>0;$('clear').disabled=!has;$('saveNext').disabled=!has;$('finish').disabled=!has&&!state.groups.length;renderGroups()}function renderGroups(){const box=$('groupsBox');box.innerHTML='';if(!state.groups.length){box.innerHTML='<div class="muted">Chưa có nội dung nào được lưu. Bạn có thể chỉ làm 1 nội dung và bấm “Kết thúc & xem Preview”.</div>';return}const h=document.createElement('div');h.className='muted';h.style.fontWeight='700';h.textContent='Các nội dung đã lưu';box.appendChild(h);state.groups.forEach((gr,i)=>{const d=document.createElement('div');d.style.cssText='margin-top:8px;padding:10px;border:1px solid #dbe4df;border-radius:8px;background:#fbfdfc;display:flex;justify-content:space-between;align-items:center;gap:8px';const sp=document.createElement('span');sp.innerHTML=`<b>${i+1}. ${gr.title}</b> · ${gr.items.length} ảnh`;const b=document.createElement('button');b.className='btn light';b.textContent='✎ Sửa';b.onclick=()=>editGroup(i);d.append(sp,b);box.appendChild(d)})}
+function render(){const g=$('grid');g.innerHTML='';state.current.items.forEach((it,i)=>{it.rotate=((it.rotate||0)%360+360)%360;const d=document.createElement('div');d.className='thumb';d.dataset.dragId=imageReorder.ensureDragId(it);d.title='Kéo ảnh để đổi thứ tự';d.draggable=true;
+imageReorder.bindThumb(d,g);const imgBox=document.createElement('div');imgBox.className='imgBox';const im=document.createElement('img');im.src=URL.createObjectURL(it.file);im.style.transform=`rotate(${it.rotate}deg)`;im.onload=()=>URL.revokeObjectURL(im.src);imgBox.appendChild(im);const n=document.createElement('span');n.className='n';n.textContent=i+1;const actions=document.createElement('div');actions.className='thumbActions';const rb=document.createElement('button');rb.className='replace';rb.textContent='🖼 Thay';rb.title='Thay ảnh, giữ nguyên vị trí';rb.onclick=()=>{state.replaceIndex=i;$('replaceFile').click()};const rot=document.createElement('button');rot.className='rotate';rot.textContent='↻ Xoay';rot.title='Xoay ảnh 90°';rot.onclick=()=>{it.rotate=(it.rotate+90)%360;render();scheduleAutoDraftSave(true);msg(`Ảnh số ${i+1} đã xoay ${it.rotate}°.`,true)};const ins=document.createElement('button');ins.className='insert';ins.textContent='＋ Thêm';ins.title='Chèn ảnh mới ngay sau ảnh này';ins.onclick=()=>{state.insertIndex=i;$('insertFile').click()};const vw=document.createElement('button');vw.className='view';vw.textContent='👁️ Xem';vw.title='Xem ảnh kích thước lớn';vw.onclick=()=>openImageViewer(it,i);const b2=document.createElement('button');b2.className='del2';b2.textContent='🗑️ Xóa';b2.title='Xóa ảnh';b2.onclick=()=>{state.current.items.splice(i,1);render();scheduleAutoDraftSave(true)};actions.append(rb,rot,ins,vw,b2);const ta=document.createElement('textarea');ta.placeholder='Thuyết minh ảnh (tùy chọn)…';ta.value=it.caption;ta.oninput=()=>{it.caption=ta.value;scheduleAutoDraftSave(false)};ta.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const captions=[...g.querySelectorAll('.thumb textarea')],index=captions.indexOf(ta),next=index+(e.shiftKey?-1:1);if(next>=0&&next<captions.length){e.preventDefault();captions[next].focus()}});d.append(imgBox,n,actions,ta);g.appendChild(d)});const has=state.current.items.length>0;$('clear').disabled=!has;$('saveNext').disabled=!has;$('finish').disabled=!has&&!state.groups.length;renderGroups()}function renderGroups(){const box=$('groupsBox');box.innerHTML='';if(!state.groups.length){box.innerHTML='<div class="muted">Chưa có nội dung nào được lưu. Bạn có thể chỉ làm 1 nội dung và bấm “Kết thúc & xem Preview”.</div>';return}const h=document.createElement('div');h.className='muted';h.style.fontWeight='700';h.textContent='Các nội dung đã lưu';box.appendChild(h);state.groups.forEach((gr,i)=>{const d=document.createElement('div');d.style.cssText='margin-top:8px;padding:10px;border:1px solid #dbe4df;border-radius:8px;background:#fbfdfc;display:flex;justify-content:space-between;align-items:center;gap:8px';const sp=document.createElement('span');sp.innerHTML=`<b>${i+1}. ${gr.title}</b> · ${gr.items.length} ảnh`;const b=document.createElement('button');b.className='btn light';b.textContent='✎ Sửa';b.onclick=()=>editGroup(i);d.append(sp,b);box.appendChild(d)})}
 function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}state.current={title:state.groups[i].title,items:state.groups[i].items};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');state.groups.splice(i,1);state.editing=i;state.pages=[];$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';scheduleAutoDraftSave(true);$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
 $('title').addEventListener('change',()=>{state.current.title=$('title').value;scheduleAutoDraftSave(false)});
 $('filenameCaption').addEventListener('change',e=>{state.filenameCaption=e.target.checked;$('filenameCaption').closest('.filenameCaptionBox').classList.toggle('on',state.filenameCaption);if(state.filenameCaption){state.current.items.forEach(it=>{it.caption=fileBaseName(it.file.name)});render();scheduleAutoDraftSave(false);msg('Đã lấy tên file (bỏ phần đuôi) làm thuyết minh cho các ảnh trong mục này.',true)}else{msg('Đã tắt chế độ lấy tên file; ảnh mới sẽ quay về cách thuyết minh bình thường.',true)}});
