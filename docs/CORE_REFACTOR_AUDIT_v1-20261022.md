@@ -368,3 +368,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Extracted `addFiles` into `core/image-ingest.js`. It retains accepted image extensions, duplicate checks against the current group, file-name caption defaults, add-sequence assignment, render/save scheduling, and existing status messages.
 - Added unit tests for supported/unsupported files, duplicate avoidance, captions, add sequence, and save scheduling. GitHub Actions run **#655** (`39831826237`) completed successfully; run **#643** (`39831599313`) also passed the GĐV Fusion checks.
 - The latest App Core source is now about 26.6 KB, down from 46.5 KB at the start. The 093 GĐV list is now outside Core, and PTI has not been modified.
+
+
+## Real Chromium + IndexedDB regression — v2-20261023.6
+
+- Added `tests/draft-recovery-browser.html` and `tests/draft-recovery-browser.test.cjs` as an isolated test fixture for the actual `PTILocalDraftStore` and `PTI093DraftRecovery` modules.
+- GitHub Actions run **#395** (`39825756353`) completed with conclusion `success`. Its Playwright/Chromium step passed, including an actual page reload with real browser IndexedDB, session ID continuity, case fields, image-group metadata, captions, rotation, original image Blob bytes, and draft cleanup.
+- This is meaningful browser-level evidence for the isolated draft-recovery modules. It is not yet an end-to-end acceptance test of the complete production UI, because the fixture uses a minimal harness rather than loading the full application and its actual Skin.
+- Production `main`, deployed Pages, and the separate PTI repository remain untouched. Keep this branch isolated and retain full-app browser acceptance as a separate gate.
