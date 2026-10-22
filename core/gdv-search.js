@@ -12,9 +12,25 @@
     const initials=gdvInitials(name);
     return n.includes(q)||initials.includes(q)||q===initials;
   }
+  function searchQueryVariants(query,names){
+    const q=String(query||'').trim(),nq=normalizeRecordSearch(q),out=[q];
+    for(const name of (names||[])){
+      if(gdvSearchMatches(q,name)){
+        if(!out.some(x=>normalizeRecordSearch(x)===normalizeRecordSearch(name)))out.push(name);
+        const surname=name.trim().split(/\s+/).slice(-1)[0];
+        if(!out.some(x=>normalizeRecordSearch(x)===normalizeRecordSearch(surname)))out.push(surname);
+      }
+      if(nq===normalizeRecordSearch(name)||normalizeRecordSearch(name).includes(nq)){
+        const initials=gdvInitials(name);
+        if(initials&&!out.some(x=>normalizeRecordSearch(x)===initials))out.push(initials);
+      }
+    }
+    return [...new Set(out.filter(Boolean))].slice(0,5);
+  }
   global.PTISharedCore=Object.assign(global.PTISharedCore||{},{
     normalizeRecordSearch,
     gdvInitials,
-    gdvSearchMatches
+    gdvSearchMatches,
+    searchQueryVariants
   });
 })(window);
