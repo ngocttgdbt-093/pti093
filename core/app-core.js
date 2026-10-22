@@ -47,7 +47,7 @@ const pdfExportController=window.PTI093PdfExportController.install({state,$,spli
 const {exportHighQualitySplit}=pdfExportController;
 const classicPdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({$,document,exportHighQualitySplit});
 const {hidePdfWarning,showPdfWarning}=classicPdfWarningSkin;
-const classicPreviewSkin=window.PTI093ClassicPreviewSkin.install({state,$,document,window,buildPreview,getAllGroups,selectedGdv,setSelectedGdvCache:value=>{selectedGdvCache=value;},hidePdfWarning,msg,pagePixels,jpegQuality});
+const classicPreviewSkin=window.PTI093ClassicPreviewSkin.install({state,$,document,window,buildPreview,getAllGroups,selectedGdv,setSelectedGdvCache:value=>{selectedGdvCache=value;},hidePdfWarning,msg,pagePixels,jpegQuality,setTimeout});
 const {makePreview}=classicPreviewSkin;
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
@@ -87,16 +87,6 @@ let selectedGdvCache='';
 
 
 $('pdf').onclick=()=>pdfExportController.exportStandardPdf($('pdf'));
-$('backEdit').onclick=()=>{
-  // Nút này nằm bên trong Preview toàn màn hình: phải đóng modal trước khi cuộn về trình sửa.
-  if(typeof window.pti093ClosePreview==='function')window.pti093ClosePreview();
-  document.body.style.overflow='';
-  setTimeout(()=>{
-    const drop=$('drop');
-    if(drop)window.scrollTo({top:drop.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'});
-    msg('Đã quay lại hồ sơ hiện tại. Anh có thể sửa ảnh, thêm ảnh, sửa thuyết minh hoặc sửa từng nội dung.',true);
-  },80);
-};
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
 gdvFusion.bindSelectionPersistence((...args)=>scheduleAutoDraftSave(...args));
 
