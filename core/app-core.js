@@ -26,6 +26,8 @@ const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
 const {pagePixels,jpegQuality,makeCanvas,pdfBytesFromCanvases,resamplePdfCanvases,pdfPackSize,makePdfAt,buildAdaptivePdf,splitPdfBytes}=pdfBuilder;
 const imageCanvasCore=window.PTI093ImageCanvasCore.install({state,$,pagePixels,makeCanvas,formatDateDMY,getDateISO,getLogoSrc:()=>logoSrc,getSelectedGdvCache:()=>selectedGdvCache});
 const {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage}=imageCanvasCore;
+const previewBuilder=window.PTI093PreviewBuilder.install({drawPage});
+const {buildPreview}=previewBuilder;
 const classicLayoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims,document});
 const classicGroupListSkin=window.PTI093ClassicGroupListSkin.install({state,$,document,onEditGroup:i=>editGroup(i)});
 const classicPdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({$,document,exportHighQualitySplit});
@@ -80,15 +82,7 @@ let selectedGdvCache='';
 
 
 
-async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.display='none';$('newCase').style.display='none';hidePdfWarning();const groups=getAllGroups();if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}const pages=[],defs=[];let no=1;for(const gr of groups){const total=Math.ceil(gr.items.length/state.per);for(let i=0;i<gr.items.length;i+=state.per){
-      const pageItems=gr.items.slice(i,i+state.per);
-      const pageNo=no++;
-      const groupPageNo=Math.floor(i/state.per)+1;
-      const def={group:gr,pageItems,pageNo,groupPageNo,groupPages:total,groupStartIndex:i};
-      defs.push(def);
-      // i là vị trí tuyệt đối trong toàn bộ loại ảnh, không phải vị trí trong trang.
-      pages.push(await drawPage(gr,pageItems,pageNo,groupPageNo,total,i));
-    }}state.pages=pages;state.pageDefs=defs;$('preview').innerHTML='';pages.forEach((c,i)=>{const d=document.createElement('div');d.className='pageprev';const t=document.createElement('div');t.className='muted';t.textContent=`Trang ${i+1}`;d.append(t,c);$('preview').appendChild(d)});$('previewInfo').textContent=`Preview ${pages.length} trang A4 · ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh · tối ưu ${pagePixels().dpi} DPI / JPEG ${Math.round(jpegQuality()*100)}%`;$('pdf').disabled=false;$('newCase').style.display='inline-block';window.scrollTo({top:$('preview').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})}
+async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.display='none';$('newCase').style.display='none';hidePdfWarning();const groups=getAllGroups();if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}const {pages,defs}=await buildPreview(groups,state.per);$('preview').innerHTML='';pages.forEach((c,i)=>{const d=document.createElement('div');d.className='pageprev';const t=document.createElement('div');t.className='muted';t.textContent=`Trang ${i+1}`;d.append(t,c);$('preview').appendChild(d)});$('previewInfo').textContent=`Preview ${pages.length} trang A4 · ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh · tối ưu ${pagePixels().dpi} DPI / JPEG ${Math.round(jpegQuality()*100)}%`;$('pdf').disabled=false;$('newCase').style.display='inline-block';window.scrollTo({top:$('preview').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})}
 
 
 function mib(n){return n/1048576}
