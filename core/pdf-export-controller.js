@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093PdfExportController = {
     install: function(deps){
-      const {state,$,splitHighQualityPdf,exportPdfFile,msg,alert,setTimeout} = deps;
+      const {state,$,splitHighQualityPdf,exportPdfFile,msg,alert,setTimeout,buildAdaptivePdf,pdfPackSize,pdfFileName,getPdfWarningSkin,finalizeCompletedSession} = deps;
       let pdfHighQualityRunning=false;
       function mib(n){return n/1048576}
       async function exportHighQualitySplit(filenameBase,button,progress){
@@ -38,7 +38,36 @@
           pdfHighQualityRunning=false;if(button)button.disabled=false;if(checkbox)checkbox.disabled=false;
         }
       }
-      return {exportHighQualitySplit};
+      async function exportStandardPdf(button){
+        if(!state.pages||!state.pages.length)return;
+        const btn=button||$('pdf');btn.disabled=true;
+        try{
+          const baseName=pdfFileName();
+          msg('Đang kiểm tra dung lượng PDF...',true);
+          const result=await buildAdaptivePdf(state.pages);
+          const size=mib(pdfPackSize(result.bytes));
+          const warnings=getPdfWarningSkin();
+          if(!result.compressed){
+            const blob=new Blob([result.bytes],{type:'application/pdf'});
+            await exportPdfFile(blob,baseName);
+            $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
+            msg('Đã xuất PDF '+size.toFixed(2)+' MB · không cần nén ảnh · '+result.dpi+' DPI · JPEG '+Math.round(result.quality*100)+'%.',true);
+            warnings.hidePdfWarning();
+            await finalizeCompletedSession();
+          }else{
+            const blob=new Blob([result.bytes],{type:'application/pdf'});
+            await exportPdfFile(blob,baseName);
+            $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
+            msg('Đã xuất PDF '+size.toFixed(2)+' MB bằng chế độ nén. Vui lòng kiểm tra lại bản ảnh sau khi xuất.',true);
+            warnings.showPdfWarning('Dung lượng bản PDF ở chất lượng cao không phù hợp giới hạn 10 MB nên phần mềm đã nén ảnh. Bạn có thể xuất lại ở chất lượng cao; phần mềm sẽ tự tách thành nhiều file.',baseName);
+            await finalizeCompletedSession();
+          }
+        }catch(e){
+          msg('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)),false);
+          alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
+        }finally{btn.disabled=false}
+      }
+      return {exportHighQualitySplit,exportStandardPdf};
     }
   };
 })(typeof window!=='undefined'?window:globalThis);
