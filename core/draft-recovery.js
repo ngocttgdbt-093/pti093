@@ -170,7 +170,25 @@
         }catch(e){console.warn('Không thể khôi phục bản nháp tự động:',e);msg('Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.',true)}
         finally{autoDraftRestoring=false}
       }
-      return {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer};
+      function bindLifecycle(){
+        ['bks','hoso','gdv','date','garage'].forEach(id=>{
+          const el=$(id);if(!el)return;
+          el.addEventListener('input',()=>scheduleAutoDraftSave(false));
+          el.addEventListener('change',()=>scheduleAutoDraftSave(false));
+        });
+        window.addEventListener('pagehide',()=>{
+          clearAutoDraftTimer();
+          saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e));
+        });
+        document.addEventListener('visibilitychange',()=>{
+          if(document.visibilityState==='hidden'){
+            clearAutoDraftTimer();
+            saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e));
+          }
+        });
+        restoreAutoDraft();
+      }
+      return {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer,bindLifecycle};
     }
   };
 })(window);
