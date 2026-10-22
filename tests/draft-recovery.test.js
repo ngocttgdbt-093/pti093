@@ -102,3 +102,7 @@ for (const contract of [
 assert.ok(source.includes("const PTI093_SESSION_KEY='pti093_work_session_id'"), 'The session key must remain stable');
 assert.ok(source.includes("const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT'"), 'The automatic draft ID must remain stable');
 console.log('Draft-recovery integration wiring contract passed.');
+
+assert.ok(!html.includes('docx-builder.js') && !html.includes('zip-utils.js'), 'Retired DOCX draft and ZIP utility modules must not load');
+assert.ok(!appCore.includes('saveDocx') && !appCore.includes('openDocxFile') && !appCore.includes('PTI093DocxBuilder'), 'The app Core must not retain the retired Word draft workflow');
+console.log('Retired DOCX draft path removal contract passed.');
