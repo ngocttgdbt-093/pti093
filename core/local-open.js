@@ -51,7 +51,7 @@
         if(settings.orientation)state.orientation=settings.orientation;
         if(settings.imagesPerPage){state.per=Number(settings.imagesPerPage);document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per))}
         document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
-        state.groups=groups.slice(1);state.current=groups[0]||{title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
+        state.groups=groups.slice(0,-1);state.current=groups[groups.length-1]||{title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
         state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
         $('title').value=state.current.title;
         $('driveId').textContent='💻 Bản lưu tại máy: '+id;$('driveId').classList.remove('hidden');
