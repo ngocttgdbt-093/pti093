@@ -57,6 +57,19 @@
           driveRecordId:state.driveRecordId||''
         };
       },
+      cleanupFailureRecovery:async()=>{
+        const originalOpen=window.indexedDB.open;
+        let rejected=false;
+        try{
+          window.indexedDB.open=function(){throw new Error('Simulated IndexedDB open failure');};
+          try{await api.clearAutoDraft()}catch(e){rejected=true}
+        }finally{
+          window.indexedDB.open=originalOpen;
+        }
+        await api.saveAutoDraft();
+        const drafts=await store.getLocalDrafts();
+        return {rejected,autosaveRecovered:drafts.some(d=>d.id==='AUTO-DRAFT')};
+      },
       cleanup:async()=>{
         await api.clearAutoDraft();
         const db=await store.openLocalDraftDB();
