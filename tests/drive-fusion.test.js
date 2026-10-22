@@ -17,7 +17,11 @@ const deps = {
   snapshotGroupsForProject: () => [],
   buildProjectData: () => ({}),
   PTI093_API: 'https://example.invalid/api',
-  DRIVE_CONCURRENCY: 5
+  getAllGroups: () => [],
+  selectedGdv: () => '',
+  scheduleAutoDraftSave: () => {},
+  finalizeCompletedSession: async () => {},
+  sha256HexBlob: async () => 'test-hash'
 };
 const api = global.PTI093DriveFusion.install(deps);
 for (const name of ['saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
