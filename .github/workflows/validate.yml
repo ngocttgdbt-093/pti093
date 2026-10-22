@@ -85,6 +85,11 @@ jobs:
             sleep 1
           done
           node tests/draft-recovery-browser.test.cjs
+          node tests/image-reorder-browser.test.cjs
+
+      - name: Check extracted Image Reorder Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/image-reorder.js
 
       - name: Check extracted File Naming Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
