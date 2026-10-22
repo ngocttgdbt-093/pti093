@@ -29,6 +29,7 @@ const {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage}=imageCanv
 const previewBuilder=window.PTI093PreviewBuilder.install({drawPage});
 const {buildPreview}=previewBuilder;
 const classicLayoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims,document});
+classicLayoutSkin.bindControls({scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args)});
 const classicGroupListSkin=window.PTI093ClassicGroupListSkin.install({state,$,document,onEditGroup:i=>editGroup(i)});
 const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
   state,$,document,URL,imageReorder,openImageViewer,renderGroups:()=>renderGroups(),
@@ -68,8 +69,6 @@ $('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.i
 // counts
 
 function renderLayout(){return classicLayoutSkin.renderLayout()}
-[1,2,3,4,6,8].forEach(n=>{const b=document.createElement('button');b.className='opt'+(n===6?' on':'');b.textContent=n;b.onclick=()=>{state.per=n;document.querySelectorAll('#counts .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)};$('counts').appendChild(b)});
-document.querySelectorAll('#orient .opt').forEach(b=>b.onclick=()=>{state.orientation=b.dataset.o;document.querySelectorAll('#orient .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)});
 // V39: render bố cục ngay sau khi tạo các nút lựa chọn, không phụ thuộc render() hoặc khôi phục bản nháp.
 // Nhờ đó vừa mở trang đã thấy đúng 6 ảnh A4 dọc (2 × 3), không cần bấm lại nút 6.
 renderLayout();
