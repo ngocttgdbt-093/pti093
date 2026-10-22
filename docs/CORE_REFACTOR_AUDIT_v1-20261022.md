@@ -444,3 +444,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Latest complete validation: GitHub Actions run **#797** (`39834741290`) passed on head `0b63f1c96d17c99b7b680e540138a65ee6940d04`, including real Chromium IndexedDB draft recovery, full-app smoke test, module syntax checks, and Core/Skin/Fusion tests.
 - DOCX/Word draft storage remains retired; local IndexedDB is the supported draft recovery mechanism. No changes to `main`, no production deployment, and no changes to the separate PTI repository.
 - Remaining work: continue reducing `core/app-core.js` by extracting cohesive responsibilities with regression coverage. Full user-device/manual acceptance and production release are still separate, explicit gates.
+
+
+## Group Workflow, Drive Fusion bindings, and Preview return control — v2-20261023.23
+
+- Extracted group editing, save-next, finish, and commit coordination into `core/group-workflow.js`; App Core now delegates those actions and the Classic Group List Skin edit callback. Tests cover commit, finish-to-preview, edit/cancel/confirm, state reset, and autosave.
+- Moved Drive search/save/create button bindings into `fusion/drive.js` via `bindControls()`. App Core now injects dependencies and delegates UI wiring to the 093-only Fusion. Existing upload logic, concurrency behavior, per-file confirmation, and Drive storage helpers were not rewritten. GitHub Actions run **#848** (`39835717353`) passed after the Fusion binding/test updates.
+- Moved the back-to-edit handler into `skin/classic-preview.js`, alongside preview presentation. The Skin now closes the full-screen preview when available, releases body scroll lock, scrolls back to the editor, and updates status.
+- Latest full validation run **#855** (`39835875058`) completed successfully on head `3b00fa7540e0115a2284ff71addb78fcf3f4eb76`, including real Chromium draft recovery, full-app preview/PDF export smoke test, Image Editing Core, Group Workflow Core, Skin/Fusion tests, and syntax checks.
+- Current `core/app-core.js` snapshot is about **10,289 bytes**, down from the original 46,529-byte baseline (about 77.9% smaller by byte count). This measures orchestration source size only, not runtime speed or acceptance completeness.
+- The branch remains isolated; no merge, no production deployment, and no changes to the separate PTI repository. Manual acceptance on the user's actual PC/iPhone and actual case photos remains a release gate.
