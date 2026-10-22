@@ -35,7 +35,7 @@ const deps = {
   wrap: value => value
 };
 const api = global.PTI093DriveFusion.install(deps);
-for (const name of ['openRecordFromDrive','finishOpenLoad','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
+for (const name of ['openRecordFromDrive','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
   assert.equal(typeof api[name], 'function', name + ' should be exported');
 }
 const file = { name: 'damage.jpg', size: 1200, lastModified: 99, webkitRelativePath: '' };
@@ -74,6 +74,7 @@ for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async fu
 
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive search must bind after module installation');
 assert.ok(!html.includes('function openRecordFromDrive(') && !html.includes('function searchDriveRecords('), 'Drive record functions should live outside index.html');
+assert.ok(html.includes('function finishOpenLoad('), 'Shared open-progress completion must remain in Core for local draft open');
 assert.ok(html.includes('src="./core/workspace.js"'), 'Shared workspace Core should be loaded');
 assert.ok(workspaceSource.includes('function snapshotGroupsForProject(state)'), 'Workspace Core should own the shared snapshot helper');
 assert.ok(html.includes('workspaceCore.snapshotGroupsForProject(state)'), 'Manual local-save should use the shared workspace snapshot');
