@@ -2,17 +2,22 @@ const assert=require('node:assert/strict');
 global.window=global;
 require('../core/pdf-export-controller.js');
 assert.ok(global.PTI093PdfExportController);
-function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false}={}){
+function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false}={}){
   const elements={};
   for(const id of ['pdfHighQualityCheck','pdfHighProgressWrap','pdfHighProgressLabel','pdfHighProgressPct','pdfHighProgressBar']){
     elements[id]={disabled:false,textContent:'',style:{display:'',width:''}};
   }
-  const events={messages:[],exports:[],alerts:[]};
+  const events={messages:[],exports:[],alerts:[],warnings:[],finalized:0};
   const api=global.PTI093PdfExportController.install({
     state:{pages},
     $:id=>elements[id]||(elements[id]={style:{},textContent:''}),
     splitHighQualityPdf:async(name,update)=>{events.splitName=name;events.update=update;return parts;},
     exportPdfFile:async(blob,name)=>{if(failExport)throw new Error('download failed');events.exports.push({blob,name});},
+    buildAdaptivePdf:async pages=>{events.pagesPassed=pages;if(failBuild)throw new Error('build failed');return pdfResult;},
+    pdfPackSize:bytes=>bytes.length,
+    pdfFileName:()=> 'case.pdf',
+    getPdfWarningSkin:()=>({hidePdfWarning:()=>events.warnings.push('hide'),showPdfWarning:(...args)=>events.warnings.push(['show',...args])}),
+    finalizeCompletedSession:async()=>{events.finalized++;},
     msg:(text,ok)=>events.messages.push({text,ok}),
     alert:text=>events.alerts.push(text),
     setTimeout:fn=>{fn();return 1;}
@@ -47,5 +52,36 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.match(events.messages[0].text,/Không có trang PDF/);
     assert.equal(events.exports.length,0);
   }
-  console.log('PDF Export Controller tests passed (success, failure cleanup, and empty preview guard).');
+  {
+    const {api,elements,events}=setup();
+    const button={disabled:false};
+    await api.exportStandardPdf(button);
+    assert.equal(events.pagesPassed.length,1);
+    assert.equal(events.exports[0].name,'case.pdf');
+    assert.equal(events.exports[0].blob.type,'application/pdf');
+    assert.deepEqual(events.warnings,['hide']);
+    assert.equal(events.finalized,1);
+    assert.equal(elements.backEdit.style.display,'inline-block');
+    assert.equal(elements.newCase.style.display,'inline-block');
+    assert.match(events.messages.at(-1).text,/không cần nén ảnh/);
+    assert.equal(button.disabled,false);
+  }
+  {
+    const {api,events}=setup({pdfResult:{bytes:new Uint8Array(20),compressed:true,dpi:96,quality:0.6}});
+    await api.exportStandardPdf({disabled:false});
+    assert.equal(events.exports[0].name,'case.pdf');
+    assert.equal(events.warnings[0][0],'show');
+    assert.equal(events.warnings[0][2],'case.pdf');
+    assert.equal(events.finalized,1);
+    assert.match(events.messages.at(-1).text,/chế độ nén/);
+  }
+  {
+    const {api,events}=setup({failBuild:true});
+    const button={disabled:false};
+    await api.exportStandardPdf(button);
+    assert.equal(button.disabled,false);
+    assert.match(events.alerts[0],/build failed/);
+    assert.match(events.messages.at(-1).text,/Không thể xuất PDF/);
+  }
+  console.log('PDF Export Controller tests passed (standard/high-quality export, warnings, error recovery, and empty preview guard).');
 })().catch(error=>{console.error(error);process.exitCode=1});
