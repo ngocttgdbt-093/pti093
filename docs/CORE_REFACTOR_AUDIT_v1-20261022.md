@@ -260,3 +260,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - No changes to `main`, no production deployment, and no PTI repository changes. Continue using the test branch only.
 
 - Updated CI to cache the Playwright Chromium browser and avoid reinstalling Linux system dependencies on every push. Run **#409** completed successfully with this faster setup: https://github.com/ngocttgdbt-093/pti093/actions/runs/39826616509.
+
+
+## Session-isolation regression and File Naming Core — v2-20261023.10
+
+- Extended the real Chromium test to open a second tab with a separate `sessionStorage` work-session ID. The test verifies that a draft belonging to the first tab is not restored in the new session, the stale draft and image blobs are cleared, and old vehicle/case fields and Drive record ID are not carried into the new tab.
+- GitHub Actions run **#415** (`39826818325`) passed the expanded real-browser test for both F5 restoration and new-session cleanup.
+- Extracted the existing `fileBaseName`, `gdvShortName`, and `pdfFileName` rules into `core/file-naming.js`; application Core consumes the module API. The existing GĐV abbreviation map, plate sanitization, and PDF naming rules are retained.
+- Added `tests/file-naming.test.js`. GitHub Actions run **#426** (`39826955610`) completed successfully, including the File Naming and Date Utils tests and the Chromium IndexedDB regression.
+- The app's current test branch is still not deployed. These results are CI validation and isolated module/browser-fixture tests, not a full end-to-end acceptance of the production page with real user images.
