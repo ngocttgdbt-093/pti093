@@ -60,3 +60,33 @@ for (const marker of [
 assert.ok(storeSource.includes('pti093_local_drafts_v1') === false, 'DB name should be supplied through the store adapter configuration');
 assert.ok(typeof storeApi.openLocalDraftDB === 'function' && typeof storeApi.localDraftTransactionDone === 'function' && typeof storeApi.getLocalDrafts === 'function', 'Local Draft Store should export storage APIs');
 console.log('Shared Core draft-recovery tests passed (module API + session contract).');
+
+
+// Integration contract: the app must initialize the extracted modules in dependency order
+// and keep the existing autosave/reload lifecycle wired to the extracted API.
+const appCore = fs.readFileSync('core/app-core.js', 'utf8');
+const moduleScripts = [
+  './core/local-draft-store.js',
+  './core/draft-recovery.js',
+  './core/local-save.js',
+  './core/local-open.js',
+  './fusion/drive.js'
+];
+const scriptPositions = moduleScripts.map(src => html.indexOf('src="' + src + '"'));
+assert.ok(scriptPositions.every(pos => pos >= 0), 'index.html should load every extracted storage/Core/Fusion module');
+assert.ok(scriptPositions.every((pos, i) => i === 0 || pos > scriptPositions[i - 1]), 'Store, recovery, local save/open, and Drive Fusion scripts must load in dependency order');
+for (const contract of [
+  "window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'})",
+  'window.PTI093DraftRecovery.install(',
+  'window.PTILocalSaveCore.install(',
+  'window.PTI093LocalOpenCore.install(',
+  'window.PTI093DriveFusion.install(',
+  'const {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery',
+  "document.addEventListener('visibilitychange'",
+  "window.addEventListener('pagehide'"
+]) {
+  assert.ok(appCore.includes(contract), 'App integration contract should remain: ' + contract);
+}
+assert.ok(source.includes("const PTI093_SESSION_KEY='pti093_work_session_id'"), 'The session key must remain stable');
+assert.ok(source.includes("const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT'"), 'The automatic draft ID must remain stable');
+console.log('Draft-recovery integration wiring contract passed.');
