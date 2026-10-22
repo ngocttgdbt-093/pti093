@@ -359,3 +359,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - GitHub Actions run **#621** (`39831058354`) passed the PDF Warning Skin browser regression and existing Core/Fusion checks.
 - The previous Image Grid Skin regression is confirmed by run **#605** (`39830736157`); the group list test is confirmed by **#585** (`39830216365`). These tests cover UI rendering/action delegation without deploying the test branch.
 - App Core is now 27,359 bytes after moving PDF warning presentation out; it was 46,529 bytes at the beginning of this refactor series. No changes to production `main` or PTI have been made.
+
+
+## 093 GĐV Fusion and Image Ingest Core — v2-20261023.27
+
+- Moved the 093-specific GĐV selection list and custom-name prompt/storage behavior into `fusion/gdv-093.js`. App Core receives `names` and `selectedGdv` from that module; the shared GĐV search algorithm remains in `core/gdv-search.js` and accepts the 093 names as input.
+- Added a Chromium test for standard selection, custom-name prompt, cached custom value, cancellation, localStorage behavior, and the exact 093-only name list. The full-app smoke test confirms GĐV Fusion loads.
+- Extracted `addFiles` into `core/image-ingest.js`. It retains accepted image extensions, duplicate checks against the current group, file-name caption defaults, add-sequence assignment, render/save scheduling, and existing status messages.
+- Added unit tests for supported/unsupported files, duplicate avoidance, captions, add sequence, and save scheduling. GitHub Actions run **#655** (`39831826237`) completed successfully; run **#643** (`39831599313`) also passed the GĐV Fusion checks.
+- The latest App Core source is now about 26.6 KB, down from 46.5 KB at the start. The 093 GĐV list is now outside Core, and PTI has not been modified.
