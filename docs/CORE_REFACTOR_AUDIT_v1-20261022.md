@@ -454,3 +454,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Latest full validation run **#855** (`39835875058`) completed successfully on head `3b00fa7540e0115a2284ff71addb78fcf3f4eb76`, including real Chromium draft recovery, full-app preview/PDF export smoke test, Image Editing Core, Group Workflow Core, Skin/Fusion tests, and syntax checks.
 - Current `core/app-core.js` snapshot is about **10,289 bytes**, down from the original 46,529-byte baseline (about 77.9% smaller by byte count). This measures orchestration source size only, not runtime speed or acceptance completeness.
 - The branch remains isolated; no merge, no production deployment, and no changes to the separate PTI repository. Manual acceptance on the user's actual PC/iPhone and actual case photos remains a release gate.
+
+
+## Session Actions Core extraction — v2-20261023.24
+
+- Moved the “Làm tiếp bản ảnh khác” / new-case transition into `core/session-actions.js`. The module persists the selected GĐV (including the custom-name path), disables the action while clearing the previous autosave draft, warns if cleanup fails, and reloads the page as before.
+- Wired the module before application initialization and added `tests/session-actions.test.js` covering normal selection, custom GĐV, awaited draft cleanup, and cleanup-failure recovery. The load-order assertion was added to the draft-recovery integration test.
+- DOCX/ZIP draft functionality remains fully retired: the branch no longer contains `core/docx-builder.js`, `core/zip-utils.js`, a DOCX builder test, or DOCX script/CI references. IndexedDB draft recovery and 093 Drive Fusion remain separate and unchanged in purpose.
+- The latest completed validation visible during this audit update was run **#974** (`39836097410`) on commit `ee1ad96f2f9674915ebcbfd05e971b0fbba8d6d6`, which passed. Newer runs for the Session Actions tests/load-order checks were still running or queued at audit time; verify the latest branch-head run before declaring the current full workflow green.
+- Current work remains isolated to `refactor/core-modules-test-20261022`. No merge, production deployment, changes to `main`, or changes to the PTI repository were performed.
