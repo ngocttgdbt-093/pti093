@@ -99,3 +99,32 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   delete global.localStorage;delete global.IDBKeyRange;
   console.log('Local Save storage-blocked test passed (saved record remains successful despite blocked GĐV preference storage).');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+(async()=>{
+  const elements={},messages=[],driveStates=[];
+  const localState={groups:[],current:{title:'Thiệt hại',items:[]},localDraftId:'',driveRecordId:'',orientation:'portrait',per:6};
+  global.localStorage={getItem(){throw new Error('localStorage blocked')},setItem(){throw new Error('localStorage blocked')},removeItem(){}};
+  global.IDBKeyRange={only:value=>value};
+  const db={
+    close(){},
+    transaction(){return {objectStore(name){
+      if(name==='drafts')return {put(){}};
+      return {index:()=>({openCursor:()=>{const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}})};
+    }}}
+  };
+  const api=global.PTILocalSaveCore.install({
+    state:localState,
+    $:id=>elements[id]||(elements[id]={value:id==='gdv'?'Nhập tên khác':'',dataset:{custom:''},textContent:'',disabled:false,style:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[],openLocalDraftDB:async()=>db,localDraftTransactionDone:async()=>{},
+    getDateISO:()=> '2026-10-23',selectedGdv:()=> 'NONAME',
+    setDriveState:(text)=>driveStates.push(text),msg:(text)=>messages.push(text),renderLocalSaveFeedback:noop,
+    showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{throw new Error('cleanup failed')}
+  });
+  await api.saveDraftWithoutPhotos();
+  assert.match(localState.localDraftId,/^LOCAL-/,'the saved local record ID must remain after autosave cleanup fails');
+  assert.ok(messages.some(text=>/đã lưu tại máy thành công/i.test(text)),'user should be told the local record was saved');
+  assert.equal(messages.some(text=>/Lưu tại máy thất bại/.test(text)),false,'autosave cleanup failure must not be misreported as local record save failure');
+  assert.ok(driveStates.some(text=>/chưa dọn được nháp tự động/.test(text)),'cleanup failure should remain visible as a separate warning');
+  delete global.localStorage;delete global.IDBKeyRange;
+  console.log('Local Save cleanup-failure test passed (successful record save is not misreported as failed).');
+})().catch(error=>{console.error(error);process.exitCode=1});
