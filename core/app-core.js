@@ -14,6 +14,8 @@ const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
 const {pagePixels,jpegQuality,makeCanvas,pdfBytesFromCanvases,resamplePdfCanvases,pdfPackSize,makePdfAt,buildAdaptivePdf,splitPdfBytes}=pdfBuilder;
 const imageCanvasCore=window.PTI093ImageCanvasCore.install({state,$,pagePixels,makeCanvas,formatDateDMY,getDateISO,getLogoSrc:()=>logoSrc,getSelectedGdvCache:()=>selectedGdvCache});
 const {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage}=imageCanvasCore;
+const pdfExportCore=window.PTI093PdfExportCore.install({state,PDF_SAFE_LIMIT,drawPage,makePdfAt,pagePixels,jpegQuality,pdfPackSize});
+const {splitHighQualityPdf}=pdfExportCore;
 const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,textFile}=window.PTISharedCore;
 const docxBuilder=window.PTI093DocxBuilder.install({xmlEsc,formatDateDMY});
 const {docxText,docxCaption,drawingXml,pageBreak,makeDocxFiles}=docxBuilder;
@@ -100,56 +102,6 @@ function showPdfWarning(message,baseName){
   box.appendChild(b);
   cb.addEventListener('change',()=>{if(cb.checked)exportHighQualitySplit(baseName,b,progress)});
 }
-async function renderPageRangeWithLabel(start,end,label,totalParts){
-  const out=[];
-  for(let i=start;i<end;i++){
-    const d=state.pageDefs[i];
-    out.push(await drawPage(d.group,d.pageItems,d.pageNo,d.groupPageNo,d.groupPages,d.groupStartIndex,label));
-  }
-  return out;
-}
-async function splitHighQualityPdf(filenameBase,onProgress=()=>{}){
-  const pages=state.pages||[],safe=PDF_SAFE_LIMIT;
-  if(!pages.length)return [];
-  const ranges=[];let start=0;
-  while(start<pages.length){
-    let bestEnd=start+1;
-    for(let end=start+1;end<=pages.length;end++){
-      const trial=makePdfAt(pages.slice(start,end),pagePixels().dpi,jpegQuality());
-      if(pdfPackSize(trial.bytes)<=safe)bestEnd=end;else break;
-      if(end%2===0){onProgress(5+Math.round(start/pages.length*30),'Đang tính cách chia PDF…');await new Promise(resolve=>setTimeout(resolve,0))}
-    }
-    ranges.push([start,bestEnd]);start=bestEnd;
-    onProgress(5+Math.round(start/pages.length*30),'Đã xác định '+start+'/'+pages.length+' trang');
-    await new Promise(resolve=>setTimeout(resolve,0));
-  }
-  const parts=[];
-  for(let pi=0;pi<ranges.length;pi++){
-    const [s,e]=ranges[pi],label=`${pi+1}/${ranges.length}`;
-    onProgress(35+Math.round(pi/Math.max(1,ranges.length)*45),'Đang dựng PDF phần '+(pi+1)+'/'+ranges.length+'…');
-    await new Promise(resolve=>setTimeout(resolve,0));
-    const canvases=await renderPageRangeWithLabel(s,e,label,ranges.length);
-    const result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
-    if(pdfPackSize(result.bytes)>safe&&e-s>1){const ne=e-1;ranges[pi]=[s,ne];ranges.splice(pi+1,0,[ne,e]);pi--;continue}
-    parts.push({blob:new Blob([result.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+(pi+1)+'.pdf',dpi:result.dpi,quality:result.quality});
-    onProgress(35+Math.round((pi+1)/Math.max(1,ranges.length)*45),'Đã dựng '+(pi+1)+'/'+ranges.length+' tệp PDF');
-  }
-  if(parts.length!==ranges.length){
-    parts.length=0;const total=ranges.length;
-    for(let pi=0;pi<ranges.length;pi++){
-      onProgress(35+Math.round(pi/Math.max(1,total)*45),'Đang hoàn thiện nhãn tệp '+(pi+1)+'/'+total+'…');
-      const [s,e]=ranges[pi],label=`${pi+1}/${total}`;
-      const canvases=await renderPageRangeWithLabel(s,e,label,total);
-      const result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
-      parts.push({blob:new Blob([result.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+(pi+1)+'.pdf',dpi:result.dpi,quality:result.quality});
-      await new Promise(resolve=>setTimeout(resolve,0));
-    }
-  }
-  return parts;
-}
-
-
-
 let pdfHighQualityRunning=false;
 async function exportHighQualitySplit(filenameBase,button,progress){
   if(pdfHighQualityRunning)return;
