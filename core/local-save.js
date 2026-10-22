@@ -21,13 +21,8 @@
         const total=groups.reduce((n,g)=>n+g.items.length,0);
         // Hiện ID ngay từ đầu để người dùng thấy mã hồ sơ trong lúc lưu, kể cả khi lưu chậm.
         const idBox=$('driveId');if(idBox){idBox.textContent='💻 ID hồ sơ local: '+id;idBox.classList.remove('hidden')}renderLocalSaveFeedback(id,3,'Đang chuẩn bị lưu tại máy…','Đang đọc thông tin hồ sơ',false);
-        // Bản local độc lập, không giữ liên kết tới record/ảnh Drive.
-        for(const g of [...(state.groups||[]),state.current||{}])for(const it of (g.items||[])){
-          it.driveFileId='';it.driveFileName='';it.driveUploadKey='';
-        }
-        state.driveRecordId='';state.localDraftId=id;
-        try{sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
-        try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
+        // Chỉ tách bản local khỏi Drive sau khi giao dịch ghi local thành công.
+        // Nếu IndexedDB lỗi, giữ nguyên liên kết Drive và ID đang làm việc để người dùng thử lại.
         let db;
         try{
           db=await openLocalDraftDB();
@@ -63,6 +58,13 @@
             }));
           };
           await localDraftTransactionDone(tx);
+          // Bản local đã được ghi hoàn tất; từ thời điểm này mới tách trạng thái khỏi Drive.
+          for(const g of [...(state.groups||[]),state.current||{}])for(const it of (g.items||[])){
+            it.driveFileId='';it.driveFileName='';it.driveUploadKey='';
+          }
+          state.driveRecordId='';state.localDraftId=id;
+          try{sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+          try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
           $('driveId').textContent='💻 ID hồ sơ local: '+id;
           $('driveId').classList.remove('hidden');
           progress(100,'✓ Đã lưu hồ sơ tại máy thành công',total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');
