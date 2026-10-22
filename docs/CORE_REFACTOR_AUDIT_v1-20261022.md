@@ -180,3 +180,10 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Boundary review caught a coupling issue: `snapshotGroupsForProject` is also needed by manual local-save flow, so it must not live exclusively inside Drive Fusion. Restored it as an app/Core workspace helper and inject it into `fusion/drive.js`; added a regression assertion for that boundary.
 - Current source checks: all 5 inline app scripts parse; the shared modules (GĐV search, ZIP/XML, PDF builder, local draft store, draft recovery, Drive Fusion) parse; no inline `<style>` blocks remain; all 15 CSS assets are linked; the eight draft/store lifecycle bodies and six PDF helper bodies match the source `main` versions after normalization.
 - The latest GitHub Actions run for this exact head is still in progress at the time of this note; do not mark CI green until its completed result is checked. No production `main` changes or deployments have been made. Browser visual regression and a real IndexedDB F5/reload test remain acceptance gates.
+
+## Workspace Core extraction — v6-20261022.2
+
+- Moved `getAllGroups` and `snapshotGroupsForProject` into `core/workspace.js`. Both the manual local-save path and Drive Fusion now consume the same shared workspace snapshot implementation; Drive Fusion no longer owns this helper.
+- Added `tests/workspace-core.test.js` for filtering empty groups, merging the current section with the last same-title group, and ensuring snapshots do not mutate the live workspace. The workflow now syntax-checks and runs this test.
+- This closes a dependency boundary found during the audit: local save must not rely on a helper hidden inside the Drive-specific fusion. The Drive Fusion receives the shared snapshot function explicitly.
+- The latest verified static/runtime smoke checks before this workspace extraction passed 15/15. Re-run the checks and verify the CI result for the new workspace module before treating this batch as complete. Browser acceptance and production deployment remain out of scope.
