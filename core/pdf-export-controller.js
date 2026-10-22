@@ -6,7 +6,8 @@
       let pdfHighQualityRunning=false;
       async function finalizeAfterSuccessfulExport(){
         try{
-          await finalizeCompletedSession();
+          const cleaned=await finalizeCompletedSession();
+          if(cleaned===false)throw new Error('Không dọn được nháp tự động.');
         }catch(error){
           const detail=error&&error.message?error.message:String(error);
           msg('⚠️ PDF đã xuất thành công, nhưng chưa dọn được nháp tự động: '+detail+'. Hồ sơ đã xuất vẫn được giữ lại.',true);
