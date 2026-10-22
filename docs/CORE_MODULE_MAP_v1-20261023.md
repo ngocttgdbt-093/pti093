@@ -61,9 +61,10 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 5. Local Save Core must not call Drive case-upload functions. Drive Fusion remains 093-specific and retains concurrency 5 and per-file upload-state tracking.
 6. Do not change `main`, deploy production, or modify the separate PTI repository during this refactor without a separate explicit release decision.
 
-## Validation status at document creation
+## Validation status — updated 2026-10-23
 
-- Latest full GitHub Actions validation on head `bca3beabf784ccb7482ce3d3502ba4c93244d063`: run **#944** passed.
-- The workflow includes real Chromium IndexedDB draft recovery, image reordering, full-app smoke/PDF download, Modern gallery mount, module syntax checks, and Core/Skin/Fusion unit/contract tests.
-- Static reference audit: `index.html` has zero inline JavaScript blocks; all 38 external scripts and all 53 local `src`/`href` references resolve to repository files, with no duplicate local references.
-- Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets, plus explicit review before merge/deploy.
+- Latest full GitHub Actions validation on head `26cfc89e39dba20434f92ed8219a46a2e931af85`: run **#1041** passed.
+- The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
+- Static reference audit confirms `index.html` has zero inline JavaScript blocks; all 53 local `src`/`href` references resolve to repository files with no duplicate local references.
+- The DOCX/ZIP draft path removal contract passes. The automatic draft remains IndexedDB-based with the existing `pti093_local_drafts_v1`, `AUTO-DRAFT`, and `pti093_work_session_id` contracts.
+- Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets. The PR remains draft-only; no merge or production deployment is authorized.
