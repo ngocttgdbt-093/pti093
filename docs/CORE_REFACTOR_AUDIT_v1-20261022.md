@@ -278,3 +278,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Added `tests/image-reorder-browser.html` and `tests/image-reorder-browser.test.cjs`. The real Chromium regression simulates dragging the first thumbnail below the second and asserts DOM order, application-state order, dirty-draft scheduling, layout refresh, rerender, and cleanup of drag CSS classes.
 - GitHub Actions run **#441** (`39827235287`) completed successfully, including Image Reorder module syntax validation, File Naming and Date Utils tests, and the Chromium browser regression suite.
 - This confirms the extracted module contract and simulated reorder behavior in Chromium. A full manual check with real user photos and touch hardware remains a separate acceptance gate.
+
+
+## Full application browser smoke gate — v2-20261023.12
+
+- Added `tests/app-smoke-browser.test.cjs` to launch the complete `index.html` in Chromium via the local test server, check that the extracted modules are present, verify the six-image default layout and date placeholder, type `01012026`, and assert the real app date mask renders `01/01/2026` without uncaught page errors.
+- GitHub Actions run **#446** (`39827453463`) completed successfully. It included the full application Chromium smoke test, draft recovery across reload and separate-tab session isolation, image reorder behavior, File Naming Core tests, Date Utils tests, and all existing module checks.
+- Current refactor baseline: `core/app-core.js` decreased from 46,529 bytes before the recent extractions to 40,777 bytes after extracting DOCX Builder, Date Utils, File Naming, and Image Reorder. This is a source-size measurement, not a performance benchmark.
+- Still not accepted: full manual workflow with real user photos, touch-device reorder, PDF/Word export opened in external apps, and the 10-image save/reload workflow. No production deployment or merge has occurred.
