@@ -72,6 +72,30 @@ const {chromium}=require('playwright');
     await page.locator('#ptiPreviewClose').click();
     await page.waitForFunction(()=>{const modal=document.getElementById('ptiPreviewModal');return modal&&!modal.classList.contains('open');});
     assert.deepEqual(pageErrors,[],'the full app should start without uncaught JavaScript errors');
+
+    const modernPage=await browser.newPage();
+    const modernErrors=[];
+    modernPage.on('pageerror',e=>modernErrors.push(e.message));
+    await modernPage.addInitScript(()=>{
+      localStorage.setItem('pti093_ui_default_classic_v2','1');
+      localStorage.setItem('pti093_ui_mode','modern');
+    });
+    await modernPage.goto('http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded'});
+    await modernPage.waitForSelector('.pcImageGallery',{timeout:5000});
+    const modernGallery=await modernPage.evaluate(()=>({
+      classic:document.body.classList.contains('classic-ui'),
+      galleryCount:document.querySelectorAll('.pcImageGallery').length,
+      gridInsideGallery:!!document.querySelector('.pcImageGallery #grid'),
+      countLabel:document.getElementById('pcGalleryCount')?.textContent,
+      renderer:typeof window.pti093RenderSavedGroupsGallery
+    }));
+    assert.equal(modernGallery.classic,false,'saved Modern preference should activate the Modern skin');
+    assert.equal(modernGallery.galleryCount,1,'Modern Image Gallery Skin should mount once');
+    assert.equal(modernGallery.gridInsideGallery,true,'the image grid should be placed inside the gallery');
+    assert.equal(modernGallery.countLabel,'Chưa có ảnh');
+    assert.equal(modernGallery.renderer,'function','gallery renderer should remain available to Preview Skin');
+    assert.deepEqual(modernErrors,[],'Modern skin should mount without uncaught JavaScript errors');
+    await modernPage.close();
     console.log('Full app Chromium smoke test passed: module loading, initial six-image layout, and date mask.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
