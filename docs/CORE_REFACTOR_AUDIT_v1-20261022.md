@@ -392,3 +392,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Current App Core source: **25,112 bytes / 268 lines**, versus 46,529 bytes at the initial audit baseline (about 46% smaller by byte count; not a runtime performance claim).
 - Latest full validation workflow, **#679** (`39832377132`), completed successfully after the File Intake Skin and Image Ingest changes.
 - Current acceptance boundary remains: test branch only; no merge/deployment, no production `main` changes, and no PTI repository changes. Full manual testing with the user's actual photo set and a physical touch device is still pending.
+
+
+## Preview Builder and File Delivery Core extraction — v2-20261023.8
+
+- Extracted page/preview iteration into `core/preview-builder.js`. It takes the existing `drawPage` function as a dependency and returns rendered pages, page definitions, and total image count without changing the page grouping rule.
+- Extracted PDF file delivery into `core/file-delivery.js`, keeping the existing iOS share sheet/new-tab fallback and desktop download behavior. PDF generation and splitting remain separate from delivery.
+- Added unit tests for Preview Builder and File Delivery, and wired both modules before App Core. GitHub Actions run **#696** (`39832618898`) completed successfully, including both module tests and the real Chromium recovery/reorder/full-app smoke suite.
+- The current App Core file is 24,677 bytes in the latest branch snapshot. The branch is receiving parallel, non-production refactor commits; continue to re-read the current file SHA before every edit to avoid overwriting changes.
