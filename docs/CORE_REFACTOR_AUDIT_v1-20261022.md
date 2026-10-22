@@ -94,3 +94,10 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - 093 local draft recovery is a known-good behavior based on the user's 10/10 reload/F5 tests on 2026-10-22. Any refactor needs a before/after regression plan that checks restoration of image files, captions, order, selected GĐV, and relevant form fields; do not alter draft lifecycle just for stylistic consistency.
 - PTI's visible case-Drive-save button has already been removed according to the user. The source still contains case-save-related code; this audit does not infer that the UI button remains visible. Verify whether those functions are reachable from any current UI/event handler/global export and ensure PTI cannot initiate case uploads, while keeping admin login and user-directory operations intact.
 - The next implementation stage is dependency mapping and test harness preparation. No Core extraction, production deployment, or functional acceptance is claimed by this audit update.
+
+## Shared Core extraction milestone — v2-20261022
+
+- Extracted the identical pure GĐV search helpers into `core/gdv-search.js` in both test branches: `normalizeRecordSearch`, `gdvInitials`, and `gdvSearchMatches`. Both app entry points now load this shared module before the existing inline application script and bind the same helper names to `window.PTISharedCore`.
+- Added `tests/gdv-search.test.js` to both repositories with assertions for Vietnamese diacritic normalization, Đ/d normalization, initials, partial-name matching, empty queries, and non-matches. GitHub Actions is configured to run the test on the test branch.
+- Source parsing after extraction: 093 inline scripts 5/5 parsed successfully; PTI inline script 1/1 parsed successfully; shared module loaded and manual behavior checks passed for accented name, initials, partial name, and empty query.
+- This is the first narrow shared-module extraction only. It does not yet standardize draft recovery or image/PDF flows. Preserve the 093 draft lifecycle unchanged in the next phase and add browser-level regression tests before changing it.
