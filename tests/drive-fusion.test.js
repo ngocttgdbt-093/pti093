@@ -11,7 +11,8 @@ assert.ok(global.PTI093DriveFusion, 'Drive Fusion module should load');
 const driveModule = require('node:fs').readFileSync('fusion/drive.js', 'utf8');
 assert.ok(driveModule.includes('async function optimizeDriveImage'), 'Drive image optimizer should live in Drive Fusion');
 assert.ok(driveModule.includes('async function sha256HexBlob'), 'Drive SHA-256 helper should live in Drive Fusion');
-assert.ok(!driveModule.includes('DRIVE_CONCURRENCY = deps'), 'Drive concurrency must stay internal to the existing uploader');
+assert.match(driveModule,/const DRIVE_CONCURRENCY\s*=\s*5;/,'093 Drive Fusion must preserve the validated five-file concurrency baseline');
+assert.ok(driveModule.includes('await Promise.all(entries.map(processOne))'),'Drive Fusion must await every file in each batch before advancing progress');
 const deps = {
   state: { groups: [], current: { title: '', items: [] }, driveRecordId: '', localDraftId: '' },
   $: () => ({ value: '', textContent: '', innerHTML: '', style: {}, options: [], classList: { add(){}, remove(){} }, appendChild(){}, setAttribute(){}, addEventListener(){} }),
