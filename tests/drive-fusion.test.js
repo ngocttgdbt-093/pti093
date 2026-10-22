@@ -13,6 +13,8 @@ assert.ok(driveModule.includes('async function optimizeDriveImage'), 'Drive imag
 assert.ok(driveModule.includes('async function sha256HexBlob'), 'Drive SHA-256 helper should live in Drive Fusion');
 assert.match(driveModule,/const DRIVE_CONCURRENCY\s*=\s*5;/,'093 Drive Fusion must preserve the validated five-file concurrency baseline');
 assert.ok(driveModule.includes('await Promise.all(entries.map(processOne))'),'Drive Fusion must await every file in each batch before advancing progress');
+assert.equal((driveModule.match(/await finalizeCompletedSession\(\)/g)||[]).length,1,'Drive Fusion should call the raw finalizer only inside the guarded post-save helper');
+assert.ok(driveModule.includes('if(cleanupOk)setDriveState('),'Drive success handlers must not overwrite the cleanup-warning state');
 const deps = {
   state: { groups: [], current: { title: '', items: [] }, driveRecordId: '', localDraftId: '' },
   $: () => ({ value: '', textContent: '', innerHTML: '', style: {}, options: [], classList: { add(){}, remove(){} }, appendChild(){}, setAttribute(){}, addEventListener(){} }),
@@ -93,3 +95,19 @@ assert.ok(!driveModule.includes('function snapshotGroupsForProject('), 'Drive Fu
 assert.ok(driveModule.includes('snapshotGroupsForProject, selectedGdv'), 'Drive Fusion should receive the workspace snapshot through dependency injection');
 
 console.log('093 Drive Fusion tests passed (source contract + storage helpers).');
+
+(async()=>{
+  const cleanupEvents={states:[],messages:[]};
+  const cleanupApi=global.PTI093DriveFusion.install({
+    ...deps,
+    setDriveState:(text,ok)=>cleanupEvents.states.push({text,ok}),
+    msg:(text,show)=>cleanupEvents.messages.push({text,show}),
+    finalizeCompletedSession:async()=>{throw new Error('cleanup failed')}
+  });
+  const finalized=await cleanupApi.finalizeAfterSuccessfulDriveSave();
+  assert.equal(finalized,false,'post-save cleanup failure must be surfaced separately from the completed Drive save');
+  assert.match(cleanupEvents.states[0].text,/Hồ sơ Drive đã lưu thành công, nhưng chưa dọn được nháp tự động/);
+  assert.equal(cleanupEvents.states[0].ok,false);
+  assert.match(cleanupEvents.messages[0].text,/Hồ sơ Drive đã lưu thành công/);
+  console.log('Drive Fusion post-save cleanup regression passed (successful Drive save is not misreported as failed).');
+})().catch(error=>{console.error(error);process.exitCode=1});
