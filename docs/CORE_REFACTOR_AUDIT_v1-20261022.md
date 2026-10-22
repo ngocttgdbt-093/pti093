@@ -512,3 +512,21 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - GitHub Actions run **#962** (`39838455861`) completed successfully on head `a4a9dcf81c15f497a80c7d87f69c7e1dca9ed942`. It includes the new local-reference audit and Drive Guard test plus the existing full browser/IndexedDB and Core/Skin/Fusion coverage.
 - The current source has 38 external script references and no inline application JavaScript. App Core remains approximately 9.1 KB compared with the 46.5 KB original snapshot. These are structural/source-size measurements, not performance claims.
 - All changes remain on the test branch; no merge, production deploy, changes to `main`, or modifications to the separate PTI repository.
+
+
+## Current 093 implementation status — 2026-10-23
+
+This section supersedes the earlier “Current status” checklist for the **093 repository only**. The earlier sections remain as chronological audit history.
+
+- [x] Shared Core modules extracted and wired through `core/app-core.js`.
+- [x] Skin modules and stylesheet layers extracted to `skin/`, `css/`.
+- [x] Existing 093 Drive record/upload behavior isolated in `fusion/drive.js`; canonical source comparison confirms the executable `pti093UploadAll` body matches `main`. Concurrency remains 5 and each batch is awaited.
+- [x] Local IndexedDB recovery tested with real Chromium, including orphan-image cleanup, new-session cleanup, storage-blocked handling, local-open order preservation, and cleanup failure recovery.
+- [x] PDF export, local save, and Drive save now distinguish successful output/save from a later AUTO-DRAFT cleanup failure.
+- [x] Full GitHub Actions workflow passed on commit `993ebfe5e573976a74bcee38fc8aa9fb1cfdd9be`, run **#1069**: https://github.com/ngocttgdbt-093/pti093/actions/runs/39845230532
+- [x] DOCX/ZIP temporary-draft path remains excluded.
+- [ ] Manual acceptance on the user's actual PC/iPhone and real case photo sets remains pending.
+- [ ] Do not merge/deploy from the current branch. GitHub reports hundreds of commits ahead of `main`; prepare a clean review/squash branch before any release.
+- PTI remains a separate repository/project. This 093 branch does not change PTI code or authorize a PTI deployment.
+
+See `docs/CORE_MODULE_MAP_v1-20261023.md` for current module responsibilities and invariants.
