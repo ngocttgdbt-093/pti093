@@ -416,3 +416,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - PDF splitting remains in `core/pdf-export.js`, while actual platform-specific file delivery remains in `core/file-delivery.js`. The controller receives both as injected dependencies.
 - Added `tests/pdf-export-controller.test.js` for no-pages handling, multi-part export, progress state, and error recovery. GitHub Actions run **#710** (`39832981323`) passed.
 - The latest App Core snapshot measured 22,541 bytes at this extraction point. This is another reduction in orchestration size; no production or PTI deployment occurred.
+
+
+## Remove obsolete Word/DOCX draft workflow — v2-20261023.14
+
+- Per project decision, Word/DOCX is not a supported draft persistence path; local IndexedDB draft recovery is the canonical draft workflow. Removed `saveDocx` / `openDocxFile` and their DOCX builder wiring from `core/app-core.js`.
+- Removed `core/docx-builder.js`, its dedicated test, and `core/zip-utils.js`, which was only used by the retired DOCX path. Removed their script tags and the DOCX-specific CI steps/load-order assertions.
+- Preserved local draft modules, `pti093_local_drafts_v1`, `AUTO-DRAFT`, session key, and Drive Fusion. No changes to `main`, production deployment, or the separate PTI repository.
+- Required follow-up: run the complete CI after removal and verify no remaining DOCX/ZIP helper references. This commit records code removal; acceptance depends on the resulting workflow.
