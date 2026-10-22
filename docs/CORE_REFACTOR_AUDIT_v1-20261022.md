@@ -463,3 +463,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - DOCX/ZIP draft functionality remains fully retired: the branch no longer contains `core/docx-builder.js`, `core/zip-utils.js`, a DOCX builder test, or DOCX script/CI references. IndexedDB draft recovery and 093 Drive Fusion remain separate and unchanged in purpose.
 - The latest completed validation visible during this audit update was run **#974** (`39836097410`) on commit `ee1ad96f2f9674915ebcbfd05e971b0fbba8d6d6`, which passed. Newer runs for the Session Actions tests/load-order checks were still running or queued at audit time; verify the latest branch-head run before declaring the current full workflow green.
 - Current work remains isolated to `refactor/core-modules-test-20261022`. No merge, production deployment, changes to `main`, or changes to the PTI repository were performed.
+
+
+## Device Context Core and UI Mode Toggle Skin — v2-20261023.25/.26
+
+- Extracted the shared device label helper into `core/device-context.js`. Local Open and Drive Fusion receive the same injected `deviceStorageLabel` function, keeping the device classification consistent without coupling either module to browser globals. Tests cover iPhone/iPad/iPod, Android, desktop, and empty user-agent strings.
+- Extracted the UI mode toggle from the final inline script into `skin/ui-mode-toggle.js` without changing its user-facing behavior: the first-run default remains Classic, an existing saved Modern choice is respected after the one-time migration flag, the toggle updates the stylesheet/body class/accessible label, and blocked localStorage does not prevent switching in the current page.
+- Added `tests/ui-mode-toggle.test.js` and workflow syntax/unit steps. The regression test passed in CI, including Classic default, saved preference, both toggle directions, and blocked-storage behavior.
+- Latest full workflow validation on branch head `7b50452580baef8d24a7a33103b449ce3d8f935d` completed successfully in runs **#10500** (`39836510500`) and **#10500 sibling run** (`39836503576`); both report success. The run logs show the real Chromium IndexedDB draft recovery, image reorder, full-app smoke test, and all Core/Skin/Fusion unit/contract checks passed.
+- The obsolete DOCX/ZIP draft path remains removed. The branch still uses `pti093_local_drafts_v1`, `AUTO-DRAFT`, and the established session key for local draft recovery; Drive upload/save remains in the 093-only Fusion with its original concurrency and per-file tracking.
+- Current scope remains the 093 test branch only. No merge, production deployment, changes to `main`, or changes to the PTI repository. Actual PC/iPhone manual acceptance remains a separate release gate.
