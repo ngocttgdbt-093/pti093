@@ -8,20 +8,22 @@ global.localStorage = {
 };
 require('../fusion/drive.js');
 assert.ok(global.PTI093DriveFusion, 'Drive Fusion module should load');
+const driveModule = require('node:fs').readFileSync('fusion/drive.js', 'utf8');
+assert.ok(driveModule.includes('async function optimizeDriveImage'), 'Drive image optimizer should live in Drive Fusion');
+assert.ok(driveModule.includes('async function sha256HexBlob'), 'Drive SHA-256 helper should live in Drive Fusion');
+assert.ok(!driveModule.includes('DRIVE_CONCURRENCY = deps'), 'Drive concurrency must stay internal to the existing uploader');
 const deps = {
   state: { groups: [], driveRecordId: '' },
   $: () => ({ textContent: '', style: {}, classList: { add(){}, remove(){} }, appendChild(){} }),
   msg: () => {},
   setDriveState: () => {},
-  optimizeDriveImage: async file => ({ blob: file, fileName: file.name, mimeType: file.type }),
   snapshotGroupsForProject: () => [],
   buildProjectData: () => ({}),
   PTI093_API: 'https://example.invalid/api',
   getAllGroups: () => [],
   selectedGdv: () => '',
   scheduleAutoDraftSave: () => {},
-  finalizeCompletedSession: async () => {},
-  sha256HexBlob: async () => 'test-hash'
+  finalizeCompletedSession: async () => {}
 };
 const api = global.PTI093DriveFusion.install(deps);
 for (const name of ['openRecordFromDrive','setOpenLoad','finishOpenLoad','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
@@ -40,6 +42,7 @@ const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 assert.ok(html.includes('<link rel="stylesheet" href="./css/skin-classic.css">'), 'Classic skin should be external');
 assert.ok(html.includes('<link rel="stylesheet" id="uiRefreshV42" href="./css/skin-modern.css">'), 'Modern skin toggle target should remain addressable');
+assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusion/drive.js"'), 'Shared Core should load before app-specific Drive Fusion');
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
 for (const marker of ['pti093_local_drafts_v1', 'async function restoreAutoDraft', 'async function saveAutoDraft']) {
