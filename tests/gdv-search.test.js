@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+global.window = {};
+require('../core/gdv-search.js');
+const core = global.window.PTISharedCore;
+assert.equal(core.normalizeRecordSearch('Đặng Văn Hiên'), 'dangvanhien');
+assert.equal(core.gdvSearchMatches('Nguyen Minh Ngoc', 'Nguyễn Minh Ngọc'), true);
+assert.equal(core.gdvSearchMatches('NMN', 'Nguyễn Minh Ngọc'), true);
+assert.equal(core.gdvSearchMatches('ngoc', 'Nguyễn Minh Ngọc'), true);
+assert.equal(core.gdvSearchMatches('', 'Nguyễn Minh Ngọc'), false);
+assert.equal(core.gdvSearchMatches('xyz', 'Nguyễn Minh Ngọc'), false);
+console.log('Shared GĐV search tests passed (6 assertions).');
