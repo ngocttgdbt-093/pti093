@@ -30,14 +30,15 @@ const {chromium}=require('playwright');
         pdfWarningSkin:!!window.PTI093ClassicPdfWarningSkin,
         gdvFusion:!!window.PTI093GdvFusion,
         imageIngest:!!window.PTI093ImageIngest,
-        fileIntakeSkin:!!window.PTI093ClassicFileIntakeSkin
+        fileIntakeSkin:!!window.PTI093ClassicFileIntakeSkin,
+        previewSkin:!!window.PTI093ClassicPreviewSkin
       }
     }));
     assert.equal(initial.counts,6,'six image-count choices should be rendered');
     assert.equal(initial.layoutCells,6,'default layout should show six image slots');
     assert.match(initial.layoutText,/6 ảnh/);
     assert.equal(initial.datePlaceholder,'dd/mm/yyyy');
-    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,fileIntakeSkin:true});
+    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,fileIntakeSkin:true,previewSkin:true});
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
     assert.deepEqual(pageErrors,[],'the full app should start without uncaught JavaScript errors');
