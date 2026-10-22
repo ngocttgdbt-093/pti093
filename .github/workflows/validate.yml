@@ -95,6 +95,7 @@ jobs:
           node tests/classic-group-list-skin.test.cjs
           node tests/classic-image-grid-skin.test.cjs
           node tests/classic-pdf-warning-skin.test.cjs
+          node tests/classic-preview-skin.test.js
           node tests/classic-file-intake-skin.test.cjs
           node tests/gdv-093-fusion.test.cjs
 
