@@ -6,7 +6,8 @@ This file records the initial source audit for the shared Core refactor of GHÉP
 
 - Keep both `main` branches and current production deployments unchanged during refactor.
 - Treat the currently working 093 Core, 093 Drive case-saving, and PTI administrator/user-directory function as stable behavior to preserve.
-- PTI must not save image cases to Drive. Its Drive use is limited to the separate administrator/login/user-directory workflow.
+- User-confirmed regression baseline (2026-10-22): the user tested 093 draft recovery after reload/F5 10 times today and all 10 succeeded. Treat that as trusted behavioral evidence; the refactor must preserve it, not re-litigate whether the current behavior works.
+- PTI must not save image cases to Drive. The user confirms the case-save button has already been removed from the visible PTI UI; source code may still contain dormant handlers or upload functions, so audit the complete call paths rather than assuming the button is present. Remove/disable only PTI case-save entry points on this test branch. Preserve the separate administrator/login/permissions/user-directory Drive integration.
 - Do not copy code blindly between apps. First map dependencies and test each extracted module.
 - A syntax check is not a functional regression test and must never be reported as acceptance.
 
@@ -86,3 +87,10 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - [ ] Shared Core extracted.
 - [ ] PTI case-Drive functionality isolated/removed on test branch.
 - [ ] Test deployments and acceptance completed.
+
+
+## User-confirmed baseline and PTI Drive boundary — v1-20261022.3
+
+- 093 local draft recovery is a known-good behavior based on the user's 10/10 reload/F5 tests on 2026-10-22. Any refactor needs a before/after regression plan that checks restoration of image files, captions, order, selected GĐV, and relevant form fields; do not alter draft lifecycle just for stylistic consistency.
+- PTI's visible case-Drive-save button has already been removed according to the user. The source still contains case-save-related code; this audit does not infer that the UI button remains visible. Verify whether those functions are reachable from any current UI/event handler/global export and ensure PTI cannot initiate case uploads, while keeping admin login and user-directory operations intact.
+- The next implementation stage is dependency mapping and test harness preparation. No Core extraction, production deployment, or functional acceptance is claimed by this audit update.
