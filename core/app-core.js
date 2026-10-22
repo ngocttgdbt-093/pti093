@@ -160,11 +160,7 @@ const {openLocalDraft}=localOpenCore;
 
 const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 const {openRecordFromDrive,recordMatchesQuery,recordTime,sameLocalDriveRecord,searchDriveRecords,saveProjectToDrive,driveImageKey,getDriveUploadedKeys,saveDriveUploadedKeys,getDrivePendingUploadKey,saveDrivePendingUploadKey,prepareDriveItem,waitForUploadStatus,sendDrivePayload,renderDriveUploadFailures,createDriveRecord,pti093UploadAll}=driveSaveFusion;
-window.pti093UploadAll=pti093UploadAll;
-$('driveSearchBtn').onclick=searchDriveRecords;
-$('driveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchDriveRecords()});
-$('driveSaveProject').onclick=async()=>{const b=$('driveSaveProject');b.disabled=true;try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');if(result&&result.total>result.sent)throw new Error('Chưa xác nhận đủ ảnh trên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Đã lưu thay đổi hồ sơ. Ảnh hiện có đã được xác nhận trên Drive.')}catch(e){msg('Lỗi lưu thay đổi: '+e.message,true)}finally{b.disabled=false}};
-$('driveCreate').onclick=createDriveRecord;
+driveSaveFusion.bindControls();
 
 /* Draft session state moved to core/draft-recovery.js */
 /* Draft session state moved to core/draft-recovery.js */
@@ -185,7 +181,6 @@ $('driveCreate').onclick=createDriveRecord;
 
 /* Classic Local Save UI is implemented in skin/classic-local-save.js */
 
-window.pti093UploadAll = pti093UploadAll;
 
 
 
