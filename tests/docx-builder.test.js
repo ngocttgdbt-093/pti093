@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+global.window = global;
+require('../core/docx-builder.js');
+assert.ok(global.PTI093DocxBuilder);
+const api = global.PTI093DocxBuilder.install({xmlEsc: x => String(x ?? ''), formatDateDMY: x => String(x ?? '')});
+const out = api.makeDocxFiles({orientation:'portrait',bks:'TEST',hoso:'HS-1',date:'2026-10-23',garage:'Garage',gdv:'GĐV',groups:[{title:'Hiện trường',items:[{caption:'Ảnh 1'}]}]},[{name:'image1.jpg',w:1200,h:800}]);
+assert.ok(out.documentXml.includes('TEST'));
+assert.ok(out.documentXml.includes('Ảnh 1'));
+assert.ok(out.relXml.includes('image1.jpg'));
+assert.ok(out.content.includes('word/document.xml'));
+console.log('DOCX Builder tests passed.');
