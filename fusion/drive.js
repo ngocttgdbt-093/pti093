@@ -536,7 +536,8 @@
       
       async function finalizeAfterSuccessfulDriveSave(){
         try{
-          await finalizeCompletedSession();
+          const cleaned=await finalizeCompletedSession();
+          if(cleaned===false)throw new Error('Không dọn được nháp tự động.');
           return true;
         }catch(error){
           const detail=error&&error.message?error.message:String(error);
