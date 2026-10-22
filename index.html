@@ -35,9 +35,12 @@
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
 <div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v59-20261020.1</span></div>
 </div>
-<script src="./core/gdv-search.js"></script><script src="./core/zip-utils.js"></script><script src="./core/local-draft-store.js"></script><script src="./core/draft-recovery.js"></script><script src="./fusion/drive.js"></script><script>
+<script src="./core/gdv-search.js"></script><script src="./core/zip-utils.js"></script><script src="./core/pdf-builder.js"></script><script src="./core/local-draft-store.js"></script><script src="./core/draft-recovery.js"></script><script src="./fusion/drive.js"></script><script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
+const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
+const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
+const {pagePixels,jpegQuality,makeCanvas,pdfBytesFromCanvases,resamplePdfCanvases,pdfPackSize,makePdfAt,buildAdaptivePdf,splitPdfBytes}=pdfBuilder;
 const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,textFile}=window.PTISharedCore;
 function formatDateDMY(value){const v=String(value||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}return v;}
 function getDateISO(){const v=String($('date').value||'').trim();let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m){const d=m[1].padStart(2,'0'),mo=m[2].padStart(2,'0'),y=m[3];const dt=new Date(Number(y),Number(mo)-1,Number(d));if(dt.getFullYear()===Number(y)&&dt.getMonth()===Number(mo)-1&&dt.getDate()===Number(d))return `${y}-${mo}-${d}`;return '';}if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;return '';}
@@ -139,15 +142,9 @@ document.querySelectorAll('#orient .opt').forEach(b=>b.onclick=()=>{state.orient
 // V39: render bố cục ngay sau khi tạo các nút lựa chọn, không phụ thuộc render() hoặc khôi phục bản nháp.
 // Nhờ đó vừa mở trang đã thấy đúng 6 ảnh A4 dọc (2 × 3), không cần bấm lại nút 6.
 renderLayout();
-function pagePixels(){/* A4 render: enough pixels for crisp PDF while avoiding oversized raster pages. */
-  const dpi=state.per===1?180:(state.per<=4?165:150);
-  const mmPerIn=25.4, a4w=state.orientation==='landscape'?297:210, a4h=state.orientation==='landscape'?210:297;
-  return {W:Math.round(a4w/mmPerIn*dpi),H:Math.round(a4h/mmPerIn*dpi),dpi};
-}
-function jpegQuality(){/* More images = smaller cells, so excessive JPEG quality only inflates the PDF. */
-  return state.per===1?0.88:(state.per<=4?0.84:0.80);
-}
-function makeCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+
+
+
 function loadImage(f){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=URL.createObjectURL(f)})}
 const logoSrc=document.querySelector('.logo').src;function loadLogo(){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=logoSrc})}
 function wrap(ctx,text,max,font){if(!text)return[];ctx.font=`400 ${font}px Arial`;const words=text.split(/\s+/),out=[];let line='';for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width<=max)line=t;else{if(line)out.push(line);line=w}}if(line)out.push(line);return out}
@@ -196,37 +193,13 @@ async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.
       // i là vị trí tuyệt đối trong toàn bộ loại ảnh, không phải vị trí trong trang.
       pages.push(await drawPage(gr,pageItems,pageNo,groupPageNo,total,i));
     }}state.pages=pages;state.pageDefs=defs;$('preview').innerHTML='';pages.forEach((c,i)=>{const d=document.createElement('div');d.className='pageprev';const t=document.createElement('div');t.className='muted';t.textContent=`Trang ${i+1}`;d.append(t,c);$('preview').appendChild(d)});$('previewInfo').textContent=`Preview ${pages.length} trang A4 · ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh · tối ưu ${pagePixels().dpi} DPI / JPEG ${Math.round(jpegQuality()*100)}%`;$('pdf').disabled=false;$('newCase').style.display='inline-block';window.scrollTo({top:$('preview').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})}
-function pdfBytesFromCanvases(canvases,qualityOverride){const enc=new TextEncoder(),chunks=[],objs=[];let off=0;const add=s=>{const b=enc.encode(s);chunks.push(b);off+=b.length};const obj=(n,body)=>{objs[n]=off;add(`${n} 0 obj\n${body}\nendobj\n`)};const streamObj=(n,dict,bytes)=>{objs[n]=off;add(`${n} 0 obj\n${dict}\nstream\n`);chunks.push(bytes);off+=bytes.length;add(`\nendstream\nendobj\n`)};add('%PDF-1.4\n%âãÏÓ\n');obj(1,'<< /Type /Catalog /Pages 2 0 R >>');const pageIds=[];for(let i=0;i<canvases.length;i++){const pid=3+i*3,imgid=4+i*3,contid=5+i*3;pageIds.push(pid);const pw=state.orientation==='landscape'?841.89:595.28,ph=state.orientation==='landscape'?595.28:841.89;obj(pid,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im${i+1} ${imgid} 0 R >> >> /Contents ${contid} 0 R >>`);const c=canvases[i],raw=atob(c.toDataURL('image/jpeg',qualityOverride==null?jpegQuality():qualityOverride).split(',')[1]),u=new Uint8Array(raw.length);for(let j=0;j<raw.length;j++)u[j]=raw.charCodeAt(j);streamObj(imgid,`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${u.length} >>`,u);const cb=enc.encode(`q\n${pw} 0 0 ${ph} 0 0 cm\n/Im${i+1} Do\nQ\n`);streamObj(contid,`<< /Length ${cb.length} >>`,cb)}obj(2,`<< /Type /Pages /Count ${pageIds.length} /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] >>`);const xref=off;add(`xref\n0 ${objs.length}\n0000000000 65535 f \n`);for(let i=1;i<objs.length;i++)add(String(objs[i]).padStart(10,'0')+' 00000 n \n');add(`trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);const total=chunks.reduce((a,b)=>a+b.length,0),out=new Uint8Array(total);let p=0;for(const b of chunks){out.set(b,p);p+=b.length}return out}
-function resamplePdfCanvases(canvases,targetDpi){
-  const src=pagePixels(),scale=targetDpi/src.dpi;
-  if(scale>=0.999)return canvases;
-  return canvases.map(srcCanvas=>{
-    const w=Math.max(1,Math.round(srcCanvas.width*scale)),h=Math.max(1,Math.round(srcCanvas.height*scale));
-    const out=makeCanvas(w,h),ctx=out.getContext('2d');
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
-    ctx.drawImage(srcCanvas,0,0,w,h);
-    return out;
-  });
-}
+
+
 function mib(n){return n/1048576}
-const PDF_SAFE_LIMIT=9.5*1048576;
-function pdfPackSize(bytes){return bytes.byteLength||bytes.length||0}
-function makePdfAt(canvases,dpi,quality){return {bytes:pdfBytesFromCanvases(resamplePdfCanvases(canvases,dpi),quality),dpi,quality}}
-async function buildAdaptivePdf(canvases){
-  const tries=[
-    {dpi:pagePixels().dpi,quality:jpegQuality()},
-    {dpi:120,quality:.72},
-    {dpi:100,quality:.65},
-    {dpi:85,quality:.58},
-    {dpi:72,quality:.52}
-  ];
-  let last=null;
-  for(const t of tries){
-    const result=makePdfAt(canvases,t.dpi,t.quality);last=result;
-    if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT)return {...result,compressed:t.dpi!==pagePixels().dpi};
-  }
-  return {...last,compressed:true};
-}
+
+
+
+
 function hidePdfWarning(){const box=$('pdfWarn');if(box){box.classList.add('hidden');box.innerHTML='';}}
 function showPdfWarning(message,baseName){
   const box=$('pdfWarn');if(!box)return;
@@ -298,28 +271,7 @@ async function splitHighQualityPdf(filenameBase,onProgress=()=>{}){
   }
   return parts;
 }
-function splitPdfBytes(canvases,filenameBase){
-  return (async()=>{
-    const parts=[];let start=0,partNo=1;
-    while(start<canvases.length){
-      let low=start+1,high=canvases.length,best=null;
-      while(low<=high){
-        const mid=Math.floor((low+high)/2);
-        const trial=await buildAdaptivePdf(canvases.slice(start,mid));
-        if(pdfPackSize(trial.bytes)<=PDF_SAFE_LIMIT){best={end:mid,...trial};low=mid+1}
-        else high=mid-1;
-      }
-      if(!best){
-        const fallbackDpi=[60,50,40];let one=null;
-        for(const dpi of fallbackDpi){const q=dpi===60?.46:dpi===50?.40:.34;const r=makePdfAt(canvases.slice(start,start+1),dpi,q);one=r;if(pdfPackSize(r.bytes)<=PDF_SAFE_LIMIT)break}
-        best={end:start+1,...one};
-      }
-      parts.push({blob:new Blob([best.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' Phan '+partNo+'.pdf',dpi:best.dpi,quality:best.quality});
-      start=best.end;partNo++;
-    }
-    return parts;
-  })();
-}
+
 
 
 let pdfHighQualityRunning=false;
