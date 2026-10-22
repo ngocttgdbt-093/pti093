@@ -108,7 +108,7 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - Extracted the 093 case-save/upload functions into `fusion/drive.js`: project save, image key and upload-state persistence helpers, item preparation, upload confirmation, payload sending, failure rendering, create-record orchestration, and the existing batch uploader. The uploader's local concurrency constant remains 5; it was not reconfigured. App/UI dependencies are passed explicitly through the fusion installer.
 - Moved the save/create event binding until after the fusion installer returns, preventing access to uninitialized module aliases. Removed the duplicate create-handler assignment.
 - Added `tests/drive-fusion.test.js` and workflow steps for syntax and module contract checks. In this environment, 5/5 remaining inline script blocks parsed, the extracted module parsed, all 12 expected functions were exported, and the upload-key persistence checks passed with a browser-storage mock.
-- Scope note: this extraction covers the save/upload path. Drive search/open-record functions remain in the main app script and must be assessed separately before declaring the entire Drive fusion isolated. The local-draft lifecycle remains unchanged. CSS/JS source checks are not browser acceptance; no deployment was performed.
+- Scope note (updated v4-20261022.4): Drive save/upload and record search/open paths are now inside `fusion/drive.js`; the app HTML retains the Drive UI markup and event binding points. The local-draft lifecycle remains in Core and unchanged. CSS/JS source checks are not browser acceptance; no deployment was performed.
 
 ## Dependency-wiring correction — v4-20261022.2
 
@@ -134,3 +134,10 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - The five late style blocks originally appeared after the document head; their stylesheet links are now loaded in the head in the same cascade order as the source blocks. This makes the skin assets explicit and avoids relying on style tags embedded in the body.
 - Updated the Drive Fusion test to verify that all 15 CSS assets exist, are non-empty, and are linked from `index.html`.
 - Source validation still does not substitute for browser visual regression; the Classic default, Modern toggle, mobile layout, preview modal, tooltip stacking, and PC dashboard should be visually checked on an isolated test build before merge.
+
+## Complete Drive Fusion boundary — v4-20261022.4
+
+- Consolidated the Drive-specific API endpoint, image optimization, SHA-256 upload key, create/save/upload, upload-state tracking, record search/open, and Drive progress helpers inside `fusion/drive.js`. The main app now supplies app/UI adapters and retains the HTML controls; event bindings are installed after the module returns its API.
+- Source comparison confirms the extracted Drive function bodies match the original `main` implementations after normalizing indentation. The uploader's concurrency remains the original local `DRIVE_CONCURRENCY=5`; no concurrency redesign was made.
+- Removed the obsolete Drive function declarations from `index.html`. The shared local-draft functions remain in `index.html` and are unchanged compared with `main`.
+- Remaining work: optimize and consolidate the non-Drive app functions into Core modules, then run browser-level regressions and verify completed GitHub Actions runs. No production deploy or merge has occurred.
