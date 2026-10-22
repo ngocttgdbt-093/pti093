@@ -424,3 +424,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Removed `core/docx-builder.js`, its dedicated test, and `core/zip-utils.js`, which was only used by the retired DOCX path. Removed their script tags and the DOCX-specific CI steps/load-order assertions.
 - Preserved local draft modules, `pti093_local_drafts_v1`, `AUTO-DRAFT`, session key, and Drive Fusion. No changes to `main`, production deployment, or the separate PTI repository.
 - Required follow-up: run the complete CI after removal and verify no remaining DOCX/ZIP helper references. This commit records code removal; acceptance depends on the resulting workflow.
+
+
+## Retired DOCX cleanup, Preview Skin, and standard PDF export — v2-20261023.19
+
+- Removed the obsolete Word/DOCX draft path and its ZIP/XML helper because local IndexedDB is the canonical draft-recovery workflow. The follow-up cleanup removed stale ZIP CI steps and the smoke-test expectation that DOCX should load. Workflow run **#770** (`39834098942`) completed successfully after the preview-test syntax fix and retired-path cleanup.
+- Extracted the preview UI into `skin/classic-preview.js`. It owns preview-page DOM rendering, preview summary/status, visibility of edit/new-case controls, scroll positioning, and assignment of `state.pages` / `state.pageDefs`. That assignment is required for the PDF export path.
+- Extended the full-app Chromium smoke test to add a real SVG image through the actual file input, finish the image group, render a preview page, and trigger a PDF download. Workflow run **#775** (`39834334559`) completed successfully; the full app, preview, and PDF download path passed, alongside the draft recovery, image reorder, Skin, and Core/Fusion checks.
+- Moved both standard PDF export and high-quality split export into `core/pdf-export-controller.js`. Unit tests now cover the standard compressed/uncompressed paths, warning display, completion cleanup, multi-part high-quality export, empty-page guard, and error recovery.
+- Extracted layout/orientation control binding into `skin/classic-layout.js`. The current `core/app-core.js` snapshot is about **15,994 bytes**, compared with the initial 46,529-byte baseline (about 65.6% smaller by byte count; this is not a runtime-performance claim).
+- Still isolated to `refactor/core-modules-test-20261022`: no merge, no production deployment, no changes to `main`, and no changes to the separate PTI repository. Full manual acceptance with the user's actual photo set and physical touch-device interaction remains open.
