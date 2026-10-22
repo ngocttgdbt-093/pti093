@@ -45,9 +45,6 @@ const pdfExportController=window.PTI093PdfExportController.install({state,$,spli
 const {exportHighQualitySplit}=pdfExportController;
 const classicPdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({$,document,exportHighQualitySplit});
 const {hidePdfWarning,showPdfWarning}=classicPdfWarningSkin;
-const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,textFile}=window.PTISharedCore;
-const docxBuilder=window.PTI093DocxBuilder.install({xmlEsc,formatDateDMY,loadImage,makeCanvas,dataUrlBytes});
-const {docxText,docxCaption,drawingXml,pageBreak,makeDocxFiles,imageForDocx}=docxBuilder;
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
@@ -91,14 +88,6 @@ function mib(n){return n/1048576}
 
 
 
-
-// ===== Word draft (PC only) =====
-const DOCX_MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-async function saveDocx(){const groups=getAllGroups();if(!groups.length){alert('Chưa có ảnh để lưu bản nháp.');return}const gdv=selectedGdv(),meta={version:2,app:'PTI_GhepAnhXe',gdv,bks:$('bks').value,hoso:$('hoso').value,date:getDateISO(),garage:$('garage').value,orientation:state.orientation,per:state.per,groups:groups.map(g=>({title:g.title,items:g.items.map(it=>({caption:it.caption||'',name:it.file.name,size:it.file.size,lastModified:it.file.lastModified,addSeq:it.addSeq||null,rotate:it.rotate||0}))}))};const media=[];for(let i=0;i<groups.length;i++)for(let j=0;j<groups[i].items.length;j++){const x=await imageForDocx(groups[i].items[j].file,groups[i].items[j].rotate||0);media.push({name:`image${media.length+1}.jpg`,bytes:x.bytes,w:x.w,h:x.h})}const p=makeDocxFiles(meta,media),files=[{name:'[Content_Types].xml',data:new TextEncoder().encode(p.content)},{name:'_rels/.rels',data:new TextEncoder().encode(p.rootrels)},{name:'word/document.xml',data:new TextEncoder().encode(p.documentXml)},{name:'word/_rels/document.xml.rels',data:new TextEncoder().encode(p.relXml)},{name:'docProps/core.xml',data:new TextEncoder().encode(p.core)},{name:'customXml/item1.xml',data:new TextEncoder().encode(p.custom)}];for(const m of media)files.push({name:'word/media/'+m.name,data:m.bytes});const out=zipStore(files),blob=new Blob([out],{type:DOCX_MIME}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`PTI_Nhap_${($('bks').value||'GhepAnh').replace(/[^\w.-]+/g,'_')}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);msg('Đã tạo bản nháp Word. Có thể mở lại bằng “Mở bản nháp Word”.',true)}
-async function openDocxFile(file){try{const files=unzipStore(await file.arrayBuffer()),raw=textFile(files,'customXml/item1.xml'),m=raw.match(/<!\[CDATA\[(.*?)\]\]>/s);if(!m)throw new Error('Không tìm thấy dữ liệu hồ sơ PTI trong file Word.');const meta=JSON.parse(m[1]);if(meta.app!=='PTI_GhepAnhXe')throw new Error('Đây không phải bản nháp PTI được tạo từ phần mềm.');const media=Object.keys(files).filter(k=>/^word\/media\/image\d+\.jpg$/i.test(k)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));let mi=0;const groups=[];for(const gr of meta.groups){const items=[];for(const it of gr.items){const bytes=files[media[mi++]];if(!bytes)throw new Error('Thiếu ảnh trong bản nháp.');const blob=new Blob([bytes],{type:'image/jpeg'});items.push({file:new File([blob],it.name||`image${mi}.jpg`,{type:'image/jpeg',lastModified:it.lastModified||Date.now()}),key:(it.name||'')+'|'+(it.size||0)+'|'+(it.lastModified||0),caption:it.caption||'',addSeq:it.addSeq||++state.addSeq,rotate:it.rotate||0})}groups.push({title:gr.title,items})}state.groups=groups;state.addSeq=Math.max(0,...groups.flatMap(g=>g.items.map(it=>it.addSeq||0)));state.current={title:'Bản ảnh hiện trường',items:[]};state.orientation=meta.orientation||'landscape';state.per=meta.per||4;$('gdv').value=meta.gdv||'';if($('gdv').value==='Nhập tên khác')$('gdv').dataset.custom=meta.gdv;$('bks').value=meta.bks||'';$('hoso').value=meta.hoso||'';setDateInput(meta.date||'');$('garage').value=meta.garage||'';document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per));document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
-
-render();renderLayout();await makePreview();msg(`Đã mở bản nháp: ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh.`,true)}catch(e){alert('Không mở được bản nháp Word: '+e.message)}}
-// Bản nháp Word đã được thay thế bằng project.pti trên Google Drive.
 
 $('pdf').onclick=()=>pdfExportController.exportStandardPdf($('pdf'));
 $('backEdit').onclick=()=>{
