@@ -84,11 +84,11 @@ const builderScripts = [
   './core/preview-builder.js',
   './core/image-ingest.js',
   './core/image-editing.js',
+  './core/case-editor.js',
   './core/image-reorder.js',
   './core/pdf-export.js',
   './core/pdf-export-controller.js',
   './skin/classic-preview.js',
-  './core/case-editor.js',
   './core/app-core.js'
 ];
 const builderPositions = builderScripts.map(src => html.indexOf('src="' + src + '"'));
