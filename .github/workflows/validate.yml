@@ -95,6 +95,7 @@ jobs:
           node tests/classic-group-list-skin.test.cjs
           node tests/classic-image-grid-skin.test.cjs
           node tests/classic-pdf-warning-skin.test.cjs
+          node tests/classic-file-intake-skin.test.cjs
           node tests/gdv-093-fusion.test.cjs
 
       - name: Check Image Ingest Core module
@@ -171,6 +172,10 @@ jobs:
       - name: Check 093 GĐV Fusion module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check fusion/gdv-093.js
+
+      - name: Check Classic File Intake Skin module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check skin/classic-file-intake.js
 
       - name: Check Classic PDF Warning Skin module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
