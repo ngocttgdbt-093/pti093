@@ -319,3 +319,17 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Added a real Chromium fixture and test for normal progress, failed-save state, cancel, and confirm; the full-app smoke test also asserts that the skin module loads. GitHub Actions run **#503** (`39828802151`) completed successfully.
 - This is the first explicit JavaScript Skin/Core boundary in this branch. Continue moving DOM presentation out of App Core in small units while leaving business rules and storage behavior in Core modules.
 - After this extraction, `core/app-core.js` is 34,257 bytes versus the initial 46,529 bytes. The Classic skin module is not a production deployment; the test branch remains isolated.
+
+
+## Classic Skin presentation modules expanded — v2-20261023.21
+
+- Extracted four more DOM presentation components from App Core into `skin/`:
+  - `classic-load-progress.js`: open/load progress bar, percentage, and completion state.
+  - `classic-image-viewer.js`: full-size image overlay, rotation, Escape/backdrop/close-button dismissal, and object-URL cleanup.
+  - `classic-status.js`: visible/hidden status messages and normal/warning Drive status styling.
+  - `classic-layout.js`: layout-preview slots, grid columns, and portrait/landscape labels.
+- App Core now installs these Skin modules and passes the progress callbacks into Local Open and Drive Fusion; business/storage logic remains in Core/Fusion.
+- Added browser fixtures and interaction tests for each UI component, and extended the full-app smoke test to verify all Skin modules load.
+- A test assumption in the Drive Fusion suite was updated after moving `finishOpenLoad` into Skin: the test now checks the function in `skin/classic-load-progress.js` while still verifying Drive Fusion receives the callback through dependency injection. A test-only backdrop click was also corrected to dispatch directly on the overlay itself.
+- GitHub Actions run **#563** (`39829785066`) completed successfully with the browser suite, all four Skin syntax checks, and the existing Core/Fusion tests.
+- `core/app-core.js` is now 32,112 bytes after the layout extraction; remaining work is to keep separating UI presentation from application/business orchestration without changing the current Classic behavior.
