@@ -302,3 +302,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Moved the existing `commitCurrent` business rule from `core/app-core.js` into `core/workspace.js` as `PTIWorkspaceCore.commitCurrent(state)`. The rule still returns `null` for an empty current group, merges a matching title into the last saved group, appends a different title, and reinserts an edited group at its original index while resetting `state.editing`.
 - App Core now delegates to Workspace Core; the unit tests cover empty, merge, append, and edit-reinsert cases and assert the integration binding.
 - GitHub Actions run **#474** (`39828123195`) completed successfully, including the expanded Workspace Core tests and the Chromium recovery, reorder, full-app smoke, and PDF Export checks.
+
+
+## Shared GĐV search query expansion extraction — v2-20261023.16.1
+
+- Moved the existing `searchQueryVariants` helper into `core/gdv-search.js` as `PTISharedCore.searchQueryVariants(query, names)`. The 093-specific GĐV list remains owned by App Core and is passed in; the shared Core now handles normalization, full-name/surname variants, initials, duplicate suppression, and the existing five-result cap.
+- App Core delegates to the shared search API. Tests cover normalized names, initials, query expansion, missing matches, and result limits.
+- The first test expectation incorrectly expected the surname `Ngọc` to appear when it normalizes to the same value as the original query `ngoc`; the implementation correctly suppresses that duplicate. The assertion was corrected to preserve the existing behavior.
+- GitHub Actions run **#485** (`39828453790`) completed successfully, including the expanded GĐV search tests, Workspace Core group-commit tests, PDF Export, and the Chromium recovery/reorder/full-app smoke suite.
