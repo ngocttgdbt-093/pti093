@@ -135,7 +135,7 @@ const searchQueryVariants=query=>window.PTISharedCore.searchQueryVariants(query,
 /* Draft session state moved to core/draft-recovery.js */
 const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
 const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
-const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone,getLocalDrafts});
+const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone});
 const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery;
 window.PTI093SessionActions.install({$,clearAutoDraft,localStorage,location,console,msg});
 const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
