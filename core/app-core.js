@@ -2,6 +2,8 @@
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
+const classicLocalSaveSkin=window.PTI093ClassicLocalSaveSkin.install({document});
+const {renderLocalSaveFeedback,showLocalSaveConfirm}=classicLocalSaveSkin;
 const dateUtils=window.PTI093DateUtils.install({$});
 const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
 const workspaceCore=window.PTIWorkspaceCore;
@@ -327,39 +329,7 @@ $('driveCreate').onclick=createDriveRecord;
 /* Draft recovery is implemented in core/draft-recovery.js */
 /* Draft recovery is implemented in core/draft-recovery.js */
 
-function renderLocalSaveFeedback(id,pct,label,detail='',failed=false){
-  const host=document.getElementById('ptiPreviewFeedback');
-  if(!host)return;
-  host.style.display='grid';host.style.visibility='visible';
-  let panel=document.getElementById('ptiLocalSaveFeedback');
-  if(!panel){
-    panel=document.createElement('div');panel.id='ptiLocalSaveFeedback';
-    panel.style.cssText='display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #b8d9c7;border-radius:10px;background:#f3fbf6;color:#174d34;font-size:13px;line-height:1.5';
-    panel.innerHTML='<div id="ptiLocalSaveId" style="font-weight:800;overflow-wrap:anywhere;margin-bottom:5px"></div><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><span id="ptiLocalSaveLabel" style="font-weight:700"></span><strong id="ptiLocalSavePct">0%</strong></div><div style="height:9px;border-radius:999px;background:#dcebe2;overflow:hidden;margin-top:6px"><div id="ptiLocalSaveBar" style="height:100%;width:0%;background:#07834f;transition:width .2s"></div></div><div id="ptiLocalSaveDetail" style="margin-top:5px;color:#52685b;overflow-wrap:anywhere"></div>';
-    host.prepend(panel);
-  }
-  panel.style.borderColor=failed?'#d97777':'#b8d9c7';panel.style.background=failed?'#fff5f5':'#f3fbf6';panel.style.color=failed?'#8a2424':'#174d34';
-  const idEl=document.getElementById('ptiLocalSaveId');if(idEl)idEl.textContent='💻 ID hồ sơ local: '+(id||'Đang tạo ID…');
-  const labelEl=document.getElementById('ptiLocalSaveLabel');if(labelEl)labelEl.textContent=label;
-  const pctEl=document.getElementById('ptiLocalSavePct');if(pctEl)pctEl.textContent=typeof pct==='number'?pct+'%':'!';
-  const bar=document.getElementById('ptiLocalSaveBar');if(bar){bar.style.width=(typeof pct==='number'?Math.max(0,Math.min(100,pct)):100)+'%';bar.style.background=failed?'#c43d3d':'#07834f'}
-  const detailEl=document.getElementById('ptiLocalSaveDetail');if(detailEl)detailEl.textContent=detail;
-}
-/* Manual local-save flow is implemented in core/local-save.js */
-
-function showLocalSaveConfirm(n){
-  return new Promise(resolve=>{
-    const overlay=document.createElement('div');overlay.className='localSaveOverlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
-    overlay.innerHTML='<div class="localSaveDialog"><div class="localSaveHead"><div class="localSaveIcon">💻</div><div class="localSaveTitle">Xác nhận lưu ảnh tại máy</div></div><div class="localSaveBody">Ảnh gốc sẽ được lưu trong bộ nhớ của <strong>trình duyệt trên máy này</strong> và <strong>không tải ảnh lên Google Drive</strong>.<br><br>Thông tin hồ sơ, chú thích và thứ tự ảnh vẫn được đồng bộ lên Drive để có thể tìm theo Mã HS/BKS. Ảnh lưu tại máy không thể mở trên máy khác.<div class="localSaveCount">📷 Số ảnh: '+n+'</div></div><div class="localSaveActions"><button type="button" class="localSaveCancel">Hủy</button><button type="button" class="localSaveConfirm">✓ Xác nhận & lưu</button></div></div>';
-    const finish=v=>{overlay.remove();resolve(v)};
-    overlay.querySelector('.localSaveCancel').onclick=()=>finish(false);
-    overlay.querySelector('.localSaveConfirm').onclick=()=>finish(true);
-    overlay.onclick=e=>{if(e.target===overlay)finish(false)};
-    document.body.appendChild(overlay);
-    overlay.querySelector('.localSaveConfirm').focus();
-  });
-}
-/* Manual local-save flow is implemented in core/local-save.js */
+/* Classic Local Save UI is implemented in skin/classic-local-save.js */
 
 window.pti093UploadAll = pti093UploadAll;
 
