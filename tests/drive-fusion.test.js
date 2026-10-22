@@ -17,6 +17,7 @@ const deps = {
   $: () => ({ value: '', textContent: '', innerHTML: '', style: {}, options: [], classList: { add(){}, remove(){} }, appendChild(){}, setAttribute(){}, addEventListener(){} }),
   msg: () => {},
   getAllGroups: () => [],
+  snapshotGroupsForProject: () => [],
   selectedGdv: () => '',
   scheduleAutoDraftSave: () => {},
   finalizeCompletedSession: async () => {},
