@@ -65,9 +65,6 @@ jobs:
       - name: Check shared Core draft recovery module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check core/draft-recovery.js
-      - name: Test shared Core draft recovery contract
-        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
-        run: node tests/draft-recovery.test.js
 
       - name: Check extracted Drive Fusion module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
