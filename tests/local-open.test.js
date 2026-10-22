@@ -139,5 +139,17 @@ const api = global.PTI093LocalOpenCore.install({
   assert.match(missingCalls.progress.at(-1)[3],/Không tìm thấy bản lưu tại máy/,
     'missing metadata must not leave the local-open progress stuck');
 
-  console.log('Local Open Core tests passed (section order, restore fields/images, and read-failure progress).');
+  const originalSessionStorage=global.sessionStorage,originalLocalStorage=global.localStorage;
+  global.sessionStorage={getItem(){throw new Error('sessionStorage blocked')},setItem(){throw new Error('sessionStorage blocked')},removeItem(){throw new Error('sessionStorage blocked')}};
+  global.localStorage={getItem(){throw new Error('localStorage blocked')},setItem(){throw new Error('localStorage blocked')},removeItem(){throw new Error('localStorage blocked')}};
+  try{
+    await assert.doesNotReject(api.openLocalDraft('LOCAL-TEST-1'),
+      'opening a local case should not fail just because Drive preference storage is blocked');
+    assert.equal(appState.localDraftId,'LOCAL-TEST-1');
+    assert.equal(appState.driveRecordId,'');
+  }finally{
+    global.sessionStorage=originalSessionStorage;global.localStorage=originalLocalStorage;
+  }
+
+  console.log('Local Open Core tests passed (section order, restore fields/images, read-failure progress, and blocked preference storage).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
