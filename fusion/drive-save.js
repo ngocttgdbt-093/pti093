@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093DriveFusion = {
     install: function(deps){
-      const {state, $, msg, setDriveState, optimizeDriveImage, snapshotGroupsForProject, buildProjectData, PTI093_API, getAllGroups, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, sha256HexBlob, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials} = deps;
+      const {state, $, msg, setDriveState, optimizeDriveImage, snapshotGroupsForProject, buildProjectData, PTI093_API, getAllGroups, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, sha256HexBlob, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
       async function openRecordFromDrive(recordId){
         setOpenLoad('Google Drive',0,0,'Đang mở hồ sơ và đọc danh sách ảnh từ Google Drive...');
         setDriveState('Đang tải hồ sơ từ Google Drive...');
