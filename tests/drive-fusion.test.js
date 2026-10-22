@@ -31,4 +31,15 @@ api.saveDrivePendingUploadKey('case-1', 'img-a', 'upload-123');
 assert.equal(api.getDrivePendingUploadKey('case-1','img-a'), 'upload-123');
 api.saveDrivePendingUploadKey('case-1', 'img-a', '');
 assert.equal(api.getDrivePendingUploadKey('case-1','img-a'), '');
-console.log('093 Drive Fusion tests passed (17 assertions/checks).');
+
+const fs = require('node:fs');
+const html = fs.readFileSync('index.html', 'utf8');
+assert.ok(html.includes('<link rel="stylesheet" href="./css/skin-classic.css">'), 'Classic skin should be external');
+assert.ok(html.includes('<link rel="stylesheet" id="uiRefreshV42" href="./css/skin-modern.css">'), 'Modern skin toggle target should remain addressable');
+assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
+assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
+for (const marker of ['pti093_local_drafts_v1', 'async function restoreAutoDraft', 'async function saveAutoDraft']) {
+  assert.ok(html.includes(marker), 'Existing 093 draft-recovery code must remain: ' + marker);
+}
+
+console.log('093 Drive Fusion tests passed (source contract + storage helpers).');
