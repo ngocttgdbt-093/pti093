@@ -2,6 +2,8 @@
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
+const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:localStorage});
+const {names:PTI093_GDV_NAMES,selectedGdv}=gdvFusion;
 const classicStatusSkin=window.PTI093ClassicStatusSkin.install({$});
 const {msg,setDriveState}=classicStatusSkin;
 const classicLocalSaveSkin=window.PTI093ClassicLocalSaveSkin.install({document});
@@ -41,7 +43,6 @@ const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,t
 const docxBuilder=window.PTI093DocxBuilder.install({xmlEsc,formatDateDMY});
 const {docxText,docxCaption,drawingXml,pageBreak,makeDocxFiles}=docxBuilder;
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
-function selectedGdv(){let v=$('gdv').value;if(!v)return 'NONAME';if(v==='Nhập tên khác'){let x=$('gdv').dataset.custom||'';if(!x)x=prompt('Nhập tên GĐV / Thụ lý:','');if(x){v=x;$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else v='NONAME'}return v}
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
@@ -225,7 +226,6 @@ function deviceStorageLabel(){
   return 'PC';
 }
 const normalizeRecordSearch=window.PTISharedCore.normalizeRecordSearch;
-const PTI093_GDV_NAMES=['Phạm Duy Thái','Đặng Xuân Linh','Nguyễn Tuấn Hưng','Đặng Xuân Diệu','Đặng Văn Hiên','Nguyễn Minh Ngọc'];
 const gdvInitials=window.PTISharedCore.gdvInitials;
 const gdvSearchMatches=window.PTISharedCore.gdvSearchMatches;
 const searchQueryVariants=query=>window.PTISharedCore.searchQueryVariants(query,PTI093_GDV_NAMES);
