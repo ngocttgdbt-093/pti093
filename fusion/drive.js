@@ -714,7 +714,26 @@
           return {sent,total,failures};
         }
       }
-      return {openRecordFromDrive, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll};
+      function bindControls(){
+        global.pti093UploadAll=pti093UploadAll;
+        $('driveSearchBtn').onclick=searchDriveRecords;
+        $('driveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchDriveRecords()});
+        $('driveSaveProject').onclick=async()=>{
+          const button=$('driveSaveProject');button.disabled=true;
+          try{
+            const result=await pti093UploadAll();
+            if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');
+            if(result&&result.total>result.sent)throw new Error('Chưa xác nhận đủ ảnh trên Drive.');
+            state.localDraftId='';
+            await saveProjectToDrive();
+            await finalizeCompletedSession();
+            setDriveState('Đã lưu thay đổi hồ sơ. Ảnh hiện có đã được xác nhận trên Drive.');
+          }catch(error){msg('Lỗi lưu thay đổi: '+error.message,true)}
+          finally{button.disabled=false}
+        };
+        $('driveCreate').onclick=createDriveRecord;
+      }
+      return {openRecordFromDrive, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll, bindControls};
     }
   };
 })(window);
