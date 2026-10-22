@@ -310,3 +310,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - App Core delegates to the shared search API. Tests cover normalized names, initials, query expansion, missing matches, and result limits.
 - The first test expectation incorrectly expected the surname `Ngọc` to appear when it normalizes to the same value as the original query `ngoc`; the implementation correctly suppresses that duplicate. The assertion was corrected to preserve the existing behavior.
 - GitHub Actions run **#485** (`39828453790`) completed successfully, including the expanded GĐV search tests, Workspace Core group-commit tests, PDF Export, and the Chromium recovery/reorder/full-app smoke suite.
+
+
+## First Classic Skin module extracted — v2-20261023.17
+
+- Created `skin/classic-local-save.js` for the Classic skin's local-save progress panel and confirmation dialog. The module owns the presentation markup, text, styling, progress display, and cancel/confirm UI; `core/local-save.js` continues to own the save behavior.
+- Removed those presentation functions from `core/app-core.js`; the app now installs the Classic Skin module and injects its UI callbacks into Local Save Core.
+- Added a real Chromium fixture and test for normal progress, failed-save state, cancel, and confirm; the full-app smoke test also asserts that the skin module loads. GitHub Actions run **#503** (`39828802151`) completed successfully.
+- This is the first explicit JavaScript Skin/Core boundary in this branch. Continue moving DOM presentation out of App Core in small units while leaving business rules and storage behavior in Core modules.
+- After this extraction, `core/app-core.js` is 34,257 bytes versus the initial 46,529 bytes. The Classic skin module is not a production deployment; the test branch remains isolated.
