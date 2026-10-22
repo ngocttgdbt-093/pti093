@@ -107,5 +107,19 @@ const api = global.PTI093LocalOpenCore.install({
   assert.equal(calls.layout, 1);
   assert.ok(calls.progress.length >= 2);
   assert.equal(closed, 1);
-  console.log('Local Open Core tests passed (12 checks).');
+
+  const failureCalls={progress:[]};
+  const failureApi=global.PTI093LocalOpenCore.install({
+    state:appState,$:element,msg:()=>{},
+    openLocalDraftDB:async()=>{throw new Error('IndexedDB unavailable')},
+    setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:()=>{},
+    deviceStorageLabel:()=> 'PC',
+    setOpenLoad:(...args)=>failureCalls.progress.push(args),
+    finishOpenLoad:()=>{}
+  });
+  await assert.rejects(failureApi.openLocalDraft('LOCAL-FAIL'),/IndexedDB unavailable/);
+  assert.match(failureCalls.progress.at(-1)[3],/Không thể đọc bản lưu tại máy/,
+    'failed local-open must replace the stuck loading message with an actionable error');
+
+  console.log('Local Open Core tests passed (section order, restore fields/images, and read-failure progress).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
