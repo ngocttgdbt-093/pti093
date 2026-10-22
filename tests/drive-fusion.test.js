@@ -42,6 +42,13 @@ const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 assert.ok(html.includes('<link rel="stylesheet" href="./css/skin-classic.css">'), 'Classic skin should be external');
 assert.ok(html.includes('<link rel="stylesheet" id="uiRefreshV42" href="./css/skin-modern.css">'), 'Modern skin toggle target should remain addressable');
+assert.equal((html.match(/<style\\b/gi) || []).length, 0, 'All static skin/style blocks should be externalized');
+for (const file of ['skin-classic.css','skin-modern.css', ...Array.from({length:13}, (_,i) => 'skin-overrides-' + String(i+3).padStart(2,'0') + '.css')]) {
+  const css = fs.readFileSync('css/' + file, 'utf8');
+  assert.ok(css.length > 0, file + ' should exist and be non-empty');
+  assert.ok(html.includes('./css/' + file), file + ' should be linked from index.html');
+}
+
 assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusion/drive.js"'), 'Shared Core should load before app-specific Drive Fusion');
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
