@@ -39,7 +39,7 @@ function setup(groups){
     assert.equal(elements.preview.children[0].className,'pageprev');
     assert.equal(elements.preview.children[0].children[0].textContent,'Trang 1');
     assert.match(elements.previewInfo.textContent,/Preview 2 trang A4 · 2 nội dung · 3 ảnh/);
-    assert.match(elements.previewInfo.textContent,/150 DPI / JPEG 80%/);
+    assert.match(elements.previewInfo.textContent,/150 DPI \/ JPEG 80%/);
     assert.equal(elements.pdf.disabled,false);
     assert.equal(elements.backEdit.style.display,'none');
     assert.equal(elements.newCase.style.display,'inline-block');
