@@ -29,9 +29,22 @@ jobs:
             new Function(source);
             checked++;
           }
-          if (!checked) throw new Error('Không có script nội bộ nào được kiểm tra');
-          console.log('PTI093 JavaScript syntax: OK (' + checked + ' inline scripts)');
+          if (!checked) {
+            console.log('No inline JavaScript remains; external modules are checked in dedicated steps');
+          } else {
+            console.log('PTI093 JavaScript syntax: OK (' + checked + ' inline scripts)');
+          }
           NODE
+
+      - name: Check Preview Modal Skin
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check skin/preview-modal.js
+      - name: Check Modern Image Gallery Skin
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check skin/modern-image-gallery.js
+      - name: Check Drive Recovery Guard Fusion
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check fusion/drive-recovery-guard.js
 
       - name: Check UI Mode Toggle Skin
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
