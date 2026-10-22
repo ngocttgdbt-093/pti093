@@ -268,20 +268,7 @@ const normalizeRecordSearch=window.PTISharedCore.normalizeRecordSearch;
 const PTI093_GDV_NAMES=['Phạm Duy Thái','Đặng Xuân Linh','Nguyễn Tuấn Hưng','Đặng Xuân Diệu','Đặng Văn Hiên','Nguyễn Minh Ngọc'];
 const gdvInitials=window.PTISharedCore.gdvInitials;
 const gdvSearchMatches=window.PTISharedCore.gdvSearchMatches;
-function searchQueryVariants(query){
-  const q=String(query||'').trim(),nq=normalizeRecordSearch(q),out=[q];
-  for(const name of PTI093_GDV_NAMES){
-    if(gdvSearchMatches(q,name)){
-      if(!out.some(x=>normalizeRecordSearch(x)===normalizeRecordSearch(name)))out.push(name);
-      const surname=name.trim().split(/\s+/).slice(-1)[0];
-      if(!out.some(x=>normalizeRecordSearch(x)===normalizeRecordSearch(surname)))out.push(surname);
-    }
-    if(nq===normalizeRecordSearch(name)||normalizeRecordSearch(name).includes(nq)){
-      const initials=gdvInitials(name);if(initials&&!out.some(x=>normalizeRecordSearch(x)===initials))out.push(initials);
-    }
-  }
-  return [...new Set(out.filter(Boolean))].slice(0,5)
-}
+const searchQueryVariants=query=>window.PTISharedCore.searchQueryVariants(query,PTI093_GDV_NAMES);
 
 
 
