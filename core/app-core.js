@@ -41,7 +41,7 @@ const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
 });
 const pdfExportCore=window.PTI093PdfExportCore.install({state,PDF_SAFE_LIMIT,drawPage,makePdfAt,pagePixels,jpegQuality,pdfPackSize});
 const {splitHighQualityPdf}=pdfExportCore;
-const pdfExportController=window.PTI093PdfExportController.install({state,$,splitHighQualityPdf,exportPdfFile,msg,alert,setTimeout});
+const pdfExportController=window.PTI093PdfExportController.install({state,$,splitHighQualityPdf,exportPdfFile,msg,alert,setTimeout,buildAdaptivePdf,pdfPackSize,pdfFileName,getPdfWarningSkin:()=>classicPdfWarningSkin,finalizeCompletedSession:()=>finalizeCompletedSession()});
 const {exportHighQualitySplit}=pdfExportController;
 const classicPdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({$,document,exportHighQualitySplit});
 const {hidePdfWarning,showPdfWarning}=classicPdfWarningSkin;
@@ -100,35 +100,7 @@ async function openDocxFile(file){try{const files=unzipStore(await file.arrayBuf
 render();renderLayout();await makePreview();msg(`Đã mở bản nháp: ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh.`,true)}catch(e){alert('Không mở được bản nháp Word: '+e.message)}}
 // Bản nháp Word đã được thay thế bằng project.pti trên Google Drive.
 
-$('pdf').onclick=async()=>{
-  if(!state.pages.length)return;
-  const btn=$('pdf');btn.disabled=true;
-  try{
-    const baseName=pdfFileName();
-    msg('Đang kiểm tra dung lượng PDF...',true);
-    const result=await buildAdaptivePdf(state.pages);
-    const size=mib(pdfPackSize(result.bytes));
-    if(!result.compressed){
-      const blob=new Blob([result.bytes],{type:'application/pdf'});
-      await exportPdfFile(blob,baseName);
-      $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
-      msg('Đã xuất PDF '+size.toFixed(2)+' MB · không cần nén ảnh · '+result.dpi+' DPI · JPEG '+Math.round(result.quality*100)+'%.',true);
-      hidePdfWarning();
-      await finalizeCompletedSession();
-    }else{
-      // Xuất bản nén an toàn và đồng thời cảnh báo để GĐV kiểm tra lại ảnh.
-      const blob=new Blob([result.bytes],{type:'application/pdf'});
-      await exportPdfFile(blob,baseName);
-      $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
-      msg('Đã xuất PDF '+size.toFixed(2)+' MB bằng chế độ nén. Vui lòng kiểm tra lại bản ảnh sau khi xuất.',true);
-      showPdfWarning('Dung lượng bản PDF ở chất lượng cao không phù hợp giới hạn 10 MB nên phần mềm đã nén ảnh. Bạn có thể xuất lại ở chất lượng cao; phần mềm sẽ tự tách thành nhiều file.',baseName);
-      await finalizeCompletedSession();
-    }
-  }catch(e){
-    msg('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)),false);
-    alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
-  }finally{btn.disabled=false}
-};
+$('pdf').onclick=()=>pdfExportController.exportStandardPdf($('pdf'));
 $('backEdit').onclick=()=>{
   // Nút này nằm bên trong Preview toàn màn hình: phải đóng modal trước khi cuộn về trình sửa.
   if(typeof window.pti093ClosePreview==='function')window.pti093ClosePreview();
