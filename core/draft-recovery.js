@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093DraftRecovery = {
     install: function(deps){
-      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg, openLocalDraftDB, localDraftTransactionDone, getLocalDrafts} = deps;
+      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg, openLocalDraftDB, localDraftTransactionDone} = deps;
       const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
       // Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
       const PTI093_SESSION_KEY='pti093_work_session_id';
