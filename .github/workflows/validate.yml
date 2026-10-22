@@ -86,6 +86,13 @@ jobs:
           done
           node tests/draft-recovery-browser.test.cjs
 
+      - name: Check extracted File Naming Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/file-naming.js
+      - name: Test extracted File Naming Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/file-naming.test.js
+
       - name: Check extracted Date Utils Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check core/date-utils.js
