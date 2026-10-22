@@ -41,6 +41,26 @@ const {chromium}=require('playwright');
     assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,fileIntakeSkin:true,previewSkin:true});
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
+    await page.locator('#files').setInputFiles({
+      name:'preview-smoke.svg',
+      mimeType:'image/svg+xml',
+      buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="24"><rect width="32" height="24" fill="#087f45"/></svg>')
+    });
+    await page.waitForSelector('#grid .thumb');
+    await page.locator('#finish').click();
+    await page.waitForSelector('#preview .pageprev canvas',{timeout:15000});
+    const preview=await page.evaluate(()=>({
+      pages:document.querySelectorAll('#preview .pageprev canvas').length,
+      info:document.getElementById('previewInfo').textContent,
+      pdfDisabled:document.getElementById('pdf').disabled
+    }));
+    assert.equal(preview.pages,1,'finishing one image should render one preview page');
+    assert.match(preview.info,/1 nội dung · 1 ảnh/);
+    assert.equal(preview.pdfDisabled,false,'PDF export must be enabled after preview generation');
+    const downloadPromise=page.waitForEvent('download',{timeout:20000});
+    await page.locator('#pdf').click();
+    const download=await downloadPromise;
+    assert.match(download.suggestedFilename(),/\\.pdf$/i,'preview pages should reach the PDF export path');
     assert.deepEqual(pageErrors,[],'the full app should start without uncaught JavaScript errors');
     console.log('Full app Chromium smoke test passed: module loading, initial six-image layout, and date mask.');
   }finally{await browser.close();}
