@@ -69,8 +69,9 @@ function element(id) {
 }
 global.document = { querySelectorAll: () => [] };
 const calls = { progress: [], status: [], finished: 0, rendered: 0, layout: 0, messages: [] };
+const appState = { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', addSeq: 0 };
 const api = global.PTI093LocalOpenCore.install({
-  state: { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', addSeq: 0 },
+  state: appState,
   $: element,
   msg: text => calls.messages.push(text),
   openLocalDraftDB: async () => db,
@@ -84,7 +85,11 @@ const api = global.PTI093LocalOpenCore.install({
 });
 (async () => {
   await api.openLocalDraft('LOCAL-TEST-1');
-  const state = api; // Keep assertions below focused on the returned Core action.
+  assert.equal(appState.localDraftId, 'LOCAL-TEST-1');
+  assert.equal(appState.driveRecordId, '');
+  assert.equal(appState.current.items.length, 1);
+  assert.equal(appState.current.items[0].caption, 'Mặt trước');
+  assert.equal(appState.current.items[0].rotate, 90);
   assert.equal(element('hoso').value, 'HS-123');
   assert.equal(element('bks').value, '30A-12345');
   assert.equal(element('garage').value, 'Garage A');
