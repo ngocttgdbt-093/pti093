@@ -458,7 +458,7 @@ state.driveRecordId='';
 /* Drive-only helper moved to fusion/drive-save.js */
 /* Drive-only helper moved to fusion/drive.js */
 /* Drive-only helper moved to fusion/drive.js */
-/* Drive save function moved to fusion/drive-save.js */
+
 const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,getAllGroups,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 const {setDriveState,openRecordFromDrive,setOpenLoad,finishOpenLoad,recordMatchesQuery,recordTime,sameLocalDriveRecord,searchDriveRecords,saveProjectToDrive,driveImageKey,getDriveUploadedKeys,saveDriveUploadedKeys,getDrivePendingUploadKey,saveDrivePendingUploadKey,prepareDriveItem,waitForUploadStatus,sendDrivePayload,renderDriveUploadFailures,createDriveRecord,pti093UploadAll}=driveSaveFusion;
 $('driveSearchBtn').onclick=searchDriveRecords;
@@ -472,7 +472,7 @@ $('driveCreate').onclick=createDriveRecord;
 
 
 
-/* Drive record function moved to fusion module */
+
 
 function openImageViewer(it,index){
   if(!it||!it.file)return;
@@ -494,8 +494,8 @@ function deviceStorageLabel(){
   if(/Android/i.test(ua))return 'điện thoại Android';
   return 'PC';
 }
-/* Drive record function moved to fusion module */
-/* Drive record function moved to fusion module */
+
+
 const normalizeRecordSearch=window.PTISharedCore.normalizeRecordSearch;
 const PTI093_GDV_NAMES=['Phạm Duy Thái','Đặng Xuân Linh','Nguyễn Tuấn Hưng','Đặng Xuân Diệu','Đặng Văn Hiên','Nguyễn Minh Ngọc'];
 const gdvInitials=window.PTISharedCore.gdvInitials;
@@ -514,25 +514,25 @@ function searchQueryVariants(query){
   }
   return [...new Set(out.filter(Boolean))].slice(0,5)
 }
-/* Drive record function moved to fusion module */
-/* Drive record function moved to fusion module */
-/* Drive record function moved to fusion module */
-/* Drive record function moved to fusion module */
-/* Drive save function moved to fusion/drive-save.js */
-/* Drive save function moved to fusion/drive-save.js */
-/* Drive save function moved to fusion/drive-save.js */
-/* Drive save function moved to fusion/drive-save.js */
-/* Drive save function moved to fusion/drive-save.js */
+
+
+
+
+
+
+
+
+
 
 /* Drive-only helper moved to fusion/drive-save.js */
 
-/* Drive save function moved to fusion/drive-save.js */
-
-/* Drive save function moved to fusion/drive-save.js */
 
 
-/* Drive save function moved to fusion/drive-save.js */
-/* Drive save function moved to fusion/drive-save.js */
+
+
+
+
+
 const PTI093_LOCAL_DB='pti093_local_drafts_v1';
 const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
 // Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
@@ -913,9 +913,9 @@ async function saveDraftWithoutPhotos(){
     msg('❌ Lưu tại máy thất bại: '+e.message,true);
   }finally{b.disabled=false}
 }
-/* Drive save function moved to fusion/drive-save.js */
+
 window.pti093UploadAll = pti093UploadAll;
-/* Drive save function moved to fusion/drive-save.js */
+
 window.pti093UploadAll=pti093UploadAll;
 
 render();renderLayout();
