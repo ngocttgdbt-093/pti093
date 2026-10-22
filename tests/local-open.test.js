@@ -14,6 +14,7 @@ global.scrollY = 0;
 global.scrollTo = () => {};
 global.sessionStorage = { setItem(){}, removeItem(){}, getItem(){ return null; } };
 global.localStorage = { setItem(){}, removeItem(){}, getItem(){ return null; } };
+require('../core/workspace.js');
 require('../core/local-open.js');
 
 const meta = {
@@ -24,19 +25,15 @@ const meta = {
   date: '22/10/2026',
   gdv: 'Nguyễn Minh Ngọc',
   settings: { orientation: 'portrait', imagesPerPage: 6 },
-  sections: [{
-    title: 'Ảnh thiệt hại',
-    items: [{ fileName: 'damage.jpg', type: 'image/jpeg', lastModified: 123, size: 10, key: 'k1', caption: 'Mặt trước', rotate: 90, addSeq: 1 }]
-  }]
+  sections: [
+    { title: 'Ảnh hiện trường', items: [{ fileName: 'scene.jpg', type: 'image/jpeg', lastModified: 111, size: 10, key: 'k0', caption: 'Toàn cảnh', rotate: 0, addSeq: 1 }] },
+    { title: 'Ảnh thiệt hại', items: [{ fileName: 'damage.jpg', type: 'image/jpeg', lastModified: 123, size: 10, key: 'k1', caption: 'Mặt trước', rotate: 90, addSeq: 2 }] }
+  ]
 };
-const storedImages = [{
-  sectionIndex: 0,
-  itemIndex: 0,
-  file: { storedBytes: true },
-  fileName: 'damage.jpg',
-  type: 'image/jpeg',
-  lastModified: 123
-}];
+const storedImages = [
+  { sectionIndex: 0, itemIndex: 0, file: { storedBytes: true }, fileName: 'scene.jpg', type: 'image/jpeg', lastModified: 111 },
+  { sectionIndex: 1, itemIndex: 0, file: { storedBytes: true }, fileName: 'damage.jpg', type: 'image/jpeg', lastModified: 123 }
+];
 let closed = 0;
 global.indexedDB = {};
 const db = {
@@ -88,8 +85,15 @@ const api = global.PTI093LocalOpenCore.install({
   await api.openLocalDraft('LOCAL-TEST-1');
   assert.equal(appState.localDraftId, 'LOCAL-TEST-1');
   assert.equal(appState.driveRecordId, '');
+  assert.equal(appState.groups.length, 1);
+  assert.equal(appState.groups[0].title, 'Ảnh hiện trường');
+  assert.equal(appState.groups[0].items[0].caption, 'Toàn cảnh');
   assert.equal(appState.current.items.length, 1);
+  assert.equal(appState.current.title, 'Ảnh thiệt hại');
   assert.equal(appState.current.items[0].caption, 'Mặt trước');
+  const orderedSnapshot = global.PTIWorkspaceCore.snapshotGroupsForProject(appState);
+  assert.deepEqual(orderedSnapshot.map(group => group.title), ['Ảnh hiện trường', 'Ảnh thiệt hại'],
+    'reopening and saving a local case must preserve the original section order');
   assert.equal(appState.current.items[0].rotate, 90);
   assert.equal(element('hoso').value, 'HS-123');
   assert.equal(element('bks').value, '30A-12345');
