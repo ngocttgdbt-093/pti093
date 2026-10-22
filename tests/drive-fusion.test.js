@@ -61,8 +61,11 @@ assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusi
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
 const draftSource = fs.readFileSync('core/draft-recovery.js', 'utf8');
+const localStoreSource = fs.readFileSync('core/local-draft-store.js', 'utf8');
 assert.ok(html.includes('src="./core/draft-recovery.js"'), 'Shared Core draft module should be loaded');
-for (const marker of ['pti093_local_drafts_v1', 'async function restoreAutoDraft', 'async function saveAutoDraft']) {
+assert.ok(html.includes('src="./core/local-draft-store.js"'), 'Shared Core local storage adapter should be loaded');
+assert.ok(localStoreSource.includes("dbName:'pti093_local_drafts_v1'") || html.includes("dbName:'pti093_local_drafts_v1'"), 'Existing 093 local draft database name should remain unchanged');
+for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async function saveAutoDraft']) {
   assert.ok(draftSource.includes(marker), 'Existing 093 draft-recovery code must remain in Core: ' + marker);
 }
 
