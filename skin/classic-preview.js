@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093ClassicPreviewSkin = {
     install: function(deps){
-      const {state,$,document:doc,window:win,buildPreview,getAllGroups,selectedGdv,setSelectedGdvCache,hidePdfWarning,msg,pagePixels,jpegQuality}=deps;
+      const {state,$,document:doc,window:win,buildPreview,getAllGroups,selectedGdv,setSelectedGdvCache,hidePdfWarning,msg,pagePixels,jpegQuality,setTimeout:timer=global.setTimeout}=deps;
       async function makePreview(){
         setSelectedGdvCache(selectedGdv());
         $('backEdit').style.display='none';
@@ -25,7 +25,19 @@
         $('newCase').style.display='inline-block';
         win.scrollTo({top:$('preview').getBoundingClientRect().top+win.scrollY-80,behavior:'smooth'});
       }
-      return {makePreview};
+      function bindControls(){
+        $('backEdit').onclick=()=>{
+          if(typeof win.pti093ClosePreview==='function')win.pti093ClosePreview();
+          doc.body.style.overflow='';
+          timer(()=>{
+            const drop=$('drop');
+            if(drop)win.scrollTo({top:drop.getBoundingClientRect().top+win.scrollY-100,behavior:'smooth'});
+            msg('Đã quay lại hồ sơ hiện tại. Anh có thể sửa ảnh, thêm ảnh, sửa thuyết minh hoặc sửa từng nội dung.',true);
+          },80);
+        };
+      }
+      bindControls();
+      return {makePreview,bindControls};
     }
   };
 })(typeof window!=='undefined'?window:globalThis);
