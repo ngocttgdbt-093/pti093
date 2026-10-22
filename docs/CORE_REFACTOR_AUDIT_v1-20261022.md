@@ -157,10 +157,18 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - The eight moved function bodies were compared against `main` after normalizing indentation; all eight are exact matches across the two modules. Session ID key/value rules, database name `pti093_local_drafts_v1`, and draft ID `AUTO-DRAFT` remain unchanged.
 - The app loads `core/local-draft-store.js` before `core/draft-recovery.js`, then `fusion/drive.js`. The DraftRecovery installer receives the store API explicitly; Drive Fusion receives the same `getLocalDrafts`, autosave, and finalize APIs. The pagehide/visibilitychange paths still use the same save function.
 - Source checks after extraction: all 5 remaining inline script blocks parse; `core/draft-recovery.js`, `core/gdv-search.js`, and `fusion/drive.js` parse; 14/14 targeted source/module-contract checks passed in the available runtime. These checks do not execute a real browser IndexedDB restore, nor do they substitute for the GitHub Actions run or manual F5/reload acceptance.
-- Core modules now include GĐV search, ZIP/XML utilities, and draft recovery. Drive record search/open and case upload/save remain isolated in `fusion/drive.js`; skin CSS remains outside `index.html`. Next: validate local-save and PDF/export boundaries, then browser-test the Classic default and full recovery flow on an isolated test build. Production `main` remains untouched.
+- Core modules now include GĐV search, ZIP/XML utilities, and draft recovery. Drive record search/open and case upload/save remain isolated in `fusion/drive.js`; skin CSS remains outside `index.html`. Next: validate manual local-save and PDF export UI orchestration, then browser-test the Classic default and full recovery flow on an isolated test build. Production `main` remains untouched.
 
 ## Version-ID correction — v1-20261022.3
 
 The earlier draft-extraction commit messages used an inconsistent `v4-20261022.4` label. Per the project's agreed versioning rule, the correct refactor milestone for this same-day batch is `v1-20261022.3`; commit history is immutable, so this note corrects the project record. This is not an app footer/build version.
 
 The workflow also had a duplicated draft-recovery test invocation; it has been removed in this batch. A green CI result has not yet been verified. The current checks remain source/module contract checks, not a real browser IndexedDB F5/reload acceptance test.
+
+
+## PDF Builder Core extraction — v6-20261022
+
+- Extracted the PDF page sizing/quality helpers, canvas factory, PDF byte builder, resampling, size measurement, adaptive compression, and byte-splitting helpers into `core/pdf-builder.js`.
+- Kept the existing `PDF_SAFE_LIMIT=9.5 MiB` value and the original helper bodies unchanged; moved initialization early enough that the shared aliases exist before the initial render path runs.
+- Added `tests/pdf-builder.test.js` and GitHub Actions syntax/unit steps. In the available runtime, the module parsed, all 9 moved helper bodies matched the original `main` source after indentation normalization, and mocked-canvas checks passed for page dimensions, quality, PDF header/footer, adaptive build, and splitting.
+- The PDF export UI orchestration, page rendering, warning UI, and file-download behavior remain in the app script for now. The static/mock checks are not a browser test and do not prove real canvas quality or device-specific downloads. No deployment or merge was performed.
