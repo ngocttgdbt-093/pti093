@@ -34,11 +34,11 @@ const classicGroupListSkin=window.PTI093ClassicGroupListSkin.install({state,$,do
 const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
   state,$,document,URL,imageReorder,openImageViewer,renderGroups:()=>renderGroups(),
   scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,
-  onReplace:i=>{state.replaceIndex=i;$('replaceFile').click();},
-  onRotate:(item,index)=>{item.rotate=(item.rotate+90)%360;render();scheduleAutoDraftSave(true);msg(`Ảnh số ${index+1} đã xoay ${item.rotate}°.`,true);},
-  onInsert:i=>{state.insertIndex=i;$('insertFile').click();},
-  onDelete:i=>{state.current.items.splice(i,1);render();scheduleAutoDraftSave(true);},
-  onCaptionChange:(item,value)=>{item.caption=value;scheduleAutoDraftSave(false);}
+  onReplace:i=>imageEditing.beginReplace(i),
+  onRotate:(item,index)=>imageEditing.rotate(item,index),
+  onInsert:i=>imageEditing.beginInsert(i),
+  onDelete:i=>imageEditing.deleteCurrent(i),
+  onCaptionChange:(item,value)=>imageEditing.captionChange(item,value)
 });
 const pdfExportCore=window.PTI093PdfExportCore.install({state,PDF_SAFE_LIMIT,drawPage,makePdfAt,pagePixels,jpegQuality,pdfPackSize});
 const {splitHighQualityPdf}=pdfExportCore;
@@ -54,13 +54,11 @@ const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
 const imageIngest=window.PTI093ImageIngest.install({state,exts,fileBaseName,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),render:()=>render(),msg});
 const {addFiles}=imageIngest;
-$('clear').onclick=()=>{if(!state.current.items.length)return;if(!confirm('Xóa toàn bộ ảnh của nội dung đang làm?'))return;state.current.items=[];render();scheduleAutoDraftSave(true);msg('Đã xóa ảnh của nội dung hiện tại.',true)};
+const imageEditing=window.PTI093ImageEditing.install({state,$,exts,fileBaseName,render:()=>render(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,confirm});
 const classicFileIntakeSkin=window.PTI093ClassicFileIntakeSkin.install({$,addFiles});
 function render(){return classicImageGridSkin.render()}function renderGroups(){return classicGroupListSkin.renderGroups()}function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}if(!workspaceCore.beginEditGroup(state,i))return;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';scheduleAutoDraftSave(true);$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
 $('title').addEventListener('change',()=>{state.current.title=$('title').value;scheduleAutoDraftSave(false)});
 $('filenameCaption').addEventListener('change',e=>{state.filenameCaption=e.target.checked;$('filenameCaption').closest('.filenameCaptionBox').classList.toggle('on',state.filenameCaption);if(state.filenameCaption){state.current.items.forEach(it=>{it.caption=fileBaseName(it.file.name)});render();scheduleAutoDraftSave(false);msg('Đã lấy tên file (bỏ phần đuôi) làm thuyết minh cho các ảnh trong mục này.',true)}else{msg('Đã tắt chế độ lấy tên file; ảnh mới sẽ quay về cách thuyết minh bình thường.',true)}});
-$('insertFile').addEventListener('change',async e=>{const fs=[...e.target.files],idx=state.insertIndex;e.target.value='';state.insertIndex=-1;if(idx<0||idx>=state.current.items.length||!fs.length)return;const candidates=[];for(const f of fs){if(!f.type.startsWith('image/')&&!exts.test(f.name))continue;const key=f.name+'|'+f.size+'|'+f.lastModified;if(state.current.items.some(x=>x.key===key)||candidates.some(x=>x.key===key))continue;candidates.push({file:f,key,caption:state.filenameCaption?fileBaseName(f.name):'',addSeq:++state.addSeq,rotate:0})}if(!candidates.length){msg('Không có ảnh mới để chèn.',true);return}state.current.items.splice(idx+1,0,...candidates);render();scheduleAutoDraftSave(true);msg(`Đã chèn ${candidates.length} ảnh sau ảnh số ${idx+1}.`,true)});
-$('replaceFile').addEventListener('change',async e=>{const f=e.target.files[0],i=state.replaceIndex;e.target.value='';state.replaceIndex=-1;if(!f||i<0||i>=state.current.items.length)return;if(!f.type.startsWith('image/')&&!exts.test(f.name))return;const old=state.current.items[i];const key=f.name+'|'+f.size+'|'+f.lastModified;const dup=state.current.items.some((x,j)=>j!==i&&x.key===key);if(dup){msg('Ảnh này đã có trong mục hiện tại.',true);return}state.current.items[i]={...old,file:f,key,caption:state.filenameCaption?fileBaseName(f.name):old.caption};render();scheduleAutoDraftSave(true);msg(`Đã thay ảnh số ${i+1}; vị trí và phần thuyết minh được giữ nguyên.`,true)});
 function commitCurrent(){return workspaceCore.commitCurrent(state)}
 $('saveNext').onclick=()=>{state.current.title=$('title').value;const g=commitCurrent();if(!g)return;state.current={title:$('title').value,items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);msg(`Đã lưu “${g.title}”. Hãy chọn nội dung tiếp theo.`,true);window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})};
 $('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.items.length)commitCurrent();$('title').value=state.current.title;state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);makePreview()};
