@@ -54,11 +54,13 @@ const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
 const imageIngest=window.PTI093ImageIngest.install({state,exts,fileBaseName,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),render:()=>render(),msg});
 const {addFiles}=imageIngest;
+const caseEditor=window.PTI093CaseEditor.install({state,$,fileBaseName,render:()=>render(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg});
+caseEditor.bindControls();
 const imageEditing=window.PTI093ImageEditing.install({state,$,exts,fileBaseName,render:()=>render(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,confirm});
 const classicFileIntakeSkin=window.PTI093ClassicFileIntakeSkin.install({$,addFiles});
 function render(){return classicImageGridSkin.render()}function renderGroups(){return classicGroupListSkin.renderGroups()}function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}if(!workspaceCore.beginEditGroup(state,i))return;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';scheduleAutoDraftSave(true);$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
-$('title').addEventListener('change',()=>{state.current.title=$('title').value;scheduleAutoDraftSave(false)});
-$('filenameCaption').addEventListener('change',e=>{state.filenameCaption=e.target.checked;$('filenameCaption').closest('.filenameCaptionBox').classList.toggle('on',state.filenameCaption);if(state.filenameCaption){state.current.items.forEach(it=>{it.caption=fileBaseName(it.file.name)});render();scheduleAutoDraftSave(false);msg('Đã lấy tên file (bỏ phần đuôi) làm thuyết minh cho các ảnh trong mục này.',true)}else{msg('Đã tắt chế độ lấy tên file; ảnh mới sẽ quay về cách thuyết minh bình thường.',true)}});
+
+
 function commitCurrent(){return workspaceCore.commitCurrent(state)}
 $('saveNext').onclick=()=>{state.current.title=$('title').value;const g=commitCurrent();if(!g)return;state.current={title:$('title').value,items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);msg(`Đã lưu “${g.title}”. Hãy chọn nội dung tiếp theo.`,true);window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})};
 $('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.items.length)commitCurrent();$('title').value=state.current.title;state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);makePreview()};
