@@ -35,7 +35,7 @@ const deps = {
   wrap: value => value
 };
 const api = global.PTI093DriveFusion.install(deps);
-for (const name of ['openRecordFromDrive','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
+for (const name of ['openRecordFromDrive','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll','bindControls']) {
   assert.equal(typeof api[name], 'function', name + ' should be exported');
 }
 const file = { name: 'damage.jpg', size: 1200, lastModified: 99, webkitRelativePath: '' };
@@ -61,8 +61,9 @@ for (const file of ['skin-classic.css','skin-modern.css', ...Array.from({length:
 
 assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusion/drive.js"'), 'Shared Core should load before app-specific Drive Fusion');
 assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') >= 0, 'App Core should install Drive Fusion');
-assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') < appCore.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
-assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') < appCore.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
+assert.ok(appCore.includes('driveSaveFusion.bindControls();'), 'App Core should delegate Drive button bindings to Drive Fusion');
+assert.ok(driveModule.includes("$('driveSaveProject').onclick=async()=>{"), 'Drive Fusion should own the save-project handler');
+assert.ok(driveModule.includes("$('driveCreate').onclick=createDriveRecord;"), 'Drive Fusion should own the create-record handler');
 const draftSource = fs.readFileSync('core/draft-recovery.js', 'utf8');
 const localStoreSource = fs.readFileSync('core/local-draft-store.js', 'utf8');
 const workspaceSource = fs.readFileSync('core/workspace.js', 'utf8');
@@ -76,7 +77,7 @@ for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async fu
 }
 
 
-assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') < appCore.indexOf("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive search must bind after module installation');
+assert.ok(driveModule.includes("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive Fusion should own the search button handler');
 assert.ok(!html.includes('function openRecordFromDrive(') && !html.includes('function searchDriveRecords('), 'Drive record functions should live outside index.html');
 assert.ok(loadProgressSkinSource.includes('function finishOpenLoad('), 'Open-progress completion presentation should live in the Classic Skin module');
 assert.ok(html.includes('src="./skin/classic-load-progress.js"'), 'Classic Load Progress Skin should be loaded before App Core');
