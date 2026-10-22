@@ -2,9 +2,9 @@
   'use strict';
   global.PTI093DriveFusion = {
     install: function(deps){
-      const {state, $, msg, getAllGroups, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
+      const {state, $, msg, setDriveState, setOpenLoad, getAllGroups, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
       const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/exec';
-      function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textContent=t;s.className='driveState'+(ok?'':' driveWarn')}
+      
       
       function snapshotGroupsForProject(){
         const groups=state.groups.map(g=>({title:g.title,items:(g.items||[]).slice()}));
@@ -203,16 +203,7 @@
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
       }
       
-      function setOpenLoad(source,index,total,detail){
-        const box=$('openLoadBox'),bar=$('openLoadBar'),txt=$('openLoadText'),pct=$('openLoadPct'),meta=$('openLoadMeta');
-        if(!box)return;
-        box.classList.remove('hidden');
-        const safeTotal=Math.max(0,Number(total)||0),safeIndex=Math.max(0,Number(index)||0);
-        const p=safeTotal?Math.min(100,Math.round(safeIndex*100/safeTotal)):0;
-        bar.style.width=p+'%';pct.textContent=p+'%';
-        txt.textContent=detail||('Đang tải dữ liệu từ '+source+'...');
-        meta.textContent=safeTotal?'Đã tải '+safeIndex+'/'+safeTotal+' ảnh · '+source:'Đang kết nối '+source+'...';
-      }
+      
       
       function finishOpenLoad(source,total){
         const box=$('openLoadBox'),bar=$('openLoadBar'),txt=$('openLoadText'),pct=$('openLoadPct'),meta=$('openLoadMeta');
@@ -737,7 +728,7 @@
           return {sent,total,failures};
         }
       }
-      return {setDriveState, openRecordFromDrive, setOpenLoad, finishOpenLoad, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll};
+      return {openRecordFromDrive, finishOpenLoad, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll};
     }
   };
 })(window);
