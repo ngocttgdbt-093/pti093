@@ -99,7 +99,9 @@
         setDriveState('Đang lưu nháp tại máy…');msg('Đang lưu hồ sơ tại máy… vui lòng chờ.',true);
         try{
           await saveLocalDraft();
-          const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||''):($('gdv').value||'');
+          let storedCustomGdv='';
+          try{storedCustomGdv=localStorage.getItem('pti093_gdv_custom')||''}catch(e){}
+          const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||storedCustomGdv):($('gdv').value||'');
           if(gdv){try{localStorage.setItem('pti093_gdv',gdv)}catch(e){}}
           // Chỉ dọn AUTO-DRAFT; giữ ID local để lần lưu sau cập nhật đúng bản local.
           await clearAutoDraft();
