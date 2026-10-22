@@ -28,8 +28,8 @@ const imageCanvasCore=window.PTI093ImageCanvasCore.install({state,$,pagePixels,m
 const {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage}=imageCanvasCore;
 const previewBuilder=window.PTI093PreviewBuilder.install({drawPage});
 const {buildPreview}=previewBuilder;
-const classicLayoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims,document});
-classicLayoutSkin.bindControls({scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args)});
+const classicLayoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims,document,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args)});
+classicLayoutSkin.bindControls();
 const classicGroupListSkin=window.PTI093ClassicGroupListSkin.install({state,$,document,onEditGroup:i=>editGroup(i)});
 const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
   state,$,document,URL,imageReorder,openImageViewer,renderGroups:()=>renderGroups(),
