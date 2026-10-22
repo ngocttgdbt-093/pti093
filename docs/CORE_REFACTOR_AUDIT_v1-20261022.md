@@ -150,3 +150,11 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - Added `tests/zip-utils.test.js` for XML escaping, CRC32 known vector, little-endian helpers, byte concatenation, Base64/data-URL conversion, and a ZIP write/read round-trip. The workflow now runs this test.
 - Source checks: 5/5 remaining inline script blocks parse, no remaining `<style>` blocks exist, all 15 CSS assets are linked in order, and the ZIP helper test's behavior checks pass in a local JS harness. GitHub Actions has passed for the earlier PR head; this new Core utility commit still needs its own CI result.
 - Formal milestone ID for this Core extraction batch is `v2-20261022.1`. This is a refactor-work milestone, not an app footer/build version. The local-draft lifecycle remains untouched.
+
+## Shared Core draft-recovery extraction — v4-20261022.4
+
+- Extracted the 093 local draft lifecycle into `core/draft-recovery.js`: IndexedDB open/transaction helpers, local draft listing, autosave scheduling, autosave, restore, cleanup, and completed-session finalization.
+- The eight moved function bodies were compared against `main` after normalizing indentation; all eight are exact matches. Session ID key/value rules, database name `pti093_local_drafts_v1`, and draft ID `AUTO-DRAFT` remain unchanged.
+- The app now loads `core/draft-recovery.js` before `fusion/drive.js`; Drive Fusion receives the same `getLocalDrafts`, autosave, and finalize APIs through explicit wiring. The pagehide/visibilitychange paths still clear the pending timer and invoke the same save function.
+- Source checks after extraction: all 5 remaining inline script blocks parse; `core/draft-recovery.js`, `core/gdv-search.js`, and `fusion/drive.js` parse; 14/14 targeted source/module-contract checks passed in the available runtime. These checks do not execute a real browser IndexedDB restore, nor do they substitute for the GitHub Actions run or manual F5/reload acceptance.
+- Core modules now include GĐV search, ZIP/XML utilities, and draft recovery. Drive record search/open and case upload/save remain isolated in `fusion/drive.js`; skin CSS remains outside `index.html`. Next: validate local-save and PDF/export boundaries, then browser-test the Classic default and full recovery flow on an isolated test build. Production `main` remains untouched.
