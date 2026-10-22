@@ -25,6 +25,23 @@ const { chromium } = require('playwright');
     assert.deepEqual(result.rearBytes,[1,2,3,4,5]);
     const counts=await page.evaluate(()=>window.testHarness.cleanup());
     assert.deepEqual(counts,{drafts:0,images:0});
-    console.log('Chromium IndexedDB draft recovery passed.');
+
+    await page.evaluate(()=>window.testHarness.seed());
+    const newTab=await browser.newPage();
+    await newTab.goto('http://127.0.0.1:4173/tests/draft-recovery-browser.html');
+    const newSession=await newTab.evaluate(()=>sessionStorage.getItem('pti093_work_session_id'));
+    assert.notEqual(newSession,session,'a separate tab must have a distinct work session');
+    const fresh=await newTab.evaluate(()=>window.testHarness.restoreNewSession());
+    assert.equal(fresh.sessionId,newSession);
+    assert.equal(fresh.bks,'');
+    assert.equal(fresh.hoso,'');
+    assert.equal(fresh.garage,'');
+    assert.equal(fresh.groups,0);
+    assert.equal(fresh.currentItems,0);
+    assert.equal(fresh.driveRecordId,'');
+    const freshCounts=await newTab.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(freshCounts,{drafts:0,images:0},'a new session should discard the previous tab auto-draft');
+
+    console.log('Chromium IndexedDB draft recovery and new-session cleanup passed.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
