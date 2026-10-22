@@ -35,7 +35,7 @@
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
 <div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v59-20261020.1</span></div>
 </div>
-<script src="./core/gdv-search.js"></script><script src="./fusion/drive.js"></script><script>
+<script src="./core/gdv-search.js"></script><script src="./core/draft-recovery.js"></script><script src="./fusion/drive.js"></script><script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const $=id=>document.getElementById(id); const drop=$('drop');
 function formatDateDMY(value){const v=String(value||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}return v;}
@@ -459,7 +459,9 @@ state.driveRecordId='';
 
 
 
-const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,getAllGroups,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
+const driveSaveFusion=const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg});
+const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts,scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery;
+window.PTI093DriveFusion.install({state,$,msg,getAllGroups,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 const {setDriveState,openRecordFromDrive,setOpenLoad,finishOpenLoad,recordMatchesQuery,recordTime,sameLocalDriveRecord,searchDriveRecords,saveProjectToDrive,driveImageKey,getDriveUploadedKeys,saveDriveUploadedKeys,getDrivePendingUploadKey,saveDrivePendingUploadKey,prepareDriveItem,waitForUploadStatus,sendDrivePayload,renderDriveUploadFailures,createDriveRecord,pti093UploadAll}=driveSaveFusion;
 $('driveSearchBtn').onclick=searchDriveRecords;
 $('driveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchDriveRecords()});
@@ -533,201 +535,19 @@ function searchQueryVariants(query){
 
 
 
-const PTI093_LOCAL_DB='pti093_local_drafts_v1';
-const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
-// Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
-const PTI093_SESSION_KEY='pti093_work_session_id';
-let PTI093_SESSION_ID=sessionStorage.getItem(PTI093_SESSION_KEY)||'';
-if(!PTI093_SESSION_ID){PTI093_SESSION_ID=(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));sessionStorage.setItem(PTI093_SESSION_KEY,PTI093_SESSION_ID);}
-let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false,autoDraftImageRevision=0,autoDraftResetting=false;
-function openLocalDraftDB(){
-  return new Promise((resolve,reject)=>{
-    if(!('indexedDB' in window)){reject(new Error('Trình duyệt không hỗ trợ lưu nháp tại máy.'));return}
-    const req=indexedDB.open(PTI093_LOCAL_DB,1);
-    req.onupgradeneeded=()=>{
-      const db=req.result;
-      if(!db.objectStoreNames.contains('drafts'))db.createObjectStore('drafts',{keyPath:'id'});
-      if(!db.objectStoreNames.contains('draftImages')){
-        const st=db.createObjectStore('draftImages',{keyPath:'id'});
-        st.createIndex('draftId','draftId',{unique:false});
-      }
-    };
-    req.onsuccess=()=>resolve(req.result);
-    req.onerror=()=>reject(req.error||new Error('Không mở được kho lưu nháp tại máy.'));
-  });
-}
-function localDraftTransactionDone(tx){
-  return new Promise((resolve,reject)=>{
-    tx.oncomplete=()=>resolve();
-    tx.onerror=()=>reject(tx.error||new Error('Lỗi giao dịch lưu nháp.'));
-    tx.onabort=()=>reject(tx.error||new Error('Giao dịch lưu nháp bị hủy.'));
-  });
-}
-async function getLocalDrafts(){
-  const db=await openLocalDraftDB();
-  try{
-    return await new Promise((resolve,reject)=>{
-      const req=db.transaction('drafts','readonly').objectStore('drafts').getAll();
-      req.onsuccess=()=>resolve(req.result||[]);
-      req.onerror=()=>reject(req.error||new Error('Không đọc được danh sách nháp tại máy.'));
-    });
-  }finally{db.close()}
-}
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
 
-function scheduleAutoDraftSave(imagesDirty=true){
-  if(autoDraftRestoring||autoDraftResetting)return;
-  if(imagesDirty){autoDraftImagesDirty=true;autoDraftImageRevision++}
-  clearTimeout(autoDraftTimer);
-  autoDraftTimer=setTimeout(()=>saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e)),300);
-}
-async function saveAutoDraft(){
-  if(autoDraftRestoring||autoDraftResetting)return;
-  if(autoDraftSaving){autoDraftAgain=true;return}
-  autoDraftSaving=true;
-  const imagesNeedSaving=autoDraftImagesDirty,imageRevision=autoDraftImageRevision;
-  try{
-    const groups=[...state.groups.map(g=>({title:g.title,items:(g.items||[]).slice(),isCurrent:false})),...((state.current&&state.current.items&&state.current.items.length)?[{title:state.current.title,items:state.current.items.slice(),isCurrent:true}]:[])];
-    const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||''):$('gdv').value;
-    const sections=groups.map((g,si)=>({title:g.title,isCurrent:!!g.isCurrent,items:g.items.map((it,ii)=>({
-      sectionIndex:si,itemIndex:ii,fileName:(it.file&&it.file.name)||it.driveFileName||('anh-'+(ii+1)+'.jpg'),
-      type:(it.file&&it.file.type)||'image/jpeg',lastModified:(it.file&&it.file.lastModified)||Date.now(),
-      size:(it.file&&it.file.size)||0,key:it.key||'',caption:it.caption||'',
-      rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||ii+1,
-      driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''
-    }))}));
-    const meta={id:PTI093_AUTO_DRAFT_ID,auto:true,sessionId:PTI093_SESSION_ID,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
-      gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',
-      localDraftId:state.localDraftId||'',settings:{orientation:state.orientation,imagesPerPage:state.per},
-      currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
-    const db=await openLocalDraftDB();
-    try{
-      const tx=db.transaction(imagesNeedSaving?['drafts','draftImages']:['drafts'],'readwrite');
-      tx.objectStore('drafts').put(meta);
-      if(imagesNeedSaving){
-        const idx=tx.objectStore('draftImages').index('draftId');
-        const cursorReq=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
-        cursorReq.onsuccess=()=>{
-          const cursor=cursorReq.result;
-          if(cursor){cursor.delete();cursor.continue();return}
-          sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
-            const original=groups[si]&&groups[si].items[ii];
-            if(original&&original.file)tx.objectStore('draftImages').put({
-              id:PTI093_AUTO_DRAFT_ID+'|'+si+'|'+ii,draftId:PTI093_AUTO_DRAFT_ID,
-              sectionIndex:si,itemIndex:ii,file:original.file,fileName:item.fileName,
-              type:item.type,lastModified:item.lastModified
-            });
-          }));
-        };
-      }
-      await localDraftTransactionDone(tx);
-      if(autoDraftImageRevision===imageRevision)autoDraftImagesDirty=false;
-    }finally{db.close()}
-  }finally{
-    autoDraftSaving=false;
-    if(autoDraftAgain){autoDraftAgain=false;scheduleAutoDraftSave(false)}
-  }
-}
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
 // ===== KẾT THÚC PHIÊN LÀM VIỆC =====
 // Khi GĐV đã xuất PDF hoặc đã lưu hồ sơ (Drive/Local), bản nháp tự động
 // không còn cần để phục hồi lại ở lần mở app sau. Chỉ giữ lại GĐV để làm phiên mới.
-async function finalizeCompletedSession(){
-  const gdv=$('gdv').value==='Nhập tên khác'
-    ? ($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||'')
-    : ($('gdv').value||'');
-  if(gdv){
-    try{localStorage.setItem('pti093_gdv',gdv)}catch(e){}
-  }
-  try{
-    await clearAutoDraft();
-    // Xóa định danh phiên hiện tại khỏi bộ nhớ phiên; hồ sơ thật trên Drive/Local
-    // vẫn giữ nguyên và có thể tìm/mở lại từ chức năng Tìm hồ sơ.
-    state.localDraftId='';
-  }catch(e){
-    console.warn('Không thể dọn bản nháp sau khi hoàn tất:',e);
-  }
-}
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
 
-async function clearAutoDraft(){
-  autoDraftResetting=true;clearTimeout(autoDraftTimer);
-  while(autoDraftSaving)await new Promise(resolve=>setTimeout(resolve,50));
-  const db=await openLocalDraftDB();
-  try{
-    const tx=db.transaction(['drafts','draftImages'],'readwrite');
-    tx.objectStore('drafts').delete(PTI093_AUTO_DRAFT_ID);
-    const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
-    req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
-    await localDraftTransactionDone(tx);
-  }finally{db.close()}
-  autoDraftImagesDirty=true;autoDraftResetting=false;
-}
-async function restoreAutoDraft(){
-  autoDraftRestoring=true;
-  try{
-    const db=await openLocalDraftDB();
-    let meta,images=[];
-    try{
-      [meta,images]=await Promise.all([
-        new Promise((resolve,reject)=>{const q=db.transaction('drafts','readonly').objectStore('drafts').get(PTI093_AUTO_DRAFT_ID);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)}),
-        new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),q=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error)})
-      ]);
-    }finally{db.close()}
-    if(!meta)return;
-    // Chỉ khôi phục nháp trong đúng phiên/tab. Nháp của phiên trước bị dọn, không hiển thị lại.
-    if(!meta.sessionId||meta.sessionId!==PTI093_SESSION_ID){
-      await clearAutoDraft();
-      state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
-      state.driveRecordId='';state.localDraftId='';state.pages=[];state.pageDefs=[];
-      sessionStorage.removeItem('pti093_driveRecordId');
-      $('bks').value='';$('hoso').value='';setDateInput('');$('garage').value='';
-      $('title').value=state.current.title;render();renderLayout();
-      setDriveState('Phiên mới — chưa có ảnh hoặc thông tin hồ sơ cũ.');
-      return;
-    }
-    const imageMap=new Map(images.map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
-    const groups=[];let missing=0;
-    (meta.sections||[]).forEach((g,si)=>{
-      const items=[];
-      (g.items||[]).forEach((it,ii)=>{
-        const stored=imageMap.get(si+':'+ii);
-        if(!stored||!stored.file){missing++;return}
-        const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
-        items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++state.addSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
-      });
-      if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
-    });
-    $('bks').value=meta.bks||'';$('hoso').value=meta.caseNumber||'';setDateInput(meta.date||'');$('garage').value=meta.garage||'';
-    const gdv=meta.gdv||'';
-    if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
-    else if(gdv){$('gdv').value='Nhập tên khác';$('gdv').dataset.custom=gdv}
-    const currentGroup=groups.find(g=>g.isCurrent);
-    const restoredGroups=groups.filter(g=>!g.isCurrent);
-    const restoredImageCount=groups.reduce((n,g)=>n+(g.items||[]).length,0);
-    // Mặc định thống nhất của ứng dụng: 6 ảnh/trang, A4 dọc.
-    // Chỉ khôi phục bố cục cũ khi bản nháp thực sự có ảnh đang làm việc.
-    const hasActiveWork=restoredImageCount>0;
-    if(hasActiveWork){
-      const settings=meta.settings||{};
-      if(settings.orientation==='landscape'||settings.orientation==='portrait')state.orientation=settings.orientation;
-      if([1,2,3,4,6,8].includes(Number(settings.imagesPerPage)))state.per=Number(settings.imagesPerPage);
-    }else{
-      state.per=6;
-      state.orientation='portrait';
-    }
-    document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per));
-    document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
-    state.groups=restoredGroups;
-    state.current=currentGroup||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
-    state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';
-    state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
-    if(state.driveRecordId){sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId)}
-    $('title').value=state.current.title||meta.currentTitle||'Bản ảnh chi tiết thiệt hại';
-    if(state.driveRecordId){$('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden')}
-    render();renderLayout();autoDraftImagesDirty=false;
-    if(groups.length||meta.bks||meta.caseNumber)setDriveState('Đã khôi phục bản nháp tự động · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
-    msg(missing?'Đã khôi phục bản nháp nhưng thiếu '+missing+' ảnh trong bộ nhớ trình duyệt.':'Đã khôi phục công việc đang làm. Anh có thể tiếp tục ngay.',true);
-  }catch(e){console.warn('Không thể khôi phục bản nháp tự động:',e);msg('Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.',true)}
-  finally{autoDraftRestoring=false}
-}
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
+/* Existing draft recovery moved unchanged to core/draft-recovery.js */
 
 function renderLocalSaveFeedback(id,pct,label,detail='',failed=false){
   const host=document.getElementById('ptiPreviewFeedback');
@@ -921,8 +741,8 @@ window.pti093UploadAll=pti093UploadAll;
 render();renderLayout();
 ['bks','hoso','gdv','date','garage'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>scheduleAutoDraftSave(false));el.addEventListener('change',()=>scheduleAutoDraftSave(false))});
 restoreAutoDraft();
-window.addEventListener('pagehide',()=>{clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e))});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(autoDraftTimer);saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e))}});
+window.addEventListener('pagehide',()=>{clearAutoDraftTimer();saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e))});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearAutoDraftTimer();saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e))}});
 </script><script>
 (function(){
   const style=document.getElementById('uiRefreshV42');
