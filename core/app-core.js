@@ -6,6 +6,8 @@ const classicLocalSaveSkin=window.PTI093ClassicLocalSaveSkin.install({document})
 const {renderLocalSaveFeedback,showLocalSaveConfirm}=classicLocalSaveSkin;
 const classicLoadProgressSkin=window.PTI093ClassicLoadProgressSkin.install({$});
 const {setOpenLoad,finishOpenLoad}=classicLoadProgressSkin;
+const classicImageViewerSkin=window.PTI093ClassicImageViewerSkin.install({document,URL});
+const {openImageViewer}=classicImageViewerSkin;
 const dateUtils=window.PTI093DateUtils.install({$});
 const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
 const workspaceCore=window.PTIWorkspaceCore;
@@ -229,20 +231,6 @@ function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textCon
 
 
 
-function openImageViewer(it,index){
-  if(!it||!it.file)return;
-  const old=document.querySelector('.pti093Viewer');if(old)old.remove();
-  const url=URL.createObjectURL(it.file);
-  const wrap=document.createElement('div');wrap.className='pti093Viewer';
-  const title=document.createElement('div');title.className='pti093ViewerTitle';title.textContent='Ảnh số '+(Number(index)+1);
-  const img=document.createElement('img');img.src=url;img.alt='Ảnh số '+(Number(index)+1);img.style.transform='rotate('+(((it.rotate||0)%360+360)%360)+'deg)';
-  const close=document.createElement('button');close.className='pti093ViewerClose';close.type='button';close.textContent='×';close.title='Đóng';
-  const cleanup=()=>{URL.revokeObjectURL(url);wrap.remove();document.removeEventListener('keydown',onKey)};
-  const onKey=e=>{if(e.key==='Escape')cleanup()};
-  close.onclick=cleanup;
-  wrap.addEventListener('click',e=>{if(e.target===wrap)cleanup()});
-  wrap.append(title,img,close);document.body.appendChild(wrap);document.addEventListener('keydown',onKey);
-}
 function deviceStorageLabel(){
   const ua=navigator.userAgent||'';
   if(/iPhone|iPad|iPod/i.test(ua))return 'iPhone/iPad';
