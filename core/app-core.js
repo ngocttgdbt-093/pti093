@@ -22,6 +22,7 @@ const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
 const {pagePixels,jpegQuality,makeCanvas,pdfBytesFromCanvases,resamplePdfCanvases,pdfPackSize,makePdfAt,buildAdaptivePdf,splitPdfBytes}=pdfBuilder;
 const imageCanvasCore=window.PTI093ImageCanvasCore.install({state,$,pagePixels,makeCanvas,formatDateDMY,getDateISO,getLogoSrc:()=>logoSrc,getSelectedGdvCache:()=>selectedGdvCache});
 const {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage}=imageCanvasCore;
+const classicLayoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims,document});
 const pdfExportCore=window.PTI093PdfExportCore.install({state,PDF_SAFE_LIMIT,drawPage,makePdfAt,pagePixels,jpegQuality,pdfPackSize});
 const {splitHighQualityPdf}=pdfExportCore;
 const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,textFile}=window.PTISharedCore;
@@ -53,7 +54,7 @@ $('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.i
 /* Shared workspace snapshot helper is in core/workspace.js */
 // counts
 
-function renderLayout(){const box=$('layoutPreview'),txt=$('layoutText');if(!box)return;const d=layoutDims();box.style.gridTemplateColumns=`repeat(${d.cols},1fr)`;box.innerHTML='';for(let i=0;i<state.per;i++){const c=document.createElement('div');c.className='layoutcell';c.textContent=i+1;box.appendChild(c)}txt.textContent=`${state.per} ảnh · ${state.orientation==='portrait'?'A4 dọc':'A4 ngang'} · ${d.cols} × ${d.rows}`;}
+function renderLayout(){return classicLayoutSkin.renderLayout()}
 [1,2,3,4,6,8].forEach(n=>{const b=document.createElement('button');b.className='opt'+(n===6?' on':'');b.textContent=n;b.onclick=()=>{state.per=n;document.querySelectorAll('#counts .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)};$('counts').appendChild(b)});
 document.querySelectorAll('#orient .opt').forEach(b=>b.onclick=()=>{state.orientation=b.dataset.o;document.querySelectorAll('#orient .opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderLayout();scheduleAutoDraftSave(false)});
 // V39: render bố cục ngay sau khi tạo các nút lựa chọn, không phụ thuộc render() hoặc khôi phục bản nháp.
