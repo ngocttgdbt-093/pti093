@@ -33,6 +33,13 @@ jobs:
           console.log('PTI093 JavaScript syntax: OK (' + checked + ' inline scripts)');
           NODE
 
+      - name: Check UI Mode Toggle Skin
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check skin/ui-mode-toggle.js
+      - name: Test UI Mode Toggle Skin
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/ui-mode-toggle.test.js
+
       - name: Check 093 draft-recovery source contract
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: |
