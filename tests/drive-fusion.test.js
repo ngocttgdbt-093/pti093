@@ -13,17 +13,25 @@ assert.ok(driveModule.includes('async function optimizeDriveImage'), 'Drive imag
 assert.ok(driveModule.includes('async function sha256HexBlob'), 'Drive SHA-256 helper should live in Drive Fusion');
 assert.ok(!driveModule.includes('DRIVE_CONCURRENCY = deps'), 'Drive concurrency must stay internal to the existing uploader');
 const deps = {
-  state: { groups: [], driveRecordId: '' },
-  $: () => ({ textContent: '', style: {}, classList: { add(){}, remove(){} }, appendChild(){} }),
+  state: { groups: [], current: { title: '', items: [] }, driveRecordId: '', localDraftId: '' },
+  $: () => ({ value: '', textContent: '', innerHTML: '', style: {}, options: [], classList: { add(){}, remove(){} }, appendChild(){}, setAttribute(){}, addEventListener(){} }),
   msg: () => {},
-  setDriveState: () => {},
-  snapshotGroupsForProject: () => [],
-  buildProjectData: () => ({}),
-  PTI093_API: 'https://example.invalid/api',
   getAllGroups: () => [],
   selectedGdv: () => '',
   scheduleAutoDraftSave: () => {},
-  finalizeCompletedSession: async () => {}
+  finalizeCompletedSession: async () => {},
+  getDateISO: () => '2026-10-22',
+  setDateInput: () => {},
+  render: () => {},
+  renderLayout: () => {},
+  deviceStorageLabel: () => 'local',
+  searchQueryVariants: () => [],
+  getLocalDrafts: async () => [],
+  openLocalDraft: async () => {},
+  normalizeRecordSearch: value => String(value || '').toLowerCase(),
+  gdvSearchMatches: () => false,
+  gdvInitials: () => '',
+  wrap: value => value
 };
 const api = global.PTI093DriveFusion.install(deps);
 for (const name of ['openRecordFromDrive','setOpenLoad','finishOpenLoad','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
