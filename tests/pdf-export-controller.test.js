@@ -37,6 +37,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(elements.pdfHighProgressPct.textContent,'100%');
     assert.match(progress.textContent,/Hoàn tất gửi 2 tệp PDF/);
     assert.equal(events.alerts.length,0);
+    assert.equal(events.finalized,1,'successful high-quality export should clear the completed auto-draft');
   }
   {
     const {api,elements,events}=setup({failExport:true});
@@ -45,6 +46,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(button.disabled,false);
     assert.equal(elements.pdfHighQualityCheck.disabled,false);
     assert.match(events.alerts[0],/download failed/);
+    assert.equal(events.finalized,0,'failed high-quality export must retain the auto-draft for recovery');
   }
   {
     const {api,events}=setup({pages:[]});
