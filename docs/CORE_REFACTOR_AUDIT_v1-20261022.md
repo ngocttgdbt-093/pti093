@@ -350,3 +350,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Added a Chromium fixture/test for thumbnail order and labels, captions, Tab navigation, action callback delegation, rotation, deletion, and button states. Full-app smoke test verifies the Image Grid Skin is loaded.
 - GitHub Actions run **#605** (`39830736157`) completed successfully, including the expanded Skin browser suite, real IndexedDB draft recovery/session isolation, image reorder, full app startup/date mask, and Core/Fusion tests.
 - App Core is now approximately 29.8 KB (from 46.5 KB at the start of this series). This refactor is still on the isolated test branch; manual acceptance with real photos and device-specific touch interaction remains open.
+
+
+## Classic Image Grid and PDF Warning Skin — v2-20261023.24
+
+- Extracted the PDF warning panel, high-quality export checkbox, progress area, and export button from App Core into `skin/classic-pdf-warning.js`. The actual PDF splitting/export work remains in `core/pdf-export.js`; the Skin delegates the button/checkbox actions through an injected callback.
+- Added a Chromium test for warning content, progress controls, checkbox-triggered export, button-triggered export, and hide/cleanup behavior. The full-app smoke test verifies the module is loaded.
+- GitHub Actions run **#621** (`39831058354`) passed the PDF Warning Skin browser regression and existing Core/Fusion checks.
+- The previous Image Grid Skin regression is confirmed by run **#605** (`39830736157`); the group list test is confirmed by **#585** (`39830216365`). These tests cover UI rendering/action delegation without deploying the test branch.
+- App Core is now 27,359 bytes after moving PDF warning presentation out; it was 46,529 bytes at the beginning of this refactor series. No changes to production `main` or PTI have been made.
