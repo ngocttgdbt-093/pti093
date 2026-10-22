@@ -2,6 +2,8 @@
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
+const dateUtils=window.PTI093DateUtils.install({$});
+const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
 const workspaceCore=window.PTIWorkspaceCore;
 const getAllGroups=()=>workspaceCore.getAllGroups(state);
 const snapshotGroupsForProject=()=>workspaceCore.snapshotGroupsForProject(state);
@@ -12,11 +14,6 @@ const {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage}=imageCanv
 const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,textFile}=window.PTISharedCore;
 const docxBuilder=window.PTI093DocxBuilder.install({xmlEsc,formatDateDMY});
 const {docxText,docxCaption,drawingXml,pageBreak,makeDocxFiles}=docxBuilder;
-function formatDateDMY(value){const v=String(value||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}return v;}
-function getDateISO(){const v=String($('date').value||'').trim();let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m){const d=m[1].padStart(2,'0'),mo=m[2].padStart(2,'0'),y=m[3];const dt=new Date(Number(y),Number(mo)-1,Number(d));if(dt.getFullYear()===Number(y)&&dt.getMonth()===Number(mo)-1&&dt.getDate()===Number(d))return `${y}-${mo}-${d}`;return '';}if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;return '';}
-function setDateInput(value){$('date').value=formatDateDMY(value||'');}
-$('date').addEventListener('input',()=>{const el=$('date');const raw=el.value;const caret=el.selectionStart??raw.length;const digitsBefore=raw.slice(0,caret).replace(/\D/g,'').length;const digits=raw.replace(/\D/g,'').slice(0,8);let formatted=digits.slice(0,2);if(digits.length>=2)formatted+='/';if(digits.length>2)formatted+=digits.slice(2,4);if(digits.length>=4)formatted+='/';if(digits.length>4)formatted+=digits.slice(4,8);el.value=formatted;let pos=0,count=0;while(pos<formatted.length&&count<digitsBefore){if(/\d/.test(formatted[pos]))count++;pos++;}if((digitsBefore===2&&digits.length>=2)||(digitsBefore===4&&digits.length>=4)){if(formatted[pos]==='/')pos++;}el.setSelectionRange(pos,pos);});
-$('date').addEventListener('blur',()=>{const v=$('date').value.trim();if(!v)return;const iso=getDateISO();if(iso)$('date').value=formatDateDMY(iso);});
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 function msg(t,show=true){$('status').textContent=t;$('status').classList.toggle('hidden',!show)}
 function fileBaseName(name){return String(name||'').replace(/\.[^.]+$/, '');}
