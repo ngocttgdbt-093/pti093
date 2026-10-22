@@ -3,6 +3,7 @@
   global.PTI093ClassicLayoutSkin = {
     install: function(deps){
       const {state,$,layoutDims}=deps,doc=deps.document||document;
+      const scheduleAutoDraftSave=deps.scheduleAutoDraftSave||(()=>{});
       function renderLayout(){
         const box=$('layoutPreview'),txt=$('layoutText');
         if(!box)return;
@@ -14,7 +15,35 @@
         }
         txt.textContent=`${state.per} ảnh · ${state.orientation==='portrait'?'A4 dọc':'A4 ngang'} · ${d.cols} × ${d.rows}`;
       }
-      return {renderLayout};
+      function bindControls(){
+        const counts=$('counts');
+        if(counts){
+          counts.innerHTML='';
+          [1,2,3,4,6,8].forEach(n=>{
+            const button=doc.createElement('button');
+            button.className='opt'+(n===6?' on':'');
+            button.textContent=n;
+            button.onclick=()=>{
+              state.per=n;
+              counts.querySelectorAll('.opt').forEach(item=>item.classList.remove('on'));
+              button.classList.add('on');
+              renderLayout();
+              scheduleAutoDraftSave(false);
+            };
+            counts.appendChild(button);
+          });
+        }
+        doc.querySelectorAll('#orient .opt').forEach(button=>{
+          button.onclick=()=>{
+            state.orientation=button.dataset.o;
+            doc.querySelectorAll('#orient .opt').forEach(item=>item.classList.remove('on'));
+            button.classList.add('on');
+            renderLayout();
+            scheduleAutoDraftSave(false);
+          };
+        });
+      }
+      return {renderLayout,bindControls};
     }
   };
 })(typeof window!=='undefined'?window:globalThis);
