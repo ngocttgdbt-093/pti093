@@ -40,5 +40,23 @@ function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}
     assert.match(events.messages[0],/bản nháp cũ chưa được dọn/);
     assert.deepEqual(events.order,['clear-start'],'do not reload while the old auto-draft remains');
   }
-  console.log('Session Actions Core tests passed (GĐV persistence, awaited draft cleanup, and cleanup failure recovery).');
+  for(const gdvCase of [
+    {value:'Phạm Bá Lưu',custom:''},
+    {value:'Nhập tên khác',custom:''}
+  ]){
+    const order=[],messages=[];
+    const elements={gdv:{value:gdvCase.value,dataset:{custom:gdvCase.custom}},newCase:{disabled:false,onclick:null}};
+    const blockedStorage={getItem(){throw new Error('storage blocked')},setItem(){throw new Error('storage blocked')},removeItem(){throw new Error('storage blocked')}};
+    const blockedApi=global.PTI093SessionActions.install({
+      $:id=>elements[id],
+      clearAutoDraft:async()=>{order.push('clear')},
+      localStorage:blockedStorage,
+      location:{reload:()=>order.push('reload')},
+      console:{warn:()=>{}},msg:text=>messages.push(text)
+    });
+    await assert.doesNotReject(blockedApi.startNewCase(),'preference storage failure must not block starting a new case');
+    assert.deepEqual(order,['clear','reload']);
+    assert.equal(elements.newCase.disabled,true);
+  }
+  console.log('Session Actions Core tests passed (GĐV persistence, awaited draft cleanup, cleanup failure recovery, and blocked-storage recovery).');
 })().catch(error=>{console.error(error);process.exitCode=1});
