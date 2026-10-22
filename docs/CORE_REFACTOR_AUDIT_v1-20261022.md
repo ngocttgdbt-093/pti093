@@ -158,3 +158,9 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - The app loads `core/local-draft-store.js` before `core/draft-recovery.js`, then `fusion/drive.js`. The DraftRecovery installer receives the store API explicitly; Drive Fusion receives the same `getLocalDrafts`, autosave, and finalize APIs. The pagehide/visibilitychange paths still use the same save function.
 - Source checks after extraction: all 5 remaining inline script blocks parse; `core/draft-recovery.js`, `core/gdv-search.js`, and `fusion/drive.js` parse; 14/14 targeted source/module-contract checks passed in the available runtime. These checks do not execute a real browser IndexedDB restore, nor do they substitute for the GitHub Actions run or manual F5/reload acceptance.
 - Core modules now include GĐV search, ZIP/XML utilities, and draft recovery. Drive record search/open and case upload/save remain isolated in `fusion/drive.js`; skin CSS remains outside `index.html`. Next: validate local-save and PDF/export boundaries, then browser-test the Classic default and full recovery flow on an isolated test build. Production `main` remains untouched.
+
+## Version-ID correction — v1-20261022.3
+
+The earlier draft-extraction commit messages used an inconsistent `v4-20261022.4` label. Per the project's agreed versioning rule, the correct refactor milestone for this same-day batch is `v1-20261022.3`; commit history is immutable, so this note corrects the project record. This is not an app footer/build version.
+
+The workflow also had a duplicated draft-recovery test invocation; it has been removed in this batch. A green CI result has not yet been verified. The current checks remain source/module contract checks, not a real browser IndexedDB F5/reload acceptance test.
