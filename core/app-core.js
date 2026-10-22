@@ -139,7 +139,6 @@ const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDa
 const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery;
 const sessionActions=window.PTI093SessionActions.install({$,clearAutoDraft,localStorage,location,console});
 const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
-const {saveLocalDraft,saveDraftWithoutPhotos}=localSaveCore;
 localSaveCore.bindControls();
 const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad});
 const {openLocalDraft}=localOpenCore;
