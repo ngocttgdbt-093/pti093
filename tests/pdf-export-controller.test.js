@@ -17,7 +17,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     pdfPackSize:bytes=>bytes.length,
     pdfFileName:()=> 'case.pdf',
     getPdfWarningSkin:()=>({hidePdfWarning:()=>events.warnings.push('hide'),showPdfWarning:(...args)=>events.warnings.push(['show',...args])}),
-    finalizeCompletedSession:async()=>{events.finalized++;if(failFinalize)throw new Error('cleanup failed');},
+    finalizeCompletedSession:async()=>{events.finalized++;if(failFinalize)return false;return true;},
     msg:(text,ok)=>events.messages.push({text,ok}),
     alert:text=>events.alerts.push(text),
     setTimeout:fn=>{fn();return 1;}
