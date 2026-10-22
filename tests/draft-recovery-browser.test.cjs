@@ -26,6 +26,11 @@ const { chromium } = require('playwright');
     const counts=await page.evaluate(()=>window.testHarness.cleanup());
     assert.deepEqual(counts,{drafts:0,images:0});
 
+    const failureRecovery=await page.evaluate(()=>window.testHarness.cleanupFailureRecovery());
+    assert.deepEqual(failureRecovery,{rejected:true,autosaveRecovered:true});
+    const recoveredCleanup=await page.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(recoveredCleanup,{drafts:0,images:0});
+
     await page.evaluate(()=>window.testHarness.seed());
     const newTab=await browser.newPage();
     await newTab.goto('http://127.0.0.1:4173/tests/draft-recovery-browser.html');
