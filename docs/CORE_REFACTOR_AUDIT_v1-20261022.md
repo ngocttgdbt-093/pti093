@@ -502,3 +502,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Updated CI syntax validation so a page with no inline scripts is valid; the newly extracted Preview Modal, Modern Image Gallery, and Drive Recovery Guard receive explicit `node --check` steps. This prevents the syntax workflow from falsely failing merely because inline code has been fully extracted.
 - GitHub Actions run **#944** (`39837906510`) completed successfully on head `bca3beabf784ccb7482ce3d3502ba4c93244d063`. The run included the full browser smoke test, real Chromium IndexedDB draft recovery, image reorder, PDF download, Modern gallery mount, and all dedicated Core/Skin/Fusion checks.
 - The branch is still isolated to `refactor/core-modules-test-20261022`; no merge, production deploy, changes to `main`, or changes to the PTI repository occurred. Manual testing on the user's own PC/iPhone remains a separate acceptance step.
+
+
+## Module map, reference audit, and Drive Guard tests — v1-20261023.32/.33
+
+- Added `docs/CORE_MODULE_MAP_v1-20261023.md` as a compact handover map of Core, Fusion, and Skin responsibilities, including dependency boundaries and the non-regression invariants.
+- Added `tests/local-references.test.js` to enforce the completed extraction boundary: every local `src`/`href` reference resolves, no local references are duplicated, and `index.html` contains no inline JavaScript.
+- Added `tests/drive-recovery-guard.test.js` for the capture-phase upload-entry warning and cleanup of the known legacy stray-text pattern. The workflow now runs this test alongside the guard's syntax check.
+- GitHub Actions run **#962** (`39838455861`) completed successfully on head `a4a9dcf81c15f497a80c7d87f69c7e1dca9ed942`. It includes the new local-reference audit and Drive Guard test plus the existing full browser/IndexedDB and Core/Skin/Fusion coverage.
+- The current source has 38 external script references and no inline application JavaScript. App Core remains approximately 9.1 KB compared with the 46.5 KB original snapshot. These are structural/source-size measurements, not performance claims.
+- All changes remain on the test branch; no merge, production deploy, changes to `main`, or modifications to the separate PTI repository.
