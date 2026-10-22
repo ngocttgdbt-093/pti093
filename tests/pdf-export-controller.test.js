@@ -83,5 +83,13 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.match(events.alerts[0],/build failed/);
     assert.match(events.messages.at(-1).text,/Không thể xuất PDF/);
   }
-  console.log('PDF Export Controller tests passed (standard/high-quality export, warnings, error recovery, and empty preview guard).');
+  {
+    const {api,elements,events}=setup();
+    api.bindControls();
+    assert.equal(typeof elements.pdf.onclick,'function','Controller should own standard PDF button binding');
+    await elements.pdf.onclick();
+    assert.equal(events.exports[0].name,'case.pdf');
+    assert.equal(events.finalized,1);
+  }
+  console.log('PDF Export Controller tests passed (standard/high-quality export, warnings, error recovery, empty preview guard, and control binding).');
 })().catch(error=>{console.error(error);process.exitCode=1});
