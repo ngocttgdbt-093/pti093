@@ -18,9 +18,14 @@ const deps = {
   showLocalSaveConfirm: async () => false,
   clearAutoDraft: async () => {}
 };
+const elements={};
+deps.$=id=>elements[id]||(elements[id]={value:'',textContent:'',disabled:false,style:{},classList:{add(){},remove(){}}});
 const api = global.PTILocalSaveCore.install(deps);
 assert.equal(typeof api.saveLocalDraft, 'function');
 assert.equal(typeof api.saveDraftWithoutPhotos, 'function');
+assert.equal(typeof api.bindControls, 'function');
+api.bindControls();
+assert.equal(elements.driveSaveDraft.onclick,api.saveDraftWithoutPhotos,'Local Save Core should own the local-save button binding');
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 const appCore = fs.readFileSync('core/app-core.js', 'utf8');
