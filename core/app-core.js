@@ -136,7 +136,7 @@ const searchQueryVariants=query=>window.PTISharedCore.searchQueryVariants(query,
 const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
 const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
 const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone,getLocalDrafts});
-const {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery;
+const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery;
 const sessionActions=window.PTI093SessionActions.install({$,clearAutoDraft,localStorage,location,console});
 const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
 const {saveLocalDraft,saveDraftWithoutPhotos}=localSaveCore;
@@ -169,8 +169,4 @@ driveSaveFusion.bindControls();
 
 
 
-render();renderLayout();
-['bks','hoso','gdv','date','garage'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>scheduleAutoDraftSave(false));el.addEventListener('change',()=>scheduleAutoDraftSave(false))});
-restoreAutoDraft();
-window.addEventListener('pagehide',()=>{clearAutoDraftTimer();saveAutoDraft().catch(e=>console.warn('Không kịp tự lưu bản nháp:',e))});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearAutoDraftTimer();saveAutoDraft().catch(e=>console.warn('Không tự lưu bản nháp khi ẩn trang:',e))}});
+render();renderLayout();bindLifecycle();
