@@ -1,6 +1,8 @@
 
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
+const fileDelivery=window.PTI093FileDelivery.install({navigator,window,document,URL,File,location,setTimeout});
+const {exportPdfFile}=fileDelivery;
 const $=id=>document.getElementById(id);
 const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:localStorage});
 const {names:PTI093_GDV_NAMES,selectedGdv}=gdvFusion;
@@ -127,38 +129,6 @@ async function openDocxFile(file){try{const files=unzipStore(await file.arrayBuf
 render();renderLayout();await makePreview();msg(`Đã mở bản nháp: ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh.`,true)}catch(e){alert('Không mở được bản nháp Word: '+e.message)}}
 // Bản nháp Word đã được thay thế bằng project.pti trên Google Drive.
 
-async function exportPdfFile(blob,filename){
-  const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
-  let url='';
-  try{
-    if(isiOS){
-      // Ưu tiên chia sẻ một File có tên rõ ràng để iOS giữ đúng tên PDF.
-      // Nếu trình duyệt không hỗ trợ chia sẻ tệp, mở PDF như phương án dự phòng.
-      const file=new File([blob],filename,{type:'application/pdf'});
-      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:filename});
-        return;
-      }
-      url=URL.createObjectURL(blob);
-      const w=window.open(url,'_blank');
-      if(!w) location.href=url;
-      setTimeout(()=>URL.revokeObjectURL(url),60000);
-      return;
-    }
-    url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),3000);
-  }catch(e){
-    if(url)URL.revokeObjectURL(url);
-    if(e&&e.name==='AbortError')return;
-    throw e;
-  }
-}
 $('pdf').onclick=async()=>{
   if(!state.pages.length)return;
   const btn=$('pdf');btn.disabled=true;
