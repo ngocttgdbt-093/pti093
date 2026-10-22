@@ -73,4 +73,8 @@ for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async fu
 
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive search must bind after module installation');
 assert.ok(!html.includes('function openRecordFromDrive(') && !html.includes('function searchDriveRecords('), 'Drive record functions should live outside index.html');
+assert.ok(html.includes('function snapshotGroupsForProject('), 'Shared workspace snapshot should remain in Core/app code for local-save callers');
+assert.ok(!driveModule.includes('function snapshotGroupsForProject('), 'Drive Fusion should consume the shared snapshot adapter, not own it');
+assert.ok(driveModule.includes('snapshotGroupsForProject} = deps') || driveModule.includes('getAllGroups, snapshotGroupsForProject, selectedGdv'), 'Drive Fusion should receive the workspace snapshot through dependency injection');
+
 console.log('093 Drive Fusion tests passed (source contract + storage helpers).');
