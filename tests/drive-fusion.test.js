@@ -49,6 +49,7 @@ assert.equal(api.getDrivePendingUploadKey('case-1','img-a'), '');
 
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
+const appCore = fs.readFileSync('core/app-core.js', 'utf8');
 assert.ok(html.includes('<link rel="stylesheet" href="./css/skin-classic.css">'), 'Classic skin should be external');
 assert.ok(html.includes('<link rel="stylesheet" id="uiRefreshV42" href="./css/skin-modern.css">'), 'Modern skin toggle target should remain addressable');
 assert.equal((html.match(/<style\b/gi) || []).length, 0, 'All static skin/style blocks should be externalized');
@@ -59,15 +60,16 @@ for (const file of ['skin-classic.css','skin-modern.css', ...Array.from({length:
 }
 
 assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusion/drive.js"'), 'Shared Core should load before app-specific Drive Fusion');
-assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
-assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
+assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') >= 0, 'App Core should install Drive Fusion');
+assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') < appCore.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
+assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') < appCore.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
 const draftSource = fs.readFileSync('core/draft-recovery.js', 'utf8');
 const localStoreSource = fs.readFileSync('core/local-draft-store.js', 'utf8');
 const workspaceSource = fs.readFileSync('core/workspace.js', 'utf8');
 const localSaveSource = fs.readFileSync('core/local-save.js', 'utf8');
 assert.ok(html.includes('src="./core/draft-recovery.js"'), 'Shared Core draft module should be loaded');
 assert.ok(html.includes('src="./core/local-draft-store.js"'), 'Shared Core local storage adapter should be loaded');
-assert.ok(localStoreSource.includes("dbName:'pti093_local_drafts_v1'") || html.includes("dbName:'pti093_local_drafts_v1'"), 'Existing 093 local draft database name should remain unchanged');
+assert.ok(appCore.includes("dbName:'pti093_local_drafts_v1'"), 'Existing 093 local draft database name should remain unchanged');
 for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async function saveAutoDraft']) {
   assert.ok(draftSource.includes(marker), 'Existing 093 draft-recovery code must remain in Core: ' + marker);
 }
