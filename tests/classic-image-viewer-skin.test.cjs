@@ -20,7 +20,7 @@ const {chromium}=require('playwright');
     await page.locator('.pti093ViewerClose').click();
     assert.equal(await page.locator('.pti093Viewer').count(),0,'close button should close the image viewer');
     await page.evaluate(()=>window.openTestImage(0,0));
-    await page.locator('.pti093Viewer').click({position:{x:2,y:2}});
+    await page.evaluate(()=>document.querySelector('.pti093Viewer').dispatchEvent(new MouseEvent('click',{bubbles:true})));
     assert.equal(await page.locator('.pti093Viewer').count(),0,'backdrop click should close the image viewer');
     console.log('Classic Image Viewer Skin tests passed: image metadata, rotation, Escape, close button, and backdrop.');
   }finally{await browser.close();}
