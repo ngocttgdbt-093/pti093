@@ -82,6 +82,8 @@ const builderScripts = [
   './core/pdf-builder.js',
   './core/image-canvas.js',
   './core/preview-builder.js',
+  './core/pdf-export.js',
+  './core/pdf-export-controller.js',
   './core/app-core.js'
 ];
 const builderPositions = builderScripts.map(src => html.indexOf('src="' + src + '"'));
