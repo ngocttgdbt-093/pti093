@@ -23,5 +23,15 @@
     }
     return group;
   }
-  global.PTIWorkspaceCore = Object.assign(global.PTIWorkspaceCore||{}, {getAllGroups,snapshotGroupsForProject,commitCurrent});
+  function beginEditGroup(state,index){
+    const group=(state.groups||[])[index];
+    if(!group)return false;
+    state.current={title:group.title,items:group.items};
+    state.filenameCaption=false;
+    state.groups.splice(index,1);
+    state.editing=index;
+    state.pages=[];
+    return true;
+  }
+  global.PTIWorkspaceCore = Object.assign(global.PTIWorkspaceCore||{}, {getAllGroups,snapshotGroupsForProject,commitCurrent,beginEditGroup});
 })(window);
