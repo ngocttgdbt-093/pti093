@@ -6,6 +6,8 @@ const dateUtils=window.PTI093DateUtils.install({$});
 const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
 const workspaceCore=window.PTIWorkspaceCore;
 const getAllGroups=()=>workspaceCore.getAllGroups(state);
+const fileNaming=window.PTI093FileNaming.install({getAllGroups,$,selectedGdv});
+const {fileBaseName,gdvShortName,pdfFileName}=fileNaming;
 const snapshotGroupsForProject=()=>workspaceCore.snapshotGroupsForProject(state);
 const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
 const {pagePixels,jpegQuality,makeCanvas,pdfBytesFromCanvases,resamplePdfCanvases,pdfPackSize,makePdfAt,buildAdaptivePdf,splitPdfBytes}=pdfBuilder;
@@ -16,7 +18,6 @@ const docxBuilder=window.PTI093DocxBuilder.install({xmlEsc,formatDateDMY});
 const {docxText,docxCaption,drawingXml,pageBreak,makeDocxFiles}=docxBuilder;
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 function msg(t,show=true){$('status').textContent=t;$('status').classList.toggle('hidden',!show)}
-function fileBaseName(name){return String(name||'').replace(/\.[^.]+$/, '');}
 function selectedGdv(){let v=$('gdv').value;if(!v)return 'NONAME';if(v==='Nhập tên khác'){let x=$('gdv').dataset.custom||'';if(!x)x=prompt('Nhập tên GĐV / Thụ lý:','');if(x){v=x;$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else v='NONAME'}return v}
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
@@ -243,8 +244,6 @@ async function openDocxFile(file){try{const files=unzipStore(await file.arrayBuf
 render();renderLayout();await makePreview();msg(`Đã mở bản nháp: ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh.`,true)}catch(e){alert('Không mở được bản nháp Word: '+e.message)}}
 // Bản nháp Word đã được thay thế bằng project.pti trên Google Drive.
 
-function gdvShortName(name){if(!name)return '';const map={'Nguyễn Minh Ngọc':'NMN','Đặng Xuân Linh':'DXL','Đặng Xuân Diệu':'DXD','Đặng Văn Hiên':'DVH','Phạm Duy Thái':'PDT','Nguyễn Tuấn Hưng':'NTH'};return map[name]||((name||'').trim().split(/\s+/).filter(Boolean).map(w=>w[0]).join('').toUpperCase()||'')}
-function pdfFileName(){const groups=getAllGroups(),bks=(($('bks').value||'').trim()).replace(/[^\w.-]+/g,'_'),gdvCode=gdvShortName(selectedGdv());let prefix='Anh giam dinh';if(groups.length===1){if(groups[0].title==='Bản ảnh hiện trường')prefix='Anh hien truong';else if(groups[0].title==='Giấy tờ có liên quan')prefix='Anh giay to'}return `${prefix}${bks ? ' ' + bks : ''}${gdvCode ? ' ' + gdvCode : ''}.pdf`}
 async function exportPdfFile(blob,filename){
   const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
   let url='';
