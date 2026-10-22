@@ -70,6 +70,12 @@
           progress(100,'✓ Đã lưu hồ sơ tại máy thành công',total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');
           return id;
         }catch(e){
+          const idBox=$('driveId');
+          if(idBox){
+            if(state.localDraftId){idBox.textContent='💻 ID hồ sơ local: '+state.localDraftId;idBox.classList.remove('hidden')}
+            else if(state.driveRecordId){idBox.textContent='Hồ sơ: '+state.driveRecordId;idBox.classList.remove('hidden')}
+            else{idBox.classList.add('hidden')}
+          }
           const box=$('driveProgress');if(box)box.classList.remove('hidden');
           if($('driveProgressText'))$('driveProgressText').textContent='Lưu tại máy thất bại';
           if($('driveProgressPct'))$('driveProgressPct').textContent='!';
