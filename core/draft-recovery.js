@@ -73,8 +73,10 @@ function scheduleAutoDraftSave(imagesDirty=true){
       }
       
       async function finalizeCompletedSession(){
+        let storedCustomGdv='';
+        try{storedCustomGdv=global.localStorage.getItem('pti093_gdv_custom')||''}catch(e){}
         const gdv=$('gdv').value==='Nhập tên khác'
-          ? ($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||'')
+          ? ($('gdv').dataset.custom||storedCustomGdv)
           : ($('gdv').value||'');
         if(gdv){
           try{localStorage.setItem('pti093_gdv',gdv)}catch(e){}
