@@ -11,6 +11,7 @@ global.File = class FakeFile {
 };
 global.IDBKeyRange = { only: value => value };
 global.scrollY = 0;
+global.scrollTo = () => {};
 global.sessionStorage = { setItem(){}, removeItem(){}, getItem(){ return null; } };
 global.localStorage = { setItem(){}, removeItem(){}, getItem(){ return null; } };
 require('../core/local-open.js');
