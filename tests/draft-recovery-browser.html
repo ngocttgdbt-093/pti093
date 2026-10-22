@@ -48,6 +48,15 @@
           rearBytes:Array.from(new Uint8Array(await itemB.file.arrayBuffer()))
         };
       },
+      restoreNewSession:async()=>{
+        await api.restoreAutoDraft();
+        return {
+          sessionId:sessionStorage.getItem('pti093_work_session_id'),
+          bks:$('bks').value,hoso:$('hoso').value,garage:$('garage').value,
+          groups:state.groups.length,currentItems:state.current.items.length,
+          driveRecordId:state.driveRecordId||''
+        };
+      },
       cleanup:async()=>{
         await api.clearAutoDraft();
         const db=await store.openLocalDraftDB();
