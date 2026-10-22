@@ -82,6 +82,7 @@ const builderScripts = [
   './core/pdf-builder.js',
   './core/image-canvas.js',
   './core/preview-builder.js',
+  './core/session-actions.js',
   './core/image-ingest.js',
   './core/image-editing.js',
   './core/case-editor.js',
