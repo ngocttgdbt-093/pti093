@@ -2,8 +2,7 @@
   'use strict';
   global.PTI093DraftRecovery = {
     install: function(deps){
-      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg} = deps;
-      const PTI093_LOCAL_DB='pti093_local_drafts_v1';
+      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg, openLocalDraftDB, localDraftTransactionDone, getLocalDrafts} = deps;
       const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
       // Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
       const PTI093_SESSION_KEY='pti093_work_session_id';
@@ -11,41 +10,11 @@
       if(!PTI093_SESSION_ID){PTI093_SESSION_ID=(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));sessionStorage.setItem(PTI093_SESSION_KEY,PTI093_SESSION_ID);}
       let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false,autoDraftImageRevision=0,autoDraftResetting=false;
       function clearAutoDraftTimer(){clearTimeout(autoDraftTimer)}
-      function openLocalDraftDB(){
-        return new Promise((resolve,reject)=>{
-          if(!('indexedDB' in window)){reject(new Error('Trình duyệt không hỗ trợ lưu nháp tại máy.'));return}
-          const req=indexedDB.open(PTI093_LOCAL_DB,1);
-          req.onupgradeneeded=()=>{
-            const db=req.result;
-            if(!db.objectStoreNames.contains('drafts'))db.createObjectStore('drafts',{keyPath:'id'});
-            if(!db.objectStoreNames.contains('draftImages')){
-              const st=db.createObjectStore('draftImages',{keyPath:'id'});
-              st.createIndex('draftId','draftId',{unique:false});
-            }
-          };
-          req.onsuccess=()=>resolve(req.result);
-          req.onerror=()=>reject(req.error||new Error('Không mở được kho lưu nháp tại máy.'));
-        });
-      }
+      /* Storage adapter supplied by core/local-draft-store.js */
       
-      function localDraftTransactionDone(tx){
-        return new Promise((resolve,reject)=>{
-          tx.oncomplete=()=>resolve();
-          tx.onerror=()=>reject(tx.error||new Error('Lỗi giao dịch lưu nháp.'));
-          tx.onabort=()=>reject(tx.error||new Error('Giao dịch lưu nháp bị hủy.'));
-        });
-      }
+      /* Storage adapter supplied by core/local-draft-store.js */
       
-      async function getLocalDrafts(){
-        const db=await openLocalDraftDB();
-        try{
-          return await new Promise((resolve,reject)=>{
-            const req=db.transaction('drafts','readonly').objectStore('drafts').getAll();
-            req.onsuccess=()=>resolve(req.result||[]);
-            req.onerror=()=>reject(req.error||new Error('Không đọc được danh sách nháp tại máy.'));
-          });
-        }finally{db.close()}
-      }
+      /* Storage adapter supplied by core/local-draft-store.js */
       
       function scheduleAutoDraftSave(imagesDirty=true){
         if(autoDraftRestoring||autoDraftResetting)return;
@@ -201,7 +170,7 @@
         }catch(e){console.warn('Không thể khôi phục bản nháp tự động:',e);msg('Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.',true)}
         finally{autoDraftRestoring=false}
       }
-      return {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts,scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer};
+      return {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer};
     }
   };
 })(window);
