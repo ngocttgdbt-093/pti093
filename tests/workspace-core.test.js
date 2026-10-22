@@ -47,8 +47,10 @@ assert.equal(core.beginEditGroup(editState, 99), false, 'missing group index sho
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 const appCore = fs.readFileSync('core/app-core.js', 'utf8');
+const groupWorkflow = fs.readFileSync('core/group-workflow.js', 'utf8');
 assert.ok(html.includes('src="./core/workspace.js"'), 'index.html should load workspace Core');
 assert.ok(appCore.includes('workspaceCore.snapshotGroupsForProject(state)'), 'App Core should bind the shared snapshot adapter');
-assert.ok(appCore.includes('workspaceCore.commitCurrent(state)'), 'App Core should delegate group commit behavior to Workspace Core');
-assert.ok(appCore.includes('workspaceCore.beginEditGroup(state,i)'), 'App Core should delegate edit-group state transition to Workspace Core');
+assert.ok(html.includes('src="./core/group-workflow.js"'), 'index.html should load Group Workflow Core');
+assert.ok(groupWorkflow.includes('workspaceCore.commitCurrent(state)'), 'Group Workflow Core should delegate group commit behavior to Workspace Core');
+assert.ok(groupWorkflow.includes('workspaceCore.beginEditGroup(state,index)'), 'Group Workflow Core should delegate edit-group state transition to Workspace Core');
 console.log('Shared workspace Core tests passed (snapshot and group-commit contracts).');
