@@ -286,3 +286,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - GitHub Actions run **#446** (`39827453463`) completed successfully. It included the full application Chromium smoke test, draft recovery across reload and separate-tab session isolation, image reorder behavior, File Naming Core tests, Date Utils tests, and all existing module checks.
 - Current refactor baseline: `core/app-core.js` decreased from 46,529 bytes before the recent extractions to 40,777 bytes after extracting DOCX Builder, Date Utils, File Naming, and Image Reorder. This is a source-size measurement, not a performance benchmark.
 - Still not accepted: full manual workflow with real user photos, touch-device reorder, PDF/Word export opened in external apps, and the 10-image save/reload workflow. No production deployment or merge has occurred.
+
+
+## PDF Export Core extraction and startup initialization fix — v2-20261023.14
+
+- Extracted `renderPageRangeWithLabel` and `splitHighQualityPdf` into `core/pdf-export.js`. The module receives the existing PDF builder functions as dependencies; the existing size-limit calculation, progress reporting, per-part labels, and split-file naming are preserved.
+- Added `tests/pdf-export.test.js` covering an empty preview, size-based splitting into multiple PDFs, part labels, output metadata, and progress reporting.
+- The full-page Chromium smoke test exposed a real initialization-order defect: the Local Save button handler referenced `saveDraftWithoutPhotos` before `PTILocalSaveCore.install()` had returned that API. Moved the handler binding to immediately after the API destructuring. This is a functional bug fix discovered by the new startup test, not a change to the save algorithm.
+- GitHub Actions run **#463** (`39827802955`) reached successful completion of the full Chromium recovery, session isolation, reorder, and app startup/date-mask checks, plus PDF Export Core syntax and unit tests; final run status is being confirmed.
+- The app controller has now been reduced from 46,529 bytes at the start of these extractions to 38,350 bytes after DOCX Builder, Date Utils, File Naming, Image Reorder, and PDF Export extraction plus the handler-order fix. This is a source-size comparison only.
