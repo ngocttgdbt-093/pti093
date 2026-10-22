@@ -57,6 +57,32 @@
           driveRecordId:state.driveRecordId||''
         };
       },
+      seedOrphanImages:async()=>{
+        const db=await store.openLocalDraftDB();
+        try{
+          await new Promise((resolve,reject)=>{
+            const tx=db.transaction('draftImages','readwrite');
+            tx.objectStore('draftImages').put({
+              id:'AUTO-DRAFT|orphan|0',draftId:'AUTO-DRAFT',sectionIndex:0,itemIndex:0,
+              file:new File([new Uint8Array([9,8,7])],'orphan.jpg',{type:'image/jpeg'}),
+              fileName:'orphan.jpg',type:'image/jpeg',lastModified:123
+            });
+            tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+          });
+        }finally{db.close();}
+      },
+      countDraftRows:async()=>{
+        const db=await store.openLocalDraftDB();
+        try{
+          return await new Promise((resolve,reject)=>{
+            const tx=db.transaction(['drafts','draftImages'],'readonly');
+            const a=tx.objectStore('drafts').count();
+            const b=tx.objectStore('draftImages').count();
+            tx.oncomplete=()=>resolve({drafts:a.result,images:b.result});
+            tx.onerror=()=>reject(tx.error);
+          });
+        }finally{db.close();}
+      },
       cleanupFailureRecovery:async()=>{
         const originalOpen=window.indexedDB.open;
         let rejected=false;
