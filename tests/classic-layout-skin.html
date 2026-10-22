@@ -1,0 +1,12 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Classic Layout Skin Test</title></head><body>
+<div id="layoutPreview"></div><div id="layoutText"></div>
+<script src="../skin/classic-layout.js"></script>
+<script>
+window.layoutState={per:6,orientation:'portrait'};
+window.layoutSkin=window.PTI093ClassicLayoutSkin.install({
+  state:window.layoutState,
+  $:id=>document.getElementById(id),
+  layoutDims:()=>window.layoutState.orientation==='portrait'?{cols:2,rows:Math.ceil(window.layoutState.per/2)}:{cols:Math.ceil(window.layoutState.per/2),rows:2},
+  document
+});
+</script></body></html>
