@@ -492,3 +492,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - GitHub Actions runs **#928** (`39837478100`) and **#929** (`39837484196`) both completed successfully on head `d1af91bf1498625724b961a285151396f1c83d5d`. The full-app browser smoke and real IndexedDB recovery tests passed after the extraction.
 - This was a behavior-preserving relocation to the Skin layer; the preview rendering/PDF generation algorithms were not rewritten. The remaining modern image-gallery and legacy Drive recovery inline blocks are still present and should be assessed separately before moving.
 - No merge or deployment; production `main` and the separate PTI repository remain unchanged.
+
+
+## Modern Image Gallery Skin and Drive Recovery Guard extraction — v2-20261023.30/.31
+
+- Moved the Modern-only image gallery patch into `skin/modern-image-gallery.js` without rewriting its gallery behavior. The full-app Chromium smoke test now opens a second browser page with a persisted Modern preference and verifies that the gallery mounts exactly once, owns the image grid, renders its empty-state count, and exposes the renderer used by Preview Skin.
+- Moved the legacy Drive upload-entry guard and stale CSS-text cleanup into `fusion/drive-recovery-guard.js`, preserving its click-capture behavior. The full-app smoke test now also asserts that the Drive Fusion upload entry point is available.
+- After the final inline patches were extracted, `index.html` contains **zero inline JavaScript blocks** and loads **38 external scripts**. A source-tree check verified that all 53 local `src`/`href` references resolve to existing repository paths, with no missing or duplicate references.
+- Updated CI syntax validation so a page with no inline scripts is valid; the newly extracted Preview Modal, Modern Image Gallery, and Drive Recovery Guard receive explicit `node --check` steps. This prevents the syntax workflow from falsely failing merely because inline code has been fully extracted.
+- GitHub Actions run **#944** (`39837906510`) completed successfully on head `bca3beabf784ccb7482ce3d3502ba4c93244d063`. The run included the full browser smoke test, real Chromium IndexedDB draft recovery, image reorder, PDF download, Modern gallery mount, and all dedicated Core/Skin/Fusion checks.
+- The branch is still isolated to `refactor/core-modules-test-20261022`; no merge, production deploy, changes to `main`, or changes to the PTI repository occurred. Manual testing on the user's own PC/iPhone remains a separate acceptance step.
