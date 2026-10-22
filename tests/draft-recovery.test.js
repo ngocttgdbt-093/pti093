@@ -86,6 +86,7 @@ const builderScripts = [
   './core/pdf-export.js',
   './core/pdf-export-controller.js',
   './skin/classic-preview.js',
+  './core/case-editor.js',
   './core/app-core.js'
 ];
 const builderPositions = builderScripts.map(src => html.indexOf('src="' + src + '"'));
