@@ -1,0 +1,77 @@
+
+/* Refined icon-only controls: visual layer only; event handlers/core untouched. */
+#grid .thumb{overflow:visible!important;position:relative;isolation:isolate}
+#grid .thumb:hover{z-index:4}
+#grid .thumb .imgBox{overflow:hidden!important;border-radius:10px 10px 0 0}
+#grid .thumbActions{
+ display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-around!important;
+ gap:clamp(3px,.55vw,7px)!important;padding:8px 7px!important;
+ background:rgba(248,251,255,.58)!important;border-top:1px solid rgba(205,220,244,.65)!important;
+ overflow:visible!important;position:relative!important;z-index:2
+}
+#grid .thumbActions button{
+ position:relative!important;display:inline-flex!important;flex:1 1 0!important;align-items:center!important;justify-content:center!important;
+ width:auto!important;min-width:0!important;max-width:36px!important;height:32px!important;min-height:32px!important;
+ padding:0!important;margin:0!important;border:1px solid rgba(255,255,255,.55)!important;border-radius:50%!important;
+ color:transparent!important;font-size:0!important;line-height:0!important;white-space:nowrap!important;
+ opacity:.76!important;box-shadow:0 2px 5px rgba(21,48,81,.12)!important;
+ transition:opacity .16s ease,filter .16s ease,transform .16s ease,box-shadow .16s ease!important;
+}
+#grid .thumbActions button::before{
+ display:block!important;position:relative!important;inset:auto!important;
+ color:#fff!important;font:600 19px/1 "Segoe UI Symbol","Arial Unicode MS",sans-serif!important;
+ text-shadow:0 1px 2px rgba(0,0,0,.12)!important
+}
+#grid .thumbActions .replace{background:rgba(28,111,235,.78)!important}
+#grid .thumbActions .replace::before{content:"▧"!important;font-size:17px!important}
+#grid .thumbActions .rotate{background:rgba(236,151,15,.78)!important}
+#grid .thumbActions .rotate::before{content:"↻"!important;font-size:22px!important}
+#grid .thumbActions .insert{background:rgba(20,166,82,.78)!important}
+#grid .thumbActions .insert::before{content:"+"!important;font:500 25px/1 Arial,sans-serif!important}
+#grid .thumbActions .view{background:rgba(0,151,174,.78)!important}
+#grid .thumbActions .view::before{
+ content:""!important;width:14px!important;height:9px!important;display:block!important;
+ border:1.8px solid #fff!important;border-radius:80% 20%!important;transform:rotate(0deg)!important;
+ box-shadow:none!important
+}
+#grid .thumbActions .view::after{
+ content:""!important;position:absolute!important;left:50%!important;top:50%!important;bottom:auto!important;
+ width:4px!important;height:4px!important;border-radius:50%!important;background:#fff!important;
+ transform:translate(-50%,-50%)!important;opacity:1!important;visibility:visible!important;padding:0!important;
+ box-shadow:none!important
+}
+#grid .thumbActions .del2{background:rgba(224,48,48,.78)!important}
+#grid .thumbActions .del2::before{content:"×"!important;font:400 25px/1 Arial,sans-serif!important}
+#grid .thumbActions button:hover,#grid .thumbActions button:focus-visible{
+ opacity:1!important;filter:saturate(1.25) brightness(1.13)!important;
+ transform:translateY(-2px) scale(1.1)!important;
+ box-shadow:0 5px 13px rgba(18,45,82,.22),0 0 0 2px rgba(255,255,255,.88)!important;
+ outline:none!important;z-index:12!important
+}
+/* Tooltip lives outside the card, so captions/thumbnail overflow cannot clip it. */
+#grid .thumbActions button:not(.view)::after{
+ content:attr(title)!important;position:absolute!important;left:50%!important;top:auto!important;bottom:calc(100% + 8px)!important;
+ transform:translate(-50%,4px)!important;width:max-content!important;max-width:190px!important;white-space:normal!important;
+ text-align:center!important;padding:6px 9px!important;border:0!important;border-radius:7px!important;
+ background:rgba(24,39,61,.96)!important;color:#fff!important;font:600 11px/1.35 Arial,sans-serif!important;
+ box-shadow:0 4px 12px rgba(0,0,0,.2)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+ transition:opacity .15s ease,transform .15s ease!important;z-index:100!important
+}
+#grid .thumbActions .view::after{
+ content:attr(title)!important;position:absolute!important;left:50%!important;top:auto!important;bottom:calc(100% + 8px)!important;
+ transform:translate(-50%,4px)!important;width:max-content!important;max-width:190px!important;white-space:normal!important;
+ text-align:center!important;padding:6px 9px!important;border:0!important;border-radius:7px!important;
+ background:rgba(24,39,61,.96)!important;color:#fff!important;font:600 11px/1.35 Arial,sans-serif!important;
+ box-shadow:0 4px 12px rgba(0,0,0,.2)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;z-index:100!important
+}
+#grid .thumbActions button:hover::after,#grid .thumbActions button:focus-visible::after{
+ opacity:1!important;visibility:visible!important;transform:translate(-50%,0)!important
+}
+#grid .thumb textarea{position:relative;z-index:1}
+@media(max-width:480px){
+ #grid .thumbActions{gap:3px!important;padding:7px 4px!important}
+ #grid .thumbActions button{height:29px!important;min-height:29px!important;max-width:31px!important}
+ #grid .thumbActions button::before{font-size:17px!important}
+ #grid .thumbActions .rotate::before{font-size:20px!important}
+ #grid .thumbActions .insert::before{font-size:23px!important}
+}

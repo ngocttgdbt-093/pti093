@@ -1,0 +1,10 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Classic PDF Warning Skin Test</title></head><body>
+<div id="pdfWarn" class="hidden"></div>
+<script src="../skin/classic-pdf-warning.js"></script>
+<script>
+window.exportCalls=[];
+window.pdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({
+  $,document,exportHighQualitySplit:(name,button,progress)=>window.exportCalls.push({name,buttonClass:button.className,progressId:progress.id})
+});
+function $(id){return document.getElementById(id)}
+</script></body></html>
