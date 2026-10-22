@@ -1,7 +1,7 @@
 
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
-const $=id=>document.getElementById(id); const drop=$('drop');
+const $=id=>document.getElementById(id);
 const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:localStorage});
 const {names:PTI093_GDV_NAMES,selectedGdv}=gdvFusion;
 const classicStatusSkin=window.PTI093ClassicStatusSkin.install({$});
@@ -49,11 +49,7 @@ const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 const imageIngest=window.PTI093ImageIngest.install({state,exts,fileBaseName,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),render:()=>render(),msg});
 const {addFiles}=imageIngest;
 $('clear').onclick=()=>{if(!state.current.items.length)return;if(!confirm('Xóa toàn bộ ảnh của nội dung đang làm?'))return;state.current.items=[];render();scheduleAutoDraftSave(true);msg('Đã xóa ảnh của nội dung hiện tại.',true)};
-$('files').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
-$('folder').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value=''});
-['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.add('drag')}));
-['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave')drop.classList.remove('drag') }));
-drop.addEventListener('drop',e=>{drop.classList.remove('drag');addFiles([...e.dataTransfer.files])});
+const classicFileIntakeSkin=window.PTI093ClassicFileIntakeSkin.install({$,addFiles});
 function render(){return classicImageGridSkin.render()}function renderGroups(){return classicGroupListSkin.renderGroups()}function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}if(!workspaceCore.beginEditGroup(state,i))return;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';scheduleAutoDraftSave(true);$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
 $('title').addEventListener('change',()=>{state.current.title=$('title').value;scheduleAutoDraftSave(false)});
 $('filenameCaption').addEventListener('change',e=>{state.filenameCaption=e.target.checked;$('filenameCaption').closest('.filenameCaptionBox').classList.toggle('on',state.filenameCaption);if(state.filenameCaption){state.current.items.forEach(it=>{it.caption=fileBaseName(it.file.name)});render();scheduleAutoDraftSave(false);msg('Đã lấy tên file (bỏ phần đuôi) làm thuyết minh cho các ảnh trong mục này.',true)}else{msg('Đã tắt chế độ lấy tên file; ảnh mới sẽ quay về cách thuyết minh bình thường.',true)}});
