@@ -434,3 +434,13 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Moved both standard PDF export and high-quality split export into `core/pdf-export-controller.js`. Unit tests now cover the standard compressed/uncompressed paths, warning display, completion cleanup, multi-part high-quality export, empty-page guard, and error recovery.
 - Extracted layout/orientation control binding into `skin/classic-layout.js`. The current `core/app-core.js` snapshot is about **15,994 bytes**, compared with the initial 46,529-byte baseline (about 65.6% smaller by byte count; this is not a runtime-performance claim).
 - Still isolated to `refactor/core-modules-test-20261022`: no merge, no production deployment, no changes to `main`, and no changes to the separate PTI repository. Full manual acceptance with the user's actual photo set and physical touch-device interaction remains open.
+
+
+## Layout controls, GĐV preferences, and image editing Core — v2-20261023.20
+
+- Moved the portrait/landscape and images-per-page controls from `core/app-core.js` into `skin/classic-layout.js`. The Skin now owns rendering and click binding for these controls; the Core supplies state and the autosave callback. Regression tests verify all six count choices, active-state changes, orientation selection, and autosave scheduling.
+- Moved 093-specific GĐV preference restoration and persistence from inline application code into `fusion/gdv-093.js`. The Fusion retains the saved standard GĐV, custom-name prompt/cache, and autosave callback. Regression tests cover persistence and the custom-name flow. This remains 093-only; no PTI repository was modified.
+- Extracted image edit transitions into `core/image-editing.js`: begin insert/replace, duplicate prevention, replacement while preserving caption/rotation/order metadata, insert sequencing, rotation, caption change, delete, clear confirmation, render, and draft-save scheduling. Unit tests cover these transitions and autosave semantics.
+- Latest complete validation: GitHub Actions run **#797** (`39834741290`) passed on head `0b63f1c96d17c99b7b680e540138a65ee6940d04`, including real Chromium IndexedDB draft recovery, full-app smoke test, module syntax checks, and Core/Skin/Fusion tests.
+- DOCX/Word draft storage remains retired; local IndexedDB is the supported draft recovery mechanism. No changes to `main`, no production deployment, and no changes to the separate PTI repository.
+- Remaining work: continue reducing `core/app-core.js` by extracting cohesive responsibilities with regression coverage. Full user-device/manual acceptance and production release are still separate, explicit gates.
