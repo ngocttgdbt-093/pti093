@@ -141,3 +141,12 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - Source comparison confirms the extracted Drive function bodies match the original `main` implementations after normalizing indentation. The uploader's concurrency remains the original local `DRIVE_CONCURRENCY=5`; no concurrency redesign was made.
 - Removed the obsolete Drive function declarations from `index.html`. The shared local-draft functions remain in `index.html` and are unchanged compared with `main`.
 - Remaining work: optimize and consolidate the non-Drive app functions into Core modules, then run browser-level regressions and verify completed GitHub Actions runs. No production deploy or merge has occurred.
+
+## Shared Core ZIP/XML utilities — formal milestone v2-20261022.1
+
+- Extracted ten pure/helper functions used by DOCX ZIP creation/import into `core/zip-utils.js`: XML escaping, Base64 byte conversion, CRC32, little-endian integer encoders, byte-array concatenation, ZIP store writer/reader, data-URL conversion, and ZIP text lookup.
+- `index.html` now loads `core/gdv-search.js`, then `core/zip-utils.js`, then app-specific `fusion/drive.js`, before the app's inline controller. The original function names are bound from `window.PTISharedCore` for compatibility with existing DOCX code.
+- All ten extracted helper bodies compare exactly with their source versions on `main`; no algorithm rewrite was made.
+- Added `tests/zip-utils.test.js` for XML escaping, CRC32 known vector, little-endian helpers, byte concatenation, Base64/data-URL conversion, and a ZIP write/read round-trip. The workflow now runs this test.
+- Source checks: 5/5 remaining inline script blocks parse, no remaining `<style>` blocks exist, all 15 CSS assets are linked in order, and the ZIP helper test's behavior checks pass in a local JS harness. GitHub Actions has passed for the earlier PR head; this new Core utility commit still needs its own CI result.
+- Formal milestone ID for this Core extraction batch is `v2-20261022.1`. This is a refactor-work milestone, not an app footer/build version. The local-draft lifecycle remains untouched.
