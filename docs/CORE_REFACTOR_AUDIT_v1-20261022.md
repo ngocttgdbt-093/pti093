@@ -400,3 +400,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Extracted PDF file delivery into `core/file-delivery.js`, keeping the existing iOS share sheet/new-tab fallback and desktop download behavior. PDF generation and splitting remain separate from delivery.
 - Added unit tests for Preview Builder and File Delivery, and wired both modules before App Core. GitHub Actions run **#696** (`39832618898`) completed successfully, including both module tests and the real Chromium recovery/reorder/full-app smoke suite.
 - The current App Core file is 24,677 bytes in the latest branch snapshot. The branch is receiving parallel, non-production refactor commits; continue to re-read the current file SHA before every edit to avoid overwriting changes.
+
+
+## DOCX image processing moved into DOCX Builder Core — v2-20261023.9
+
+- Extended `core/docx-builder.js` with the existing `imageForDocx` helper. Image loading, orientation-aware canvas sizing, rotation, JPEG encoding, and byte conversion are dependency-injected so the DOCX builder can be tested without real image files or a DOM.
+- Expanded `tests/docx-builder.test.js` to verify rotated landscape image dimensions, canvas translation/rotation, draw geometry, JPEG quality, and output bytes.
+- GitHub Actions run **#702** (`39832769671`) completed successfully with the DOCX image-processing regression and all existing module/browser checks.
+- This keeps DOCX-specific image transformation next to DOCX packaging rather than in the main App Core; no change to production deployment or PTI.
