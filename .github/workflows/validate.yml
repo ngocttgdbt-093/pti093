@@ -89,6 +89,7 @@ jobs:
           node tests/app-smoke-browser.test.cjs
           node tests/classic-local-save-skin.test.cjs
           node tests/classic-load-progress-skin.test.cjs
+          node tests/classic-image-viewer-skin.test.cjs
 
       - name: Check extracted Image Reorder Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
@@ -153,6 +154,10 @@ jobs:
       - name: Test extracted DOCX Builder Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/docx-builder.test.js
+
+      - name: Check Classic Image Viewer Skin module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check skin/classic-image-viewer.js
 
       - name: Check Classic Load Progress Skin module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
