@@ -30,7 +30,8 @@ const previewBuilder=window.PTI093PreviewBuilder.install({drawPage});
 const {buildPreview}=previewBuilder;
 const classicLayoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims,document,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args)});
 classicLayoutSkin.bindControls();
-const classicGroupListSkin=window.PTI093ClassicGroupListSkin.install({state,$,document,onEditGroup:i=>editGroup(i)});
+const groupWorkflow=window.PTI093GroupWorkflow.install({state,$,workspaceCore,render:()=>render(),makePreview:()=>makePreview(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,confirm,window});
+const classicGroupListSkin=window.PTI093ClassicGroupListSkin.install({state,$,document,onEditGroup:i=>groupWorkflow.editGroup(i)});
 const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
   state,$,document,URL,imageReorder,openImageViewer,renderGroups:()=>renderGroups(),
   scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,
@@ -58,12 +59,9 @@ const caseEditor=window.PTI093CaseEditor.install({state,$,fileBaseName,render:()
 caseEditor.bindControls();
 const imageEditing=window.PTI093ImageEditing.install({state,$,exts,fileBaseName,render:()=>render(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,confirm});
 const classicFileIntakeSkin=window.PTI093ClassicFileIntakeSkin.install({$,addFiles});
-function render(){return classicImageGridSkin.render()}function renderGroups(){return classicGroupListSkin.renderGroups()}function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}if(!workspaceCore.beginEditGroup(state,i))return;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';scheduleAutoDraftSave(true);$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
+function render(){return classicImageGridSkin.render()}function renderGroups(){return classicGroupListSkin.renderGroups()}
 
 
-function commitCurrent(){return workspaceCore.commitCurrent(state)}
-$('saveNext').onclick=()=>{state.current.title=$('title').value;const g=commitCurrent();if(!g)return;state.current={title:$('title').value,items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);msg(`Đã lưu “${g.title}”. Hãy chọn nội dung tiếp theo.`,true);window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})};
-$('finish').onclick=()=>{state.current.title=$('title').value;if(state.current.items.length)commitCurrent();$('title').value=state.current.title;state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');render();scheduleAutoDraftSave(true);makePreview()};
 /* Shared workspace group helper is in core/workspace.js */
 /* Shared workspace snapshot helper is in core/workspace.js */
 // counts
