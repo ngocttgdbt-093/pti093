@@ -34,6 +34,24 @@ const {chromium}=require('playwright');
     assert.equal(persistence.custom,'Nguyễn Văn C');
     assert.equal(persistence.dataset,'Nguyễn Văn C');
     assert.equal(persistence.autoSaveCalls,2);
-    console.log('093 GĐV Fusion tests passed: default selection, custom prompt, cached custom name, cancellation, and 093-only list.');
+    const blocked=await page.evaluate(()=>{
+      const originalGet=Storage.prototype.getItem,originalSet=Storage.prototype.setItem;
+      try{
+        Storage.prototype.getItem=function(){throw new Error('storage blocked')};
+        Storage.prototype.setItem=function(){throw new Error('storage blocked')};
+        const select=document.getElementById('gdv');select.dataset.custom='';
+        let autosaves=0;
+        window.gdvFusion.bindSelectionPersistence(()=>{autosaves++});
+        select.value='Phạm Duy Thái';select.dispatchEvent(new Event('change'));
+        select.value='Nhập tên khác';window.promptValue='Tên tạm thời';select.dispatchEvent(new Event('change'));
+        return {selected:window.gdvFusion.selectedGdv(),dataset:select.dataset.custom,autosaves};
+      }finally{
+        Storage.prototype.getItem=originalGet;Storage.prototype.setItem=originalSet;
+      }
+    });
+    assert.equal(blocked.selected,'Tên tạm thời','GĐV selection should still work when browser storage is blocked');
+    assert.equal(blocked.dataset,'Tên tạm thời');
+    assert.equal(blocked.autosaves,2,'blocked storage must not prevent autosave scheduling');
+    console.log('093 GĐV Fusion tests passed: default selection, custom prompt, cached custom name, cancellation, 093-only list, and blocked-storage recovery.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
