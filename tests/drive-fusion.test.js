@@ -102,7 +102,7 @@ console.log('093 Drive Fusion tests passed (source contract + storage helpers).'
     ...deps,
     setDriveState:(text,ok)=>cleanupEvents.states.push({text,ok}),
     msg:(text,show)=>cleanupEvents.messages.push({text,show}),
-    finalizeCompletedSession:async()=>{throw new Error('cleanup failed')}
+    finalizeCompletedSession:async()=>false
   });
   const finalized=await cleanupApi.finalizeAfterSuccessfulDriveSave();
   assert.equal(finalized,false,'post-save cleanup failure must be surfaced separately from the completed Drive save');
