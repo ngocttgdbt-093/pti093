@@ -28,7 +28,7 @@ const classicImageGridSkin=window.PTI093ClassicImageGridSkin.install({
   state,$,document,URL,imageReorder,openImageViewer,renderGroups:()=>renderGroups(),
   scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,
   onReplace:i=>{state.replaceIndex=i;$('replaceFile').click();},
-  onRotate:(item,index)=>{item.rotate=(item.rotate+90)%360;render();scheduleAutoDraftSave(true);msg(`Ảnh số ${index+1} đã xoay ${item.rotate}°. `,true);},
+  onRotate:(item,index)=>{item.rotate=(item.rotate+90)%360;render();scheduleAutoDraftSave(true);msg(`Ảnh số ${index+1} đã xoay ${item.rotate}°.`,true);},
   onInsert:i=>{state.insertIndex=i;$('insertFile').click();},
   onDelete:i=>{state.current.items.splice(i,1);render();scheduleAutoDraftSave(true);},
   onCaptionChange:(item,value)=>{item.caption=value;scheduleAutoDraftSave(false);}
