@@ -534,8 +534,20 @@
         box.appendChild(b);
       }
       
+      async function finalizeAfterSuccessfulDriveSave(){
+        try{
+          await finalizeCompletedSession();
+          return true;
+        }catch(error){
+          const detail=error&&error.message?error.message:String(error);
+          setDriveState('Hồ sơ Drive đã lưu thành công, nhưng chưa dọn được nháp tự động: '+detail,false);
+          msg('⚠️ Hồ sơ Drive đã lưu thành công. Nháp tự động chưa được dọn; hồ sơ Drive vẫn được giữ lại.',true);
+          return false;
+        }
+      }
+
       async function createDriveRecord(){
-        if(state.driveRecordId){try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
+        if(state.driveRecordId){try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();const cleanupOk=await finalizeAfterSuccessfulDriveSave();if(cleanupOk)setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
         const btn=$('driveCreate');btn.disabled=true;setDriveState('Đang tạo hồ sơ và lưu dữ liệu...');
         try{
           const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
@@ -543,7 +555,7 @@
           const data=await res.json();if(!data.success)throw new Error(data.error||'API không tạo được hồ sơ');state.driveRecordId=data.recordId||'';state.localDraftId='';sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
           $('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden');
           const result=await pti093UploadAll();if(!result||result.failures&&result.failures.length)throw new Error('Có ảnh chưa được xác nhận lưu lên Drive.');
-          await saveProjectToDrive(false);await finalizeCompletedSession();setDriveState('Đã tạo hồ sơ, lưu ảnh và lưu dữ liệu nháp.');msg('Đã tạo và lưu hồ sơ thành công. Có thể tìm lại theo Mã HS hoặc BKS.',true);
+          await saveProjectToDrive(false);const cleanupOk=await finalizeAfterSuccessfulDriveSave();if(cleanupOk){setDriveState('Đã tạo hồ sơ, lưu ảnh và lưu dữ liệu nháp.');msg('Đã tạo và lưu hồ sơ thành công. Có thể tìm lại theo Mã HS hoặc BKS.',true);}
         }catch(e){setDriveState('Chưa hoàn tất hồ sơ: '+e.message,false);msg('Lỗi lưu hồ sơ: '+e.message,true)}finally{btn.disabled=false}
       }
       
@@ -726,14 +738,14 @@
             if(result&&result.total>result.sent)throw new Error('Chưa xác nhận đủ ảnh trên Drive.');
             state.localDraftId='';
             await saveProjectToDrive();
-            await finalizeCompletedSession();
-            setDriveState('Đã lưu thay đổi hồ sơ. Ảnh hiện có đã được xác nhận trên Drive.');
+            const cleanupOk=await finalizeAfterSuccessfulDriveSave();
+            if(cleanupOk)setDriveState('Đã lưu thay đổi hồ sơ. Ảnh hiện có đã được xác nhận trên Drive.');
           }catch(error){msg('Lỗi lưu thay đổi: '+error.message,true)}
           finally{button.disabled=false}
         };
         $('driveCreate').onclick=createDriveRecord;
       }
-      return {openRecordFromDrive, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll, bindControls};
+      return {openRecordFromDrive, recordMatchesQuery, recordTime, sameLocalDriveRecord, searchDriveRecords, saveProjectToDrive, driveImageKey, getDriveUploadedKeys, saveDriveUploadedKeys, getDrivePendingUploadKey, saveDrivePendingUploadKey, prepareDriveItem, waitForUploadStatus, sendDrivePayload, renderDriveUploadFailures, createDriveRecord, pti093UploadAll, finalizeAfterSuccessfulDriveSave, bindControls};
     }
   };
 })(window);
