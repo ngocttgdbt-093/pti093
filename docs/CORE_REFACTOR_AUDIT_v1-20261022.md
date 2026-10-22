@@ -126,3 +126,11 @@ This is syntax-only evidence. It does not establish runtime correctness, F5/relo
 - The five draft-lifecycle functions (`scheduleAutoDraftSave`, `saveAutoDraft`, `restoreAutoDraft`, `clearAutoDraft`, `finalizeCompletedSession`) compare byte-for-byte with the current `main` source. The user's 10/10 successful manual recovery tests remain the behavioral baseline; no draft-lifecycle refactor was performed.
 - Checks rerun after this step: 5/5 remaining inline script blocks parse; `fusion/drive.js` parses; expected fusion exports exist; mock-storage checks for uploaded/pending keys pass; Classic/Modern CSS links and script load order are present. These are source/contract checks, not browser acceptance.
 - GitHub Actions runs and browser-level regression remain unverified. No production branch or live deployment was changed. The earlier note above saying search/open functions remained in `index.html` is superseded by this section.
+
+## Full static skin extraction — v4-20261022.4
+
+- Extracted all remaining 13 static style blocks into `css/skin-overrides-03.css` through `css/skin-overrides-15.css`. Together with `skin-classic.css` and `skin-modern.css`, all 15 original style blocks are now external CSS files and the HTML has no remaining `<style>` blocks.
+- CSS contents were copied from the source style blocks. The links are ordered in the same sequence as the original style blocks so cascade precedence among Classic, Modern, and all override layers is preserved. The `uiRefreshV42` stylesheet ID remains unchanged for the existing UI toggle.
+- The five late style blocks originally appeared after the document head; their stylesheet links are now loaded in the head in the same cascade order as the source blocks. This makes the skin assets explicit and avoids relying on style tags embedded in the body.
+- Updated the Drive Fusion test to verify that all 15 CSS assets exist, are non-empty, and are linked from `index.html`.
+- Source validation still does not substitute for browser visual regression; the Classic default, Modern toggle, mobile layout, preview modal, tooltip stacking, and PC dashboard should be visually checked on an isolated test build before merge.
