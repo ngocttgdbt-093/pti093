@@ -16,6 +16,8 @@ const classicImageViewerSkin=window.PTI093ClassicImageViewerSkin.install({docume
 const {openImageViewer}=classicImageViewerSkin;
 const dateUtils=window.PTI093DateUtils.install({$});
 const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
+const deviceContext=window.PTI093DeviceContext.install({navigator});
+const {deviceStorageLabel}=deviceContext;
 const workspaceCore=window.PTIWorkspaceCore;
 const getAllGroups=()=>workspaceCore.getAllGroups(state);
 const fileNaming=window.PTI093FileNaming.install({getAllGroups,$,selectedGdv});
@@ -104,12 +106,6 @@ state.driveRecordId='';
 
 
 
-function deviceStorageLabel(){
-  const ua=navigator.userAgent||'';
-  if(/iPhone|iPad|iPod/i.test(ua))return 'iPhone/iPad';
-  if(/Android/i.test(ua))return 'điện thoại Android';
-  return 'PC';
-}
 const normalizeRecordSearch=window.PTISharedCore.normalizeRecordSearch;
 const gdvInitials=window.PTISharedCore.gdvInitials;
 const gdvSearchMatches=window.PTISharedCore.gdvSearchMatches;
