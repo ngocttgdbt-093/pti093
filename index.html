@@ -526,8 +526,6 @@ function searchQueryVariants(query){
 /* Draft session state moved to core/draft-recovery.js */
 const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
 const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
-const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
-const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
 const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone,getLocalDrafts});
 const {scheduleAutoDraftSave,saveAutoDraft,finalizeCompletedSession,clearAutoDraft,restoreAutoDraft,clearAutoDraftTimer}=draftRecovery;
 const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,setOpenLoad,getAllGroups,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
