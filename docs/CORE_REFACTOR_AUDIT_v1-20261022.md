@@ -226,10 +226,10 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - This is a green source/module CI gate, not full browser acceptance. The IndexedDB implementation is still not being exercised in a real browser session, and the user's 10/10 baseline test of the original 093 recovery still needs to be repeated against the test build.
 - Production `main` remains untouched. Do not merge or publish to the live Pages site until the browser regression checks are complete.
 
-## Latest workflow confirmation — v1-20261022.9
+## Latest workflow confirmation — v1-20261022.10
 
-- GitHub Actions run **#347** (`39818695639`) completed successfully after adding the local-open test to CI. The job reports success with 22 successful steps and no failed steps.
-- This is the latest verified automated gate for the current Core/Fusion source. The test fixture now stubs `window.scrollTo`; no application behavior was changed to accommodate the test environment.
+- GitHub Actions run **#359** (`39819183815`) completed successfully for commit `b5977dfea15cb40fa44504859cae1bff738520c9`. The job reports **24 successful steps and 0 failed steps**, including the extracted Image Canvas Core test.
+- This is the latest verified automated gate for the Core/Fusion source at that commit. Static and mocked-module tests pass; they do not replace a real-browser test with actual IndexedDB, image files, layout, and downloads.
 - Remaining gate is real-browser acceptance only: open a test build, load images, save locally, reload/F5 and confirm draft recovery, open a saved local case, preview/export PDF and verify the app still starts in Classic. No production deploy or merge has been performed.
 
 
