@@ -36,4 +36,5 @@ const html = fs.readFileSync('index.html', 'utf8');
 const appCore = fs.readFileSync('core/app-core.js', 'utf8');
 assert.ok(html.includes('src="./core/workspace.js"'), 'index.html should load workspace Core');
 assert.ok(appCore.includes('workspaceCore.snapshotGroupsForProject(state)'), 'App Core should bind the shared snapshot adapter');
-console.log('Shared workspace Core tests passed (8 assertions).');
+assert.ok(appCore.includes('workspaceCore.commitCurrent(state)'), 'App Core should delegate group commit behavior to Workspace Core');
+console.log('Shared workspace Core tests passed (snapshot and group-commit contracts).');
