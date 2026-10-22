@@ -70,6 +70,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   const localState={groups:[],current:{title:'Thiệt hại',items:[]},localDraftId:'',driveRecordId:'',orientation:'portrait',per:6};
   let cleared=0;
   global.localStorage={getItem(){throw new Error('localStorage blocked')},setItem(){throw new Error('localStorage blocked')},removeItem(){}};
+  global.IDBKeyRange={only:value=>value};
   const db={
     close(){},
     transaction(){
@@ -95,6 +96,6 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.match(localState.localDraftId,/^LOCAL-/,'local save should complete despite blocked localStorage');
   assert.equal(cleared,1,'successful local save should still clean the autosave draft');
   assert.equal(elements.driveSaveDraft.disabled,false,'save control should be re-enabled');
-  delete global.localStorage;
+  delete global.localStorage;delete global.IDBKeyRange;
   console.log('Local Save storage-blocked test passed (saved record remains successful despite blocked GĐV preference storage).');
 })().catch(error=>{console.error(error);process.exitCode=1});
