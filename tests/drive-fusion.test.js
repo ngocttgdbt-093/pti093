@@ -67,6 +67,7 @@ const draftSource = fs.readFileSync('core/draft-recovery.js', 'utf8');
 const localStoreSource = fs.readFileSync('core/local-draft-store.js', 'utf8');
 const workspaceSource = fs.readFileSync('core/workspace.js', 'utf8');
 const localSaveSource = fs.readFileSync('core/local-save.js', 'utf8');
+const loadProgressSkinSource = fs.readFileSync('skin/classic-load-progress.js', 'utf8');
 assert.ok(html.includes('src="./core/draft-recovery.js"'), 'Shared Core draft module should be loaded');
 assert.ok(html.includes('src="./core/local-draft-store.js"'), 'Shared Core local storage adapter should be loaded');
 assert.ok(appCore.includes("dbName:'pti093_local_drafts_v1'"), 'Existing 093 local draft database name should remain unchanged');
@@ -77,7 +78,8 @@ for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async fu
 
 assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') < appCore.indexOf("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive search must bind after module installation');
 assert.ok(!html.includes('function openRecordFromDrive(') && !html.includes('function searchDriveRecords('), 'Drive record functions should live outside index.html');
-assert.ok(appCore.includes('function finishOpenLoad('), 'Shared open-progress completion must remain in the app orchestration layer');
+assert.ok(loadProgressSkinSource.includes('function finishOpenLoad('), 'Open-progress completion presentation should live in the Classic Skin module');
+assert.ok(html.includes('src="./skin/classic-load-progress.js"'), 'Classic Load Progress Skin should be loaded before App Core');
 assert.ok(appCore.includes('setOpenLoad,finishOpenLoad,getAllGroups'), 'Drive Fusion must receive the app-owned open-load completion callback through dependency injection');
 assert.ok(html.includes('src="./core/workspace.js"'), 'Shared workspace Core should be loaded');
 assert.ok(html.includes('src="./core/local-save.js"'), 'Shared local-save Core should be loaded');
