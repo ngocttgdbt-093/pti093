@@ -80,6 +80,13 @@ jobs:
           done
           node tests/draft-recovery-browser.test.cjs
 
+      - name: Check extracted Date Utils Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/date-utils.js
+      - name: Test extracted Date Utils Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/date-utils.test.js
+
       - name: Check shared Core local-save module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check core/local-save.js
