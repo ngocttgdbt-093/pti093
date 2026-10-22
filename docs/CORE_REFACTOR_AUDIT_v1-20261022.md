@@ -187,3 +187,12 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Added `tests/workspace-core.test.js` for filtering empty groups, merging the current section with the last same-title group, and ensuring snapshots do not mutate the live workspace. The workflow now syntax-checks and runs this test.
 - This closes a dependency boundary found during the audit: local save must not rely on a helper hidden inside the Drive-specific fusion. The Drive Fusion receives the shared snapshot function explicitly.
 - The latest verified static/runtime smoke checks before this workspace extraction passed 15/15. Re-run the checks and verify the CI result for the new workspace module before treating this batch as complete. Browser acceptance and production deployment remain out of scope.
+
+## Core module smoke-test update — v1-20261022.4
+
+- Confirmed the HTML loads modules in dependency order: `gdv-search.js`, `zip-utils.js`, `pdf-builder.js`, `local-draft-store.js`, `draft-recovery.js`, then `fusion/drive.js`, before the app's inline initialization.
+- Executed 13 direct runtime smoke checks against the fetched branch sources in the available JavaScript runtime: Vietnamese GĐV normalization/partial/initial matching; ZIP/XML helper behavior including CRC32 and ZIP round-trip; draft lifecycle API/session-key wiring; Drive Fusion save/upload/search API and per-image upload-key persistence; Classic skin link and module load order. All 13 passed.
+- Independently syntax-parsed the 5 inline JavaScript blocks and the Core/Fusion modules and test scripts; all parsed successfully.
+- The repository's Node test suite now includes a PDF Builder test covering page dimensions, PDF structure, adaptive build and split naming. This report does not claim that GitHub Actions has passed: the workflow run has not been independently verified through the available status endpoint.
+- Not yet verified: real-browser IndexedDB writes and restore after F5/reload; actual image selection, preview, PDF export/download and split behavior in Edge/Chrome; regression against the user's 10/10 known-good 093 recovery baseline. Keep this branch isolated until those acceptance checks pass.
+- Production `main` remains untouched. The correct same-day work milestone for this update is `v1-20261022.4`; it is not an application footer/build version.
