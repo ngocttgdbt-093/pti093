@@ -117,6 +117,10 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/draft-recovery.test.js
 
+      - name: Test Draft Recovery when browser storage is blocked
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/draft-recovery-storage-blocked.test.js
+
       - name: Cache Playwright Chromium
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         uses: actions/cache@v4
