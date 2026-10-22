@@ -75,7 +75,8 @@ for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async fu
 
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive search must bind after module installation');
 assert.ok(!html.includes('function openRecordFromDrive(') && !html.includes('function searchDriveRecords('), 'Drive record functions should live outside index.html');
-assert.ok(html.includes('function finishOpenLoad('), 'Shared open-progress completion must remain in Core for local draft open');
+assert.ok(html.includes('function finishOpenLoad('), 'Shared open-progress completion must remain in the app orchestration layer');
+assert.ok(html.includes('setOpenLoad,finishOpenLoad,getAllGroups'), 'Drive Fusion must receive the app-owned open-load completion callback through dependency injection');
 assert.ok(html.includes('src="./core/workspace.js"'), 'Shared workspace Core should be loaded');
 assert.ok(html.includes('src="./core/local-save.js"'), 'Shared local-save Core should be loaded');
 assert.ok(localSaveSource.includes('async function saveLocalDraft'), 'Manual local-save should be owned by Core');
