@@ -211,3 +211,10 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - Added `node --check core/local-open.js` and `node tests/local-open.test.js` to the workflow. This extra CI coverage was added after run #329, so the new run must be checked before claiming the full current workflow is green.
 - Runtime PDF Builder smoke checks passed for PDF header/footer, adaptive output under the configured size limit, and split-file naming. These use a mock canvas and are not a real browser export test.
 - Still required before acceptance: a full real-browser smoke test and the 093 draft-recovery F5/reload regression test. Do not merge the draft PR or change production `main` before those checks.
+
+
+## Local Open Core extraction — v7-20261022.1
+
+- Moved the manual `openLocalDraft` flow into `core/local-open.js`, installed after the draft-store/recovery modules and before Drive Fusion. The Drive module receives the same `openLocalDraft` adapter; the local-open implementation itself remains independent of Drive Fusion.
+- Kept `setDriveState`, `setOpenLoad`, `finishOpenLoad`, and `snapshotGroupsForProject` in the shared app/Core layer because manual local save/open also uses them. Drive Fusion receives those helpers as explicit dependencies rather than owning them.
+- Added `tests/local-open.test.js` and a workflow step. A mocked IndexedDB test in the available runtime passed checks for restored form fields, local ID/no Drive ID, image order/caption/rotation, progress completion, render/layout, and database closure. This is not a real-browser IndexedDB/F5 test.
