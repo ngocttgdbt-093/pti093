@@ -62,6 +62,13 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/draft-recovery.test.js
 
+      - name: Check shared Core local-save module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/local-save.js
+      - name: Test shared Core local-save module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/local-save.test.js
+
       - name: Check shared Core draft recovery module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check core/draft-recovery.js
