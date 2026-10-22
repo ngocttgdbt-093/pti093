@@ -20,7 +20,8 @@ const {chromium}=require('playwright');
         reorder:!!window.PTI093ImageReorder,
         docx:!!window.PTI093DocxBuilder,
         pdf:!!window.PTI093PdfBuilder,
-        canvas:!!window.PTI093ImageCanvasCore
+        canvas:!!window.PTI093ImageCanvasCore,
+        localSaveSkin:!!window.PTI093ClassicLocalSaveSkin
       }
     }));
     assert.equal(initial.counts,6,'six image-count choices should be rendered');
