@@ -51,14 +51,16 @@ assert.equal(typeof api.restoreAutoDraft,'function');
   const originalWarn2=console.warn;
   console.warn=()=>{};
   try{
+    const failedState={groups:[],current:{title:'Thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'LOCAL-1',orientation:'portrait',per:6,addSeq:0};
     const failedCleanupApi=global.PTI093DraftRecovery.install({
-      state:{groups:[],current:{title:'Thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'LOCAL-1',orientation:'portrait',per:6,addSeq:0},
+      state:failedState,
       $:id=>({value:'',textContent:'',dataset:{},options:[],classList:{add(){},remove(){},toggle(){}}}),
       getDateISO:()=> '2026-10-23',setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:()=>{},msg:()=>{},
       openLocalDraftDB:async()=>{throw new Error('IndexedDB unavailable')},
       localDraftTransactionDone:async()=>{},getLocalDrafts:async()=>[]
     });
     assert.equal(await failedCleanupApi.finalizeCompletedSession(),false,'finalizer must return false when AUTO-DRAFT cleanup fails');
+    assert.equal(failedState.localDraftId,'LOCAL-1','failed cleanup must preserve the local draft ID for recovery/retry');
   }finally{console.warn=originalWarn2}
   console.log('Draft Recovery storage-blocked tests passed (startup and explicit finalization success/failure results).');
 })().catch(error=>{console.error(error);process.exitCode=1});
