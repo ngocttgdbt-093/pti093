@@ -119,7 +119,11 @@
               new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),q=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error)})
             ]);
           }finally{db.close()}
-          if(!meta)return;
+          if(!meta){
+            // Dọn ảnh mồ côi nếu metadata của AUTO-DRAFT đã mất hoặc bị xóa riêng lẻ.
+            await clearAutoDraft();
+            return;
+          }
           // Chỉ khôi phục nháp trong đúng phiên/tab. Nháp của phiên trước bị dọn, không hiển thị lại.
           if(!meta.sessionId||meta.sessionId!==PTI093_SESSION_ID){
             await clearAutoDraft();
