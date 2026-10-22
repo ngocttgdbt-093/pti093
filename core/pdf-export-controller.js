@@ -67,7 +67,11 @@
           alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
         }finally{btn.disabled=false}
       }
-      return {exportHighQualitySplit,exportStandardPdf};
+      function bindControls(){
+        const button=$('pdf');
+        if(button)button.onclick=()=>exportStandardPdf(button);
+      }
+      return {exportHighQualitySplit,exportStandardPdf,bindControls};
     }
   };
 })(typeof window!=='undefined'?window:globalThis);
