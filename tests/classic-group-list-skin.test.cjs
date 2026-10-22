@@ -5,6 +5,7 @@ const {chromium}=require('playwright');
   try{
     const page=await browser.newPage();
     await page.goto('http://127.0.0.1:4173/tests/classic-group-list-skin.html');
+    await page.evaluate(()=>window.groupListSkin.renderGroups());
     const empty=await page.locator('#groupsBox').innerText();
     assert.match(empty,/Chưa có nội dung nào được lưu/);
     const populated=await page.evaluate(()=>{
