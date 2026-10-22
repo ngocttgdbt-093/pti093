@@ -196,3 +196,10 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - The repository's Node test suite now includes a PDF Builder test covering page dimensions, PDF structure, adaptive build and split naming. This report does not claim that GitHub Actions has passed: the workflow run has not been independently verified through the available status endpoint.
 - Not yet verified: real-browser IndexedDB writes and restore after F5/reload; actual image selection, preview, PDF export/download and split behavior in Edge/Chrome; regression against the user's 10/10 known-good 093 recovery baseline. Keep this branch isolated until those acceptance checks pass.
 - Production `main` remains untouched. The correct same-day work milestone for this update is `v1-20261022.4`; it is not an application footer/build version.
+
+## Manual local-save Core and CI validation — v7-20261022
+
+- Extracted `saveLocalDraft` and `saveDraftWithoutPhotos` into `core/local-save.js`. Both function bodies match `main` exactly after indentation normalization; the module receives the workspace snapshot, IndexedDB store APIs, status/progress UI adapters, and draft cleanup API explicitly.
+- The local-save module contains no calls to `PTI093_API`, `pti093UploadAll`, or `saveProjectToDrive`; case Drive saving remains in `fusion/drive.js`. The superseded duplicate local-case module was removed from the working branch.
+- GitHub Actions validation for the latest branch head `5dfa8b4884ef0c7b9a8758135c4a808eb451f746` completed successfully (run 323, workflow “Validate PTI093 JavaScript”). The syntax-check job and its checks/tests for inline scripts, draft recovery/store, local save, workspace helpers, ZIP/XML, PDF builder, GĐV search, and Drive Fusion all report success.
+- This is source/Node CI validation, not browser acceptance. Still required before merging/deploying: real-browser F5/reload restore with images and captions, Classic/Modern visual regression, and PDF export/splitting behavior in the isolated test build. Production `main` remains untouched.
