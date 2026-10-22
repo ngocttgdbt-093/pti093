@@ -49,6 +49,9 @@ jobs:
       - name: Check Drive Recovery Guard Fusion
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node --check fusion/drive-recovery-guard.js
+      - name: Test Drive Recovery Guard Fusion
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/drive-recovery-guard.test.js
 
       - name: Check UI Mode Toggle Skin
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
