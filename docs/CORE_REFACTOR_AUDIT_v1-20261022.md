@@ -376,3 +376,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - GitHub Actions run **#395** (`39825756353`) completed with conclusion `success`. Its Playwright/Chromium step passed, including an actual page reload with real browser IndexedDB, session ID continuity, case fields, image-group metadata, captions, rotation, original image Blob bytes, and draft cleanup.
 - This is meaningful browser-level evidence for the isolated draft-recovery modules. It is not yet an end-to-end acceptance test of the complete production UI, because the fixture uses a minimal harness rather than loading the full application and its actual Skin.
 - Production `main`, deployed Pages, and the separate PTI repository remain untouched. Keep this branch isolated and retain full-app browser acceptance as a separate gate.
+
+
+## Classic File Intake Skin and 093 GĐV Fusion — v2-20261023.28
+
+- Extracted the file-picker, folder-picker, and drag/drop zone event bindings into `skin/classic-file-intake.js`. It delegates the selected files to the existing `core/image-ingest.js` API and retains drag-state styling, event suppression, and input reset behavior.
+- Added a Chromium test for dragenter/dragleave styling, dropped files, file picker/folder picker delegation, and resetting the input after selection. The full-app smoke test verifies File Intake Skin loads.
+- GitHub Actions run **#672** (`39832255365`) completed successfully with the expanded browser suite and all Core/Fusion checks.
+- The 093-specific GĐV list and custom-name selection are now in `fusion/gdv-093.js`; the shared search and image-ingest logic remain in Core. App Core has decreased to 26,094 bytes in the latest source snapshot, compared with 46,529 bytes at the start of this refactor.
