@@ -24,7 +24,7 @@ const deps = {
   sha256HexBlob: async () => 'test-hash'
 };
 const api = global.PTI093DriveFusion.install(deps);
-for (const name of ['saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
+for (const name of ['openRecordFromDrive','setOpenLoad','finishOpenLoad','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll']) {
   assert.equal(typeof api[name], 'function', name + ' should be exported');
 }
 const file = { name: 'damage.jpg', size: 1200, lastModified: 99, webkitRelativePath: '' };
@@ -46,4 +46,7 @@ for (const marker of ['pti093_local_drafts_v1', 'async function restoreAutoDraft
   assert.ok(html.includes(marker), 'Existing 093 draft-recovery code must remain: ' + marker);
 }
 
+
+assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive search must bind after module installation');
+assert.ok(!html.includes('function openRecordFromDrive(') && !html.includes('function searchDriveRecords('), 'Drive record functions should live outside index.html');
 console.log('093 Drive Fusion tests passed (source contract + storage helpers).');
