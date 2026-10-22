@@ -31,6 +31,7 @@
             await new Promise(resolve=>setTimeout(resolve,180));
           }
           update(100,'Hoàn tất gửi '+parts.length+' tệp PDF. Kiểm tra thư mục Tải xuống hoặc hộp thoại Chia sẻ.');
+          await finalizeCompletedSession();
         }catch(e){
           const message='Xuất PDF chất lượng cao bị gián đoạn: '+(e&&e.message?e.message:String(e))+'. Hãy kiểm tra các tệp đã lưu trước khi thử lại.';
           update(100,message);alert(message);
