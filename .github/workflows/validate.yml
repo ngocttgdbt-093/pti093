@@ -55,3 +55,10 @@ jobs:
       - name: Test extracted Drive Fusion module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/drive-fusion.test.js
+
+      - name: Check extracted ZIP/XML Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/zip-utils.js
+      - name: Test extracted ZIP/XML Core module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/zip-utils.test.js
