@@ -6,7 +6,7 @@ global.localStorage = {
   setItem: (key, value) => store.set(key, String(value)),
   removeItem: key => store.delete(key)
 };
-require('../fusion/drive-save.js');
+require('../fusion/drive.js');
 assert.ok(global.PTI093DriveFusion, 'Drive Fusion module should load');
 const deps = {
   state: { groups: [], driveRecordId: '' },
