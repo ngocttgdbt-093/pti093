@@ -36,14 +36,15 @@ const {chromium}=require('playwright');
         groupWorkflow:!!window.PTI093GroupWorkflow,
         driveBindings:typeof document.getElementById('driveSearchBtn').onclick==='function' && typeof document.getElementById('driveSaveProject').onclick==='function' && typeof document.getElementById('driveCreate').onclick==='function',
         sessionActions:!!window.PTI093SessionActions && typeof document.getElementById('newCase').onclick==='function',
-        deviceContext:!!window.PTI093DeviceContext
+        deviceContext:!!window.PTI093DeviceContext,
+        previewModal:typeof window.pti093ClosePreview==='function'
       }
     }));
     assert.equal(initial.counts,6,'six image-count choices should be rendered');
     assert.equal(initial.layoutCells,6,'default layout should show six image slots');
     assert.match(initial.layoutText,/6 ảnh/);
     assert.equal(initial.datePlaceholder,'dd/mm/yyyy');
-    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,imageEditing:true,fileIntakeSkin:true,previewSkin:true,groupWorkflow:true,driveBindings:true,sessionActions:true,deviceContext:true});
+    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,imageEditing:true,fileIntakeSkin:true,previewSkin:true,groupWorkflow:true,driveBindings:true,sessionActions:true,deviceContext:true,previewModal:true});
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
     await page.locator('#files').setInputFiles({
@@ -66,6 +67,10 @@ const {chromium}=require('playwright');
     await page.locator('#pdf').click();
     const download=await downloadPromise;
     assert.ok(download.suggestedFilename().toLowerCase().endsWith('.pdf'),'preview pages should reach the PDF export path');
+    await page.waitForSelector('#ptiPreviewModal.open',{timeout:5000});
+    assert.equal(await page.locator('#ptiPreviewModal').getAttribute('aria-modal'),'true','Preview overlay should be accessible as a modal dialog');
+    await page.locator('#ptiPreviewClose').click();
+    await page.waitForFunction(()=>{const modal=document.getElementById('ptiPreviewModal');return modal&&!modal.classList.contains('open');});
     assert.deepEqual(pageErrors,[],'the full app should start without uncaught JavaScript errors');
     console.log('Full app Chromium smoke test passed: module loading, initial six-image layout, and date mask.');
   }finally{await browser.close();}
