@@ -2,6 +2,8 @@
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
+const classicStatusSkin=window.PTI093ClassicStatusSkin.install({$});
+const {msg,setDriveState}=classicStatusSkin;
 const classicLocalSaveSkin=window.PTI093ClassicLocalSaveSkin.install({document});
 const {renderLocalSaveFeedback,showLocalSaveConfirm}=classicLocalSaveSkin;
 const classicLoadProgressSkin=window.PTI093ClassicLoadProgressSkin.install({$});
@@ -26,7 +28,6 @@ const {xmlEsc,b64Bytes,crc32,u16,u32,catBytes,zipStore,dataUrlBytes,unzipStore,t
 const docxBuilder=window.PTI093DocxBuilder.install({xmlEsc,formatDateDMY});
 const {docxText,docxCaption,drawingXml,pageBreak,makeDocxFiles}=docxBuilder;
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
-function msg(t,show=true){$('status').textContent=t;$('status').classList.toggle('hidden',!show)}
 function selectedGdv(){let v=$('gdv').value;if(!v)return 'NONAME';if(v==='Nhập tên khác'){let x=$('gdv').dataset.custom||'';if(!x)x=prompt('Nhập tên GĐV / Thụ lý:','');if(x){v=x;$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else v='NONAME'}return v}
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
@@ -224,7 +225,6 @@ $('newCase').onclick=async()=>{const gdv=$('gdv').value==='Nhập tên khác'?($
 /* ===== PTI093 GOOGLE DRIVE - GIAI ĐOẠN 1: TẠO RECORD ===== */
 
 state.driveRecordId='';
-function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textContent=t;s.className='driveState'+(ok?'':' driveWarn')}
 
 
 
