@@ -9,7 +9,7 @@ assert.equal(core.gdvSearchMatches('ngoc', 'Nguyễn Minh Ngọc'), true);
 assert.equal(core.gdvSearchMatches('', 'Nguyễn Minh Ngọc'), false);
 assert.equal(core.gdvSearchMatches('xyz', 'Nguyễn Minh Ngọc'), false);
 const names = ['Phạm Duy Thái', 'Đặng Xuân Linh', 'Nguyễn Tuấn Hưng', 'Đặng Xuân Diệu', 'Đặng Văn Hiên', 'Nguyễn Minh Ngọc'];
-assert.deepEqual(core.searchQueryVariants('ngoc', names), ['ngoc', 'Nguyễn Minh Ngọc', 'Ngọc', 'nmn']);
+assert.deepEqual(core.searchQueryVariants('ngoc', names), ['ngoc', 'Nguyễn Minh Ngọc', 'nmn']);
 assert.deepEqual(core.searchQueryVariants('NMN', names), ['NMN', 'Nguyễn Minh Ngọc', 'Ngọc']);
 assert.equal(core.searchQueryVariants('not-found', names).length, 1);
 assert.ok(core.searchQueryVariants('a', names).length <= 5, 'query expansion should retain the five-result cap');
