@@ -203,3 +203,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - The local-save module contains no calls to `PTI093_API`, `pti093UploadAll`, or `saveProjectToDrive`; case Drive saving remains in `fusion/drive.js`. The superseded duplicate local-case module was removed from the working branch.
 - GitHub Actions validation for the latest branch head `5dfa8b4884ef0c7b9a8758135c4a808eb451f746` completed successfully (run 323, workflow “Validate PTI093 JavaScript”). The syntax-check job and its checks/tests for inline scripts, draft recovery/store, local save, workspace helpers, ZIP/XML, PDF builder, GĐV search, and Drive Fusion all report success.
 - This is source/Node CI validation, not browser acceptance. Still required before merging/deploying: real-browser F5/reload restore with images and captions, Classic/Modern visual regression, and PDF export/splitting behavior in the isolated test build. Production `main` remains untouched.
+
+## CI verification and local-open coverage — v1-20261022.6
+
+- GitHub Actions run **#329** (`39818110951`) completed successfully on the test branch after correcting the Drive Fusion test to reflect the actual dependency-injection contract. All steps in that run passed, including local-save, workspace, Drive Fusion, ZIP/XML and PDF Builder tests.
+- An earlier run failed because an outdated assertion expected `finishOpenLoad` to be exported by Drive Fusion. Source inspection confirmed it is an app-owned callback passed into Fusion; the test now checks the actual injection contract instead. This was a test-contract mismatch, not evidence that the app callback was missing.
+- Added `node --check core/local-open.js` and `node tests/local-open.test.js` to the workflow. This extra CI coverage was added after run #329, so the new run must be checked before claiming the full current workflow is green.
+- Runtime PDF Builder smoke checks passed for PDF header/footer, adaptive output under the configured size limit, and split-file naming. These use a mock canvas and are not a real browser export test.
+- Still required before acceptance: a full real-browser smoke test and the 093 draft-recovery F5/reload regression test. Do not merge the draft PR or change production `main` before those checks.
