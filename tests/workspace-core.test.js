@@ -21,6 +21,7 @@ assert.equal(state.current.items.length, 1, 'Snapshot must not mutate current it
 assert.deepEqual(core.snapshotGroupsForProject({ groups: [], current: { title: 'Empty', items: [] } }), []);
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
+const appCore = fs.readFileSync('core/app-core.js', 'utf8');
 assert.ok(html.includes('src="./core/workspace.js"'), 'index.html should load workspace Core');
-assert.ok(html.includes('workspaceCore.snapshotGroupsForProject(state)'), 'App should bind the shared snapshot adapter');
+assert.ok(appCore.includes('workspaceCore.snapshotGroupsForProject(state)'), 'App Core should bind the shared snapshot adapter');
 console.log('Shared workspace Core tests passed (8 assertions).');
