@@ -86,6 +86,7 @@ jobs:
           done
           node tests/draft-recovery-browser.test.cjs
           node tests/image-reorder-browser.test.cjs
+          node tests/app-smoke-browser.test.cjs
 
       - name: Check extracted Image Reorder Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
