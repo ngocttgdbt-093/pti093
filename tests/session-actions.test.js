@@ -31,7 +31,7 @@ function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}
     assert.deepEqual(events.order,['clear-start','clear-done','reload']);
   }
   {
-    const {api,localStorage,events}=setup({gdv:'Nhập tên khác',storedCustom:'Tên đã lưu',clearError:new Error('cleanup failed')});
+    const {api,elements,localStorage,events}=setup({gdv:'Nhập tên khác',storedCustom:'Tên đã lưu',clearError:new Error('cleanup failed')});
     const started=await api.startNewCase();
     assert.equal(started,false,'new case must not start when old draft cleanup fails');
     assert.equal(localStorage.getItem('pti093_gdv'),'Tên đã lưu');
