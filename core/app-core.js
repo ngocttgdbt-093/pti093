@@ -4,6 +4,8 @@ const PDF_SAFE_LIMIT=9.5*1048576;
 const $=id=>document.getElementById(id); const drop=$('drop');
 const classicLocalSaveSkin=window.PTI093ClassicLocalSaveSkin.install({document});
 const {renderLocalSaveFeedback,showLocalSaveConfirm}=classicLocalSaveSkin;
+const classicLoadProgressSkin=window.PTI093ClassicLoadProgressSkin.install({$});
+const {setOpenLoad,finishOpenLoad}=classicLoadProgressSkin;
 const dateUtils=window.PTI093DateUtils.install({$});
 const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
 const workspaceCore=window.PTIWorkspaceCore;
@@ -247,25 +249,6 @@ function deviceStorageLabel(){
   if(/Android/i.test(ua))return 'điện thoại Android';
   return 'PC';
 }
-function setOpenLoad(source,index,total,detail){
-  const box=$('openLoadBox'),bar=$('openLoadBar'),txt=$('openLoadText'),pct=$('openLoadPct'),meta=$('openLoadMeta');
-  if(!box)return;
-  box.classList.remove('hidden');
-  const safeTotal=Math.max(0,Number(total)||0),safeIndex=Math.max(0,Number(index)||0);
-  const p=safeTotal?Math.min(100,Math.round(safeIndex*100/safeTotal)):0;
-  bar.style.width=p+'%';pct.textContent=p+'%';
-  txt.textContent=detail||('Đang tải dữ liệu từ '+source+'...');
-  meta.textContent=safeTotal?'Đã tải '+safeIndex+'/'+safeTotal+' ảnh · '+source:'Đang kết nối '+source+'...';
-}
-
-function finishOpenLoad(source,total){
-  const box=$('openLoadBox'),bar=$('openLoadBar'),txt=$('openLoadText'),pct=$('openLoadPct'),meta=$('openLoadMeta');
-  if(!box)return;
-  box.classList.remove('hidden');bar.style.width='100%';pct.textContent='100%';
-  txt.textContent='✓ Đã tải hoàn tất từ '+source;
-  meta.textContent='Hoàn tất '+(Number(total)||0)+' ảnh · Có thể tiếp tục chỉnh sửa.';
-}
-
 const normalizeRecordSearch=window.PTISharedCore.normalizeRecordSearch;
 const PTI093_GDV_NAMES=['Phạm Duy Thái','Đặng Xuân Linh','Nguyễn Tuấn Hưng','Đặng Xuân Diệu','Đặng Văn Hiên','Nguyễn Minh Ngọc'];
 const gdvInitials=window.PTISharedCore.gdvInitials;
