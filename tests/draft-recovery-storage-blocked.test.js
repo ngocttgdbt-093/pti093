@@ -5,6 +5,7 @@ global.sessionStorage={
   setItem(){throw new Error('session storage blocked')},
   removeItem(){throw new Error('session storage blocked')}
 };
+global.IDBKeyRange={only:value=>value};
 global.localStorage={
   getItem(){throw new Error('local storage blocked')},
   setItem(){throw new Error('local storage blocked')},
@@ -21,20 +22,30 @@ const api=global.PTI093DraftRecovery.install({
   openLocalDraftDB:async()=>({
     close(){},
     transaction(){
-      return {
-        objectStore(name){
-          if(name==='drafts')return {delete(){}};
-          return {index:()=>({openCursor:()=>{const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}})};
-        }
-      };
+      return {objectStore(name){
+        if(name==='drafts')return {
+          get(){const req={};queueMicrotask(()=>{req.result=undefined;req.onsuccess&&req.onsuccess()});return req},
+          delete(){},put(){}
+        };
+        return {index:()=>({
+          getAll(){const req={};queueMicrotask(()=>{req.result=[];req.onsuccess&&req.onsuccess()});return req},
+          openCursor(){const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}
+        })};
+      }};
     }
   }),
   localDraftTransactionDone:async()=>{},getLocalDrafts:async()=>[]
 });
 assert.equal(typeof api.restoreAutoDraft,'function');
 (async()=>{
-  await assert.doesNotReject(api.restoreAutoDraft(),'blocked sessionStorage must not prevent the recovery flow from handling its own error');
-  assert.ok(messages.some(text=>/Đã khôi phục công việc/.test(text))===false,'an unavailable draft must not be reported as restored');
-  await assert.doesNotReject(api.finalizeCompletedSession(),'blocked localStorage must not turn a completed export into a reported failure');
-  console.log('Draft Recovery storage-blocked tests passed (startup and session finalization tolerate blocked browser storage).');
+  const warnings=[];
+  const originalWarn=console.warn;
+  console.warn=(...args)=>warnings.push(args);
+  try{
+    await assert.doesNotReject(api.restoreAutoDraft(),'blocked sessionStorage must not prevent the recovery flow from handling its own error');
+    assert.equal(messages.some(text=>/Đã khôi phục công việc/.test(text)),false,'an unavailable draft must not be reported as restored');
+    await assert.doesNotReject(api.finalizeCompletedSession(),'blocked localStorage must not turn a completed export into a reported failure');
+    assert.equal(warnings.length,0,'the IndexedDB cleanup fixture should succeed; only browser preference storage is blocked');
+  }finally{console.warn=originalWarn;delete global.IDBKeyRange}
+  console.log('Draft Recovery storage-blocked tests passed (startup and session finalization tolerate blocked preference storage).');
 })().catch(error=>{console.error(error);process.exitCode=1});
