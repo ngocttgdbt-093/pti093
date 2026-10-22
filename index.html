@@ -677,78 +677,7 @@ $('newCase').onclick=async()=>{const gdv=$('gdv').value==='Nhập tên khác'?($
 const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/exec';
 state.driveRecordId='';
 function setDriveState(t,ok=true){const s=$('driveState');if(!s)return;s.textContent=t;s.className='driveState'+(ok?'':' driveWarn')}
-async function optimizeDriveImage(file){
-  // Tối ưu ẢNH TRƯỚC KHI GỬI DRIVE để giảm mạnh dung lượng nhưng vẫn đủ rõ cho giám định.
-  // Mục tiêu: cạnh dài tối đa 1920px, JPEG quality 0.78.
-  // JPEG nhỏ đã có kích thước phù hợp được giữ nguyên để tránh tốn CPU vô ích.
-  const maxSide=1920;
-  const quality=0.78;
-  const keepSmallBytes=900*1024;
-  if(!file || !file.type || !file.type.startsWith('image/')){
-    return {blob:file,fileName:file.name,mimeType:file.type||'application/octet-stream',originalSize:file&&file.size||0,optimizedSize:file&&file.size||0,skipped:true};
-  }
-
-  return await new Promise((resolve,reject)=>{
-    const url=URL.createObjectURL(file);
-    const cleanup=()=>URL.revokeObjectURL(url);
-    const finish=(blob)=>{
-      cleanup();
-      if(!blob){reject(new Error('Không nén được ảnh'));return}
-      const base=(file.name||'anh').replace(/\.[^.]+$/,'');
-      const result={
-        blob,
-        fileName:base+'.jpg',
-        mimeType:'image/jpeg',
-        originalSize:file.size,
-        optimizedSize:blob.size
-      };
-      // Nếu ảnh nguồn vốn đã rất nhỏ và việc nén lại không đem lại lợi ích,
-      // giữ bản gốc để tốc độ phản hồi tốt hơn.
-      if(blob.size>=file.size && file.size<=keepSmallBytes){
-        result.blob=file;
-        result.fileName=/\.(jpe?g)$/i.test(file.name||'')?file.name:base+'.jpg';
-        result.mimeType=file.type||'image/jpeg';
-        result.optimizedSize=file.size;
-        result.skipped=true;
-      }
-      resolve(result);
-    };
-    const drawAndEncode=(source)=>{
-      try{
-        let w=source.naturalWidth||source.width;
-        let h=source.naturalHeight||source.height;
-        const scale=Math.min(1,maxSide/Math.max(w,h));
-        w=Math.max(1,Math.round(w*scale));
-        h=Math.max(1,Math.round(h*scale));
-        const canvas=document.createElement('canvas');
-        canvas.width=w;
-        canvas.height=h;
-        const ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
-        ctx.drawImage(source,0,0,w,h);
-        canvas.toBlob(finish,'image/jpeg',quality);
-      }catch(err){
-        cleanup();
-        reject(err);
-      }
-    };
-    if(window.createImageBitmap){
-      createImageBitmap(file,{imageOrientation:'from-image'}).then(bitmap=>{
-        drawAndEncode(bitmap);
-        if(bitmap.close) bitmap.close();
-      }).catch(()=>{
-        const img=new Image();
-        img.onload=()=>drawAndEncode(img);
-        img.onerror=()=>{cleanup();reject(new Error('Không đọc được ảnh'))};
-        img.src=url;
-      });
-    }else{
-      const img=new Image();
-      img.onload=()=>drawAndEncode(img);
-      img.onerror=()=>{cleanup();reject(new Error('Không đọc được ảnh'))};
-      img.src=url;
-    }
-  });
-}
+/* Drive-only helper moved to fusion/drive-save.js */
 function snapshotGroupsForProject(){
   const groups=state.groups.map(g=>({title:g.title,items:(g.items||[]).slice()}));
   if(state.current&&state.current.items&&state.current.items.length){
@@ -762,7 +691,7 @@ function buildProjectData(){
   return {version:'PTI093-1.2',recordId:state.driveRecordId||'',caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),date:getDateISO(),garage:($('garage').value||'').trim(),maHoSo:($('hoso').value||'').trim(),gdv:selectedGdv(),status:state.localDraftId?'Ảnh lưu tại máy':'Đang xử lý',storageType:state.localDraftId?'local':'drive',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},sections:snapshotGroupsForProject().map(g=>({title:g.title,items:g.items.map((it,idx)=>({fileId:it.driveFileId||'',fileName:it.driveFileName||((it.file&&it.file.name)||''),clientKey:it.key||'',uploadKey:it.driveUploadKey||'',caption:it.caption||'',rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||idx+1}))})),updatedAt:new Date().toISOString()};
 }
 /* Drive save function moved to fusion/drive-save.js */
-const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,optimizeDriveImage,snapshotGroupsForProject,buildProjectData,PTI093_API,getAllGroups,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,sha256HexBlob,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
+const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,snapshotGroupsForProject,buildProjectData,PTI093_API,getAllGroups,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 const {openRecordFromDrive,setOpenLoad,finishOpenLoad,recordMatchesQuery,recordTime,sameLocalDriveRecord,searchDriveRecords,saveProjectToDrive,driveImageKey,getDriveUploadedKeys,saveDriveUploadedKeys,getDrivePendingUploadKey,saveDrivePendingUploadKey,prepareDriveItem,waitForUploadStatus,sendDrivePayload,renderDriveUploadFailures,createDriveRecord,pti093UploadAll}=driveSaveFusion;
 $('driveSearchBtn').onclick=searchDriveRecords;
 $('driveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchDriveRecords()});
@@ -827,13 +756,7 @@ function searchQueryVariants(query){
 /* Drive save function moved to fusion/drive-save.js */
 /* Drive save function moved to fusion/drive-save.js */
 
-async function sha256HexBlob(blob){
-  if(!blob) throw new Error('Không có dữ liệu ảnh để tính mã xác nhận');
-  if(!window.crypto || !crypto.subtle) throw new Error('Trình duyệt không hỗ trợ SHA-256');
-  const buf=await blob.arrayBuffer();
-  const digest=await crypto.subtle.digest('SHA-256',buf);
-  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
+/* Drive-only helper moved to fusion/drive-save.js */
 
 /* Drive save function moved to fusion/drive-save.js */
 
