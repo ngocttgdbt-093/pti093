@@ -39,15 +39,24 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
+          const core = fs.readFileSync('core/draft-recovery.js', 'utf8');
           const required = ['pti093_local_drafts_v1', 'AUTO-DRAFT', 'function scheduleAutoDraftSave', 'async function saveAutoDraft', 'async function restoreAutoDraft', 'async function finalizeCompletedSession'];
-          const missing = required.filter(x => !html.includes(x));
-          if (missing.length) throw new Error('Thiếu thành phần hợp đồng lưu nháp: ' + missing.join(', '));
+          const missing = required.filter(x => !core.includes(x));
+          if (missing.length) throw new Error('Thiếu thành phần hợp đồng lưu nháp trong Core: ' + missing.join(', '));
+          if (!html.includes('src="./core/draft-recovery.js"')) throw new Error('index.html chưa nạp core/draft-recovery.js');
           console.log('093 draft-recovery source contract: OK');
           NODE
 
       - name: Test shared GĐV search Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
         run: node tests/gdv-search.test.js
+
+      - name: Check shared Core draft recovery module
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node --check core/draft-recovery.js
+      - name: Test shared Core draft recovery contract
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
+        run: node tests/draft-recovery.test.js
 
       - name: Check extracted Drive Fusion module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-test-20261022'
