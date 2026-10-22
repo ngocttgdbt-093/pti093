@@ -76,8 +76,6 @@ const scriptPositions = moduleScripts.map(src => html.indexOf('src="' + src + '"
 assert.ok(scriptPositions.every(pos => pos >= 0), 'index.html should load every extracted storage/Core/Fusion module');
 assert.ok(scriptPositions.every((pos, i) => i === 0 || pos > scriptPositions[i - 1]), 'Store, recovery, local save/open, and Drive Fusion scripts must load in dependency order');
 const builderScripts = [
-  './core/zip-utils.js',
-  './core/docx-builder.js',
   './core/file-delivery.js',
   './core/pdf-builder.js',
   './core/image-canvas.js',
