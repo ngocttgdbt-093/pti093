@@ -45,6 +45,8 @@ const pdfExportController=window.PTI093PdfExportController.install({state,$,spli
 const {exportHighQualitySplit}=pdfExportController;
 const classicPdfWarningSkin=window.PTI093ClassicPdfWarningSkin.install({$,document,exportHighQualitySplit});
 const {hidePdfWarning,showPdfWarning}=classicPdfWarningSkin;
+const classicPreviewSkin=window.PTI093ClassicPreviewSkin.install({state,$,document,window,buildPreview,getAllGroups,selectedGdv,setSelectedGdvCache:value=>{selectedGdvCache=value;},hidePdfWarning,msg,pagePixels,jpegQuality});
+const {makePreview}=classicPreviewSkin;
 const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
@@ -81,7 +83,6 @@ let selectedGdvCache='';
 
 
 
-async function makePreview(){selectedGdvCache=selectedGdv();$('backEdit').style.display='none';$('newCase').style.display='none';hidePdfWarning();const groups=getAllGroups();if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}const {pages,defs}=await buildPreview(groups,state.per);$('preview').innerHTML='';pages.forEach((c,i)=>{const d=document.createElement('div');d.className='pageprev';const t=document.createElement('div');t.className='muted';t.textContent=`Trang ${i+1}`;d.append(t,c);$('preview').appendChild(d)});$('previewInfo').textContent=`Preview ${pages.length} trang A4 · ${groups.length} nội dung · ${groups.reduce((a,g)=>a+g.items.length,0)} ảnh · tối ưu ${pagePixels().dpi} DPI / JPEG ${Math.round(jpegQuality()*100)}%`;$('pdf').disabled=false;$('newCase').style.display='inline-block';window.scrollTo({top:$('preview').getBoundingClientRect().top+scrollY-80,behavior:'smooth'})}
 
 
 function mib(n){return n/1048576}
