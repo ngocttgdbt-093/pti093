@@ -668,8 +668,8 @@ $('backEdit').onclick=()=>{
 (function(){const custom=localStorage.getItem('pti093_gdv_custom')||'';if(custom)$('gdv').dataset.custom=custom;const saved=localStorage.getItem('pti093_gdv')||'';if(saved&&[...$('gdv').options].some(o=>o.value===saved))$('gdv').value=saved;else if(custom)$('gdv').value='Nhập tên khác';$('gdv').addEventListener('change',()=>{if($('gdv').value!=='Nhập tên khác'){if($('gdv').value)localStorage.setItem('pti093_gdv',$('gdv').value);}else{const x=prompt('Nhập tên GĐV / Thụ lý:',custom||'');if(x){$('gdv').dataset.custom=x;localStorage.setItem('pti093_gdv_custom',x)}else $('gdv').value='';}scheduleAutoDraftSave(false)});})();
 $('driveSearchBtn').onclick=searchDriveRecords;
 $('driveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchDriveRecords()});
-$('driveSaveProject').onclick=async()=>{const b=$('driveSaveProject');b.disabled=true;try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');if(result&&result.total>result.sent)throw new Error('Chưa xác nhận đủ ảnh trên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Đã lưu thay đổi hồ sơ. Ảnh hiện có đã được xác nhận trên Drive.')}catch(e){msg('Lỗi lưu thay đổi: '+e.message,true)}finally{b.disabled=false}};
-$('driveCreate').onclick=createDriveRecord;
+/* Drive save handler is bound after the Fusion module is installed. */
+/* Early Drive create binding moved after Fusion installation. */
 $('driveSaveDraft').onclick=saveDraftWithoutPhotos;
 $('newCase').onclick=async()=>{const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||localStorage.getItem('pti093_gdv_custom')||''):$('gdv').value;if(gdv)localStorage.setItem('pti093_gdv',gdv);$('newCase').disabled=true;try{await clearAutoDraft()}catch(e){console.warn(e)}location.reload()};
 
@@ -762,8 +762,10 @@ function buildProjectData(){
   return {version:'PTI093-1.2',recordId:state.driveRecordId||'',caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),date:getDateISO(),garage:($('garage').value||'').trim(),maHoSo:($('hoso').value||'').trim(),gdv:selectedGdv(),status:state.localDraftId?'Ảnh lưu tại máy':'Đang xử lý',storageType:state.localDraftId?'local':'drive',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},sections:snapshotGroupsForProject().map(g=>({title:g.title,items:g.items.map((it,idx)=>({fileId:it.driveFileId||'',fileName:it.driveFileName||((it.file&&it.file.name)||''),clientKey:it.key||'',uploadKey:it.driveUploadKey||'',caption:it.caption||'',rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||idx+1}))})),updatedAt:new Date().toISOString()};
 }
 /* Drive save function moved to fusion/drive-save.js */
-const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,optimizeDriveImage,snapshotGroupsForProject,buildProjectData,PTI093_API,DRIVE_CONCURRENCY});
+const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,optimizeDriveImage,snapshotGroupsForProject,buildProjectData,PTI093_API});
 const {saveProjectToDrive,driveImageKey,getDriveUploadedKeys,saveDriveUploadedKeys,getDrivePendingUploadKey,saveDrivePendingUploadKey,prepareDriveItem,waitForUploadStatus,sendDrivePayload,renderDriveUploadFailures,createDriveRecord,pti093UploadAll}=driveSaveFusion;
+$('driveSaveProject').onclick=async()=>{const b=$('driveSaveProject');b.disabled=true;try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');if(result&&result.total>result.sent)throw new Error('Chưa xác nhận đủ ảnh trên Drive.');state.localDraftId='';await saveProjectToDrive();await finalizeCompletedSession();setDriveState('Đã lưu thay đổi hồ sơ. Ảnh hiện có đã được xác nhận trên Drive.')}catch(e){msg('Lỗi lưu thay đổi: '+e.message,true)}finally{b.disabled=false}};
+$('driveCreate').onclick=createDriveRecord;
 async function openRecordFromDrive(recordId){
   setOpenLoad('Google Drive',0,0,'Đang mở hồ sơ và đọc danh sách ảnh từ Google Drive...');
   setDriveState('Đang tải hồ sơ từ Google Drive...');
