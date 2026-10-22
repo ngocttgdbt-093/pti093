@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093DriveFusion = {
     install: function(deps){
-      const {state, $, msg, setDriveState, optimizeDriveImage, snapshotGroupsForProject, buildProjectData, PTI093_API} = deps;
+      const {state, $, msg, setDriveState, optimizeDriveImage, snapshotGroupsForProject, buildProjectData, PTI093_API, getAllGroups, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, sha256HexBlob} = deps;
       async function saveProjectToDrive(showMsg=true){
         const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||'';
         if(!id)throw new Error('Chưa có hồ sơ Drive.');
