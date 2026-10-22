@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 global.window=global;
 require('../core/pdf-export-controller.js');
 assert.ok(global.PTI093PdfExportController);
-function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false}={}){
+function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false,failFinalize=false}={}){
   const elements={};
   for(const id of ['pdfHighQualityCheck','pdfHighProgressWrap','pdfHighProgressLabel','pdfHighProgressPct','pdfHighProgressBar']){
     elements[id]={disabled:false,textContent:'',style:{display:'',width:''}};
@@ -17,7 +17,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     pdfPackSize:bytes=>bytes.length,
     pdfFileName:()=> 'case.pdf',
     getPdfWarningSkin:()=>({hidePdfWarning:()=>events.warnings.push('hide'),showPdfWarning:(...args)=>events.warnings.push(['show',...args])}),
-    finalizeCompletedSession:async()=>{events.finalized++;},
+    finalizeCompletedSession:async()=>{events.finalized++;if(failFinalize)throw new Error('cleanup failed');},
     msg:(text,ok)=>events.messages.push({text,ok}),
     alert:text=>events.alerts.push(text),
     setTimeout:fn=>{fn();return 1;}
@@ -38,6 +38,14 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.match(progress.textContent,/Hoàn tất gửi 2 tệp PDF/);
     assert.equal(events.alerts.length,0);
     assert.equal(events.finalized,1,'successful high-quality export should clear the completed auto-draft');
+  }
+  {
+    const {api,events}=setup({failFinalize:true});
+    const button={disabled:false};
+    await api.exportHighQualitySplit('case',button,{textContent:''});
+    assert.equal(events.exports.length,2,'PDF parts should remain exported even if draft cleanup fails');
+    assert.equal(events.alerts.length,0,'cleanup failure must not be reported as a PDF export failure');
+    assert.match(events.messages.at(-1).text,/PDF đã xuất thành công, nhưng chưa dọn được nháp tự động/);
   }
   {
     const {api,elements,events}=setup({failExport:true});
@@ -67,6 +75,13 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(elements.newCase.style.display,'inline-block');
     assert.match(events.messages.at(-1).text,/không cần nén ảnh/);
     assert.equal(button.disabled,false);
+  }
+  {
+    const {api,events}=setup({failFinalize:true});
+    await api.exportStandardPdf({disabled:false});
+    assert.equal(events.exports.length,1,'standard PDF should remain exported when draft cleanup fails');
+    assert.equal(events.alerts.length,0,'cleanup failure must not show a false export-failed alert');
+    assert.match(events.messages.at(-1).text,/PDF đã xuất thành công, nhưng chưa dọn được nháp tự động/);
   }
   {
     const {api,events}=setup({pdfResult:{bytes:new Uint8Array(20),compressed:true,dpi:96,quality:0.6}});
