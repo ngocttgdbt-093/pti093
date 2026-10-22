@@ -1,0 +1,10 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Classic File Intake Skin Test</title></head><body>
+<div id="drop"></div><input id="files" type="file" multiple><input id="folder" type="file" multiple>
+<script src="../skin/classic-file-intake.js"></script>
+<script>
+window.intakeCalls=[];
+window.fileIntakeSkin=window.PTI093ClassicFileIntakeSkin.install({
+  $:id=>document.getElementById(id),
+  addFiles:files=>window.intakeCalls.push(files.map(file=>file.name))
+});
+</script></body></html>

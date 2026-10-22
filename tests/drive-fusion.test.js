@@ -1,0 +1,113 @@
+const assert = require('node:assert/strict');
+const store = new Map();
+global.window = global;
+global.localStorage = {
+  getItem: key => store.has(key) ? store.get(key) : null,
+  setItem: (key, value) => store.set(key, String(value)),
+  removeItem: key => store.delete(key)
+};
+require('../fusion/drive.js');
+assert.ok(global.PTI093DriveFusion, 'Drive Fusion module should load');
+const driveModule = require('node:fs').readFileSync('fusion/drive.js', 'utf8');
+assert.ok(driveModule.includes('async function optimizeDriveImage'), 'Drive image optimizer should live in Drive Fusion');
+assert.ok(driveModule.includes('async function sha256HexBlob'), 'Drive SHA-256 helper should live in Drive Fusion');
+assert.match(driveModule,/const DRIVE_CONCURRENCY\s*=\s*5;/,'093 Drive Fusion must preserve the validated five-file concurrency baseline');
+assert.ok(driveModule.includes('await Promise.all(entries.map(processOne))'),'Drive Fusion must await every file in each batch before advancing progress');
+assert.equal((driveModule.match(/await finalizeCompletedSession\(\)/g)||[]).length,1,'Drive Fusion should call the raw finalizer only inside the guarded post-save helper');
+assert.ok(driveModule.includes('if(cleanupOk)setDriveState('),'Drive success handlers must not overwrite the cleanup-warning state');
+const deps = {
+  state: { groups: [], current: { title: '', items: [] }, driveRecordId: '', localDraftId: '' },
+  $: () => ({ value: '', textContent: '', innerHTML: '', style: {}, options: [], classList: { add(){}, remove(){} }, appendChild(){}, setAttribute(){}, addEventListener(){} }),
+  msg: () => {},
+  getAllGroups: () => [],
+  snapshotGroupsForProject: () => [],
+  selectedGdv: () => '',
+  scheduleAutoDraftSave: () => {},
+  finalizeCompletedSession: async () => {},
+  getDateISO: () => '2026-10-22',
+  setDateInput: () => {},
+  render: () => {},
+  renderLayout: () => {},
+  deviceStorageLabel: () => 'local',
+  searchQueryVariants: () => [],
+  getLocalDrafts: async () => [],
+  openLocalDraft: async () => {},
+  normalizeRecordSearch: value => String(value || '').toLowerCase(),
+  gdvSearchMatches: () => false,
+  gdvInitials: () => '',
+  wrap: value => value
+};
+const api = global.PTI093DriveFusion.install(deps);
+for (const name of ['openRecordFromDrive','recordMatchesQuery','recordTime','sameLocalDriveRecord','searchDriveRecords','saveProjectToDrive','driveImageKey','getDriveUploadedKeys','saveDriveUploadedKeys','getDrivePendingUploadKey','saveDrivePendingUploadKey','prepareDriveItem','waitForUploadStatus','sendDrivePayload','renderDriveUploadFailures','createDriveRecord','pti093UploadAll','bindControls']) {
+  assert.equal(typeof api[name], 'function', name + ' should be exported');
+}
+const file = { name: 'damage.jpg', size: 1200, lastModified: 99, webkitRelativePath: '' };
+assert.equal(api.driveImageKey({ file }), 'damage.jpg|1200|99|');
+api.saveDriveUploadedKeys('case-1', new Set(['img-a','img-b']));
+assert.deepEqual([...api.getDriveUploadedKeys('case-1')].sort(), ['img-a','img-b']);
+api.saveDrivePendingUploadKey('case-1', 'img-a', 'upload-123');
+assert.equal(api.getDrivePendingUploadKey('case-1','img-a'), 'upload-123');
+api.saveDrivePendingUploadKey('case-1', 'img-a', '');
+assert.equal(api.getDrivePendingUploadKey('case-1','img-a'), '');
+
+const fs = require('node:fs');
+const html = fs.readFileSync('index.html', 'utf8');
+const appCore = fs.readFileSync('core/app-core.js', 'utf8');
+assert.ok(html.includes('<link rel="stylesheet" href="./css/skin-classic.css">'), 'Classic skin should be external');
+assert.ok(html.includes('<link rel="stylesheet" id="uiRefreshV42" href="./css/skin-modern.css">'), 'Modern skin toggle target should remain addressable');
+assert.equal((html.match(/<style\b/gi) || []).length, 0, 'All static skin/style blocks should be externalized');
+for (const file of ['skin-classic.css','skin-modern.css', ...Array.from({length:13}, (_,i) => 'skin-overrides-' + String(i+3).padStart(2,'0') + '.css')]) {
+  const css = fs.readFileSync('css/' + file, 'utf8');
+  assert.ok(css.length > 0, file + ' should exist and be non-empty');
+  assert.ok(html.includes('./css/' + file), file + ' should be linked from index.html');
+}
+
+assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusion/drive.js"'), 'Shared Core should load before app-specific Drive Fusion');
+assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') >= 0, 'App Core should install Drive Fusion');
+assert.ok(appCore.includes('driveSaveFusion.bindControls();'), 'App Core should delegate Drive button bindings to Drive Fusion');
+assert.ok(driveModule.includes("$('driveSaveProject').onclick=async()=>{"), 'Drive Fusion should own the save-project handler');
+assert.ok(driveModule.includes("$('driveCreate').onclick=createDriveRecord;"), 'Drive Fusion should own the create-record handler');
+const draftSource = fs.readFileSync('core/draft-recovery.js', 'utf8');
+const localStoreSource = fs.readFileSync('core/local-draft-store.js', 'utf8');
+const workspaceSource = fs.readFileSync('core/workspace.js', 'utf8');
+const localSaveSource = fs.readFileSync('core/local-save.js', 'utf8');
+const loadProgressSkinSource = fs.readFileSync('skin/classic-load-progress.js', 'utf8');
+assert.ok(html.includes('src="./core/draft-recovery.js"'), 'Shared Core draft module should be loaded');
+assert.ok(html.includes('src="./core/local-draft-store.js"'), 'Shared Core local storage adapter should be loaded');
+assert.ok(appCore.includes("dbName:'pti093_local_drafts_v1'"), 'Existing 093 local draft database name should remain unchanged');
+for (const marker of ['AUTO-DRAFT', 'async function restoreAutoDraft', 'async function saveAutoDraft']) {
+  assert.ok(draftSource.includes(marker), 'Existing 093 draft-recovery code must remain in Core: ' + marker);
+}
+
+
+assert.ok(driveModule.includes("$('driveSearchBtn').onclick=searchDriveRecords;"), 'Drive Fusion should own the search button handler');
+assert.ok(!html.includes('function openRecordFromDrive(') && !html.includes('function searchDriveRecords('), 'Drive record functions should live outside index.html');
+assert.ok(loadProgressSkinSource.includes('function finishOpenLoad('), 'Open-progress completion presentation should live in the Classic Skin module');
+assert.ok(html.includes('src="./skin/classic-load-progress.js"'), 'Classic Load Progress Skin should be loaded before App Core');
+assert.ok(appCore.includes('setOpenLoad,finishOpenLoad,getAllGroups'), 'Drive Fusion must receive the app-owned open-load completion callback through dependency injection');
+assert.ok(html.includes('src="./core/workspace.js"'), 'Shared workspace Core should be loaded');
+assert.ok(html.includes('src="./core/local-save.js"'), 'Shared local-save Core should be loaded');
+assert.ok(localSaveSource.includes('async function saveLocalDraft'), 'Manual local-save should be owned by Core');
+assert.ok(!html.includes('async function saveLocalDraft(') && !html.includes('async function saveDraftWithoutPhotos('), 'Manual local-save functions should not remain in the app monolith');
+assert.ok(workspaceSource.includes('function snapshotGroupsForProject(state)'), 'Workspace Core should own the shared snapshot helper');
+assert.ok(appCore.includes('workspaceCore.snapshotGroupsForProject(state)'), 'Manual local-save should use the shared workspace snapshot');
+assert.ok(!driveModule.includes('function snapshotGroupsForProject('), 'Drive Fusion should consume the shared snapshot adapter, not own it');
+assert.ok(driveModule.includes('snapshotGroupsForProject, selectedGdv'), 'Drive Fusion should receive the workspace snapshot through dependency injection');
+
+console.log('093 Drive Fusion tests passed (source contract + storage helpers).');
+
+(async()=>{
+  const cleanupEvents={states:[],messages:[]};
+  const cleanupApi=global.PTI093DriveFusion.install({
+    ...deps,
+    setDriveState:(text,ok)=>cleanupEvents.states.push({text,ok}),
+    msg:(text,show)=>cleanupEvents.messages.push({text,show}),
+    finalizeCompletedSession:async()=>{throw new Error('cleanup failed')}
+  });
+  const finalized=await cleanupApi.finalizeAfterSuccessfulDriveSave();
+  assert.equal(finalized,false,'post-save cleanup failure must be surfaced separately from the completed Drive save');
+  assert.match(cleanupEvents.states[0].text,/Hồ sơ Drive đã lưu thành công, nhưng chưa dọn được nháp tự động/);
+  assert.equal(cleanupEvents.states[0].ok,false);
+  assert.match(cleanupEvents.messages[0].text,/Hồ sơ Drive đã lưu thành công/);
+  console.log('Drive Fusion post-save cleanup regression passed (successful Drive save is not misreported as failed).');
+})().catch(error=>{console.error(error);process.exitCode=1});

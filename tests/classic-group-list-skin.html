@@ -1,0 +1,7 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Classic Group List Skin Test</title></head><body>
+<div id="groupsBox"></div>
+<script src="../skin/classic-group-list.js"></script>
+<script>
+window.groupState={groups:[]};window.editedIndex=-1;
+window.groupListSkin=window.PTI093ClassicGroupListSkin.install({state:window.groupState,$:id=>document.getElementById(id),document,onEditGroup:i=>{window.editedIndex=i}});
+</script></body></html>

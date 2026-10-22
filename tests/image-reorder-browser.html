@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Image Reorder Core Browser Test</title>
+<style>#grid{width:240px}.thumb{display:block;height:30px;margin:4px;border:1px solid} </style>
+</head>
+<body>
+<div id="grid"></div>
+<script src="../core/image-reorder.js"></script>
+<script>
+window.makeReorderHarness=function(){
+  const state={current:{items:[{label:'A'},{label:'B'},{label:'C'}]}};
+  let saved=[],layoutCount=0,renderCount=0;
+  const grid=document.getElementById('grid');
+  const api=window.PTI093ImageReorder.install({
+    state,$:id=>document.getElementById(id),
+    scheduleAutoDraftSave:dirty=>saved.push(dirty),
+    renderLayout:()=>layoutCount++,
+    render:()=>renderCount++
+  });
+  function rebuild(){
+    grid.innerHTML='';
+    state.current.items.forEach(item=>{
+      const node=document.createElement('div');
+      node.className='thumb';node.textContent=item.label;
+      node.dataset.dragId=api.ensureDragId(item);
+      grid.appendChild(node);api.bindThumb(node,grid);
+    });
+  }
+  rebuild();
+  return {state,api,grid,rebuild,get saved(){return saved},get layoutCount(){return layoutCount},get renderCount(){return renderCount}};
+};
+</script>
+</body>
+</html>
