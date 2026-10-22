@@ -100,7 +100,11 @@
           msg('❌ Lưu tại máy thất bại: '+e.message,true);
         }finally{b.disabled=false}
       }
-      return {saveLocalDraft,saveDraftWithoutPhotos};
+      function bindControls(){
+        const button=$('driveSaveDraft');
+        if(button)button.onclick=saveDraftWithoutPhotos;
+      }
+      return {saveLocalDraft,saveDraftWithoutPhotos,bindControls};
     }
   };
 })(window);
