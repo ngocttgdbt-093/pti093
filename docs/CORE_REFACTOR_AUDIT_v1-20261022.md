@@ -333,3 +333,11 @@ The workflow also had a duplicated draft-recovery test invocation; it has been r
 - A test assumption in the Drive Fusion suite was updated after moving `finishOpenLoad` into Skin: the test now checks the function in `skin/classic-load-progress.js` while still verifying Drive Fusion receives the callback through dependency injection. A test-only backdrop click was also corrected to dispatch directly on the overlay itself.
 - GitHub Actions run **#563** (`39829785066`) completed successfully with the browser suite, all four Skin syntax checks, and the existing Core/Fusion tests.
 - `core/app-core.js` is now 32,112 bytes after the layout extraction; remaining work is to keep separating UI presentation from application/business orchestration without changing the current Classic behavior.
+
+
+## Classic Group List Skin extraction — v2-20261023.22.1
+
+- Moved saved-group list rendering from App Core to `skin/classic-group-list.js`. The module owns the empty-state text, saved-group labels/counts, row styling, and edit-button rendering; clicking Edit delegates the selected index back to App Core.
+- Added a real Chromium fixture/test for empty and populated states and the edit callback. The full-app smoke test also verifies the Group List Skin is loaded.
+- GitHub Actions run **#585** (`39830216365`) completed successfully with the group-list UI test and the full browser/Core/Fusion regression suite.
+- App Core is now 31,422 bytes. The large thumbnail-grid renderer is still in App Core and remains a candidate for a carefully tested Skin extraction; no production changes have been made.
