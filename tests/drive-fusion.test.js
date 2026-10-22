@@ -60,8 +60,10 @@ for (const file of ['skin-classic.css','skin-modern.css', ...Array.from({length:
 assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusion/drive.js"'), 'Shared Core should load before app-specific Drive Fusion');
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveSaveProject').onclick=async()=>{"), 'Drive handlers must bind after module installation');
 assert.ok(html.indexOf('window.PTI093DriveFusion.install') < html.indexOf("$('driveCreate').onclick=createDriveRecord;"), 'Create handler must bind after module installation');
+const draftSource = fs.readFileSync('core/draft-recovery.js', 'utf8');
+assert.ok(html.includes('src="./core/draft-recovery.js"'), 'Shared Core draft module should be loaded');
 for (const marker of ['pti093_local_drafts_v1', 'async function restoreAutoDraft', 'async function saveAutoDraft']) {
-  assert.ok(html.includes(marker), 'Existing 093 draft-recovery code must remain: ' + marker);
+  assert.ok(draftSource.includes(marker), 'Existing 093 draft-recovery code must remain in Core: ' + marker);
 }
 
 
