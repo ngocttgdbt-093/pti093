@@ -85,7 +85,6 @@ let selectedGdvCache='';
 
 
 
-function mib(n){return n/1048576}
 
 
 
