@@ -128,3 +128,55 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   delete global.localStorage;delete global.IDBKeyRange;
   console.log('Local Save cleanup-failure test passed (successful record save is not misreported as failed).');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+(async()=>{
+  const itemA={file:{name:'scene.jpg',type:'image/jpeg',lastModified:111,size:10},key:'scene-key',caption:'Toàn cảnh',rotate:90,addSeq:4,driveFileId:'DRIVE-A',driveFileName:'scene.jpg',driveUploadKey:'upload-a'};
+  const itemB={file:{name:'damage.jpg',type:'image/jpeg',lastModified:222,size:20},key:'damage-key',caption:'Mặt trước',rotate:180,addSeq:7,driveFileId:'DRIVE-B',driveFileName:'damage.jpg',driveUploadKey:'upload-b'};
+  const savedMetadata=[],savedImages=[],elements={};
+  const localState={groups:[{title:'Ảnh hiện trường',items:[itemA]}],current:{title:'Ảnh thiệt hại',items:[itemB]},localDraftId:'',driveRecordId:'DRIVE-CASE-1',orientation:'portrait',per:6};
+  global.IDBKeyRange={only:value=>value};
+  const db={
+    close(){},
+    transaction(){
+      return {objectStore(name){
+        if(name==='drafts')return {put(meta){savedMetadata.push(meta)}};
+        return {
+          index:()=>({openCursor:()=>{const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}}),
+          put(row){savedImages.push(row)}
+        };
+      }};
+    }
+  };
+  const api=global.PTILocalSaveCore.install({
+    state:localState,
+    $:id=>elements[id]||(elements[id]={value:({hoso:'HS-LOCAL-1',bks:'30A-12345',garage:'Garage A'}[id]||''),textContent:'',disabled:false,style:{},dataset:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[
+      {title:'Ảnh hiện trường',items:[itemA]},
+      {title:'Ảnh thiệt hại',items:[itemB]}
+    ],
+    openLocalDraftDB:async()=>db,localDraftTransactionDone:async()=>{},
+    getDateISO:()=> '2026-10-23',selectedGdv:()=> 'GĐV test',
+    setDriveState:noop,msg:noop,renderLocalSaveFeedback:noop,
+    showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{}
+  });
+  const id=await api.saveLocalDraft();
+  assert.match(id,/^LOCAL-/,'a new local-only record should receive a LOCAL ID');
+  assert.equal(savedMetadata.length,1);
+  assert.equal(savedMetadata[0].id,id);
+  assert.equal(savedMetadata[0].storageType,'local');
+  assert.deepEqual(savedMetadata[0].sections.map(s=>s.title),['Ảnh hiện trường','Ảnh thiệt hại']);
+  assert.deepEqual(savedMetadata[0].sections.map(s=>s.items[0].caption),['Toàn cảnh','Mặt trước']);
+  assert.deepEqual(savedMetadata[0].sections.map(s=>s.items[0].rotate),[90,180]);
+  assert.deepEqual(savedMetadata[0].sections.map(s=>s.items[0].addSeq),[4,7]);
+  assert.equal(savedImages.length,2);
+  assert.equal(savedImages[0].file,itemA.file);
+  assert.equal(savedImages[1].file,itemB.file);
+  assert.equal(localState.localDraftId,id);
+  assert.equal(localState.driveRecordId,'');
+  assert.equal(itemA.driveFileId,'');
+  assert.equal(itemA.driveUploadKey,'');
+  assert.equal(itemB.driveFileId,'');
+  assert.equal(itemB.driveUploadKey,'');
+  delete global.IDBKeyRange;
+  console.log('Local Save success-path regression passed (section order, captions, rotations, image blobs, and Drive-state separation).');
+})().catch(error=>{console.error(error);process.exitCode=1});
