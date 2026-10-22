@@ -17,13 +17,13 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+          const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
           if (!scripts.length) throw new Error('Không tìm thấy <script> trong index.html');
           let checked = 0;
           for (const [index, match] of scripts.entries()) {
             const [, attrs, source] = match;
-            if (/\\bsrc\\s*=/i.test(attrs) || !source.trim()) continue;
-            if (/^\\s*async\\s*$/m.test(source)) {
+            if (/\bsrc\s*=/i.test(attrs) || !source.trim()) continue;
+            if (/^\s*async\s*$/m.test(source)) {
               throw new Error('Có token async đứng riêng trong script số ' + (index + 1));
             }
             new Function(source);
