@@ -121,5 +121,23 @@ const api = global.PTI093LocalOpenCore.install({
   assert.match(failureCalls.progress.at(-1)[3],/Không thể đọc bản lưu tại máy/,
     'failed local-open must replace the stuck loading message with an actionable error');
 
+  const missingDb={
+    close(){},
+    transaction(storeName){
+      if(storeName==='drafts')return {objectStore:()=>({get:()=>{const req={};queueMicrotask(()=>{req.result=undefined;req.onsuccess&&req.onsuccess()});return req}})};
+      if(storeName==='draftImages')return {objectStore:()=>({index:()=>({getAll:()=>{const req={};queueMicrotask(()=>{req.result=[];req.onsuccess&&req.onsuccess()});return req}})})};
+      throw new Error('Unexpected store: '+storeName);
+    }
+  };
+  const missingCalls={progress:[]};
+  const missingApi=global.PTI093LocalOpenCore.install({
+    state:appState,$:element,msg:()=>{},openLocalDraftDB:async()=>missingDb,
+    setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:()=>{},
+    deviceStorageLabel:()=> 'PC',setOpenLoad:(...args)=>missingCalls.progress.push(args),finishOpenLoad:()=>{}
+  });
+  await assert.rejects(missingApi.openLocalDraft('LOCAL-MISSING'),/Không tìm thấy bản nháp tại máy/);
+  assert.match(missingCalls.progress.at(-1)[3],/Không tìm thấy bản lưu tại máy/,
+    'missing metadata must not leave the local-open progress stuck');
+
   console.log('Local Open Core tests passed (section order, restore fields/images, and read-failure progress).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
