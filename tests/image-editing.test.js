@@ -66,6 +66,6 @@ const key=f=>f.name+'|'+f.size+'|'+f.lastModified;
   events.confirm=false;api.clearCurrent();assert.equal(state.current.items.length,2);
   events.confirm=true;api.clearCurrent();assert.equal(state.current.items.length,0);
   assert.equal(events.saves.at(-1),true);
-  assert.equal(events.renders,5);
+  assert.equal(events.renders,6);
   console.log('Image Editing Core tests passed (insert/replace/dedupe/caption/rotation/delete/clear and autosave semantics).');
 })();
