@@ -64,3 +64,37 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.equal(item.driveUploadKey,'upload-key','failed local save must preserve upload tracking metadata');
   console.log('Local Save failure-recovery test passed (Drive state remains intact when IndexedDB fails).');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+(async()=>{
+  const elements={};
+  const localState={groups:[],current:{title:'Thiệt hại',items:[]},localDraftId:'',driveRecordId:'',orientation:'portrait',per:6};
+  let cleared=0;
+  global.localStorage={getItem(){throw new Error('localStorage blocked')},setItem(){throw new Error('localStorage blocked')},removeItem(){}};
+  const db={
+    close(){},
+    transaction(){
+      return {objectStore(name){
+        if(name==='drafts')return {put(){}};
+        return {index:()=>({openCursor:()=>{const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}})};
+      }};
+    }
+  };
+  const safeApi=global.PTILocalSaveCore.install({
+    state:localState,
+    $:id=>elements[id]||(elements[id]={value:id==='gdv'?'Nhập tên khác':'',dataset:{custom:''},textContent:'',disabled:false,style:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[],
+    openLocalDraftDB:async()=>db,
+    localDraftTransactionDone:async()=>{},
+    getDateISO:()=> '2026-10-23',
+    selectedGdv:()=> 'NONAME',
+    setDriveState:noop,msg:noop,renderLocalSaveFeedback:noop,
+    showLocalSaveConfirm:async()=>true,
+    clearAutoDraft:async()=>{cleared++}
+  });
+  await safeApi.saveDraftWithoutPhotos();
+  assert.match(localState.localDraftId,/^LOCAL-/,'local save should complete despite blocked localStorage');
+  assert.equal(cleared,1,'successful local save should still clean the autosave draft');
+  assert.equal(elements.driveSaveDraft.disabled,false,'save control should be re-enabled');
+  delete global.localStorage;
+  console.log('Local Save storage-blocked test passed (saved record remains successful despite blocked GĐV preference storage).');
+})().catch(error=>{console.error(error);process.exitCode=1});
