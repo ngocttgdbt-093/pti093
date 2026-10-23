@@ -2,13 +2,22 @@
   'use strict';
   global.PTI093ImageIngest = {
     install: function(deps){
-      const {state,exts,fileBaseName,scheduleAutoDraftSave,render,msg}=deps;
+      const {state,exts,fileBaseName,fileKey:makeFileKey,scheduleAutoDraftSave,render,msg}=deps;
+      const fileKey=makeFileKey||function(file){
+        const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
+        const relative=String(file.webkitRelativePath||'').trim();
+        return relative?base+'|'+relative:base;
+      };
       async function addFiles(files){
         const candidates=[];
-        const seenKeys=new Set((state.current.items||[]).map(item=>item.key).filter(Boolean));
+        const seenKeys=new Set();
+        (state.current.items||[]).forEach(item=>{
+          if(item.key)seenKeys.add(item.key);
+          if(item.file)seenKeys.add(fileKey(item.file));
+        });
         for(const file of files){
           if(!file.type.startsWith('image/')&&!exts.test(file.name))continue;
-          const key=file.name+'|'+file.size+'|'+file.lastModified;
+          const key=fileKey(file);
           // Deduplicate both against the current section and within this same file-selection batch.
           if(!seenKeys.has(key)){
             seenKeys.add(key);
