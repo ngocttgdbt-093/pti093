@@ -67,7 +67,7 @@ function element(id) {
 }
 global.document = { querySelectorAll: () => [] };
 const calls = { progress: [], status: [], finished: 0, rendered: 0, layout: 0, messages: [] };
-const appState = { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', driveOpenIncomplete: true, addSeq: 0 };
+const appState = { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', driveOpenIncomplete: true, driveOpenPending:false, workspaceOpenPending:false, addSeq: 0 };
 const api = global.PTI093LocalOpenCore.install({
   state: appState,
   $: element,
@@ -86,6 +86,7 @@ const api = global.PTI093LocalOpenCore.install({
   assert.equal(appState.localDraftId, 'LOCAL-TEST-1');
   assert.equal(appState.driveRecordId, '');
   assert.equal(appState.driveOpenIncomplete, false, 'successful local open must clear the incomplete Drive guard');
+  assert.equal(appState.workspaceOpenPending,false,'successful local open must release the shared workspace lock');
   assert.equal(appState.groups.length, 1);
   assert.equal(appState.groups[0].title, 'Ảnh hiện trường');
   assert.equal(appState.groups[0].items[0].caption, 'Toàn cảnh');
@@ -123,6 +124,7 @@ const api = global.PTI093LocalOpenCore.install({
     'failed local-open must replace the stuck loading message with an actionable error');
   assert.match(failureCalls.status.at(-1),/Không thể đọc bản lưu tại máy/,
     'failed local-open must also clear the stale Drive loading status');
+  assert.equal(appState.workspaceOpenPending,false,'failed local open must release the shared workspace lock');
 
   const missingDb={
     close(){},
