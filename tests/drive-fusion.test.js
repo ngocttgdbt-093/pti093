@@ -186,7 +186,7 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.driveOpenIncomplete,false,'a subsequent complete reopen must clear the guard');
     assert.equal(state.current.items.length,2,'both images should be restored on the successful retry');
     assert.equal(finished.length,1,'only the fully loaded retry should complete the progress bar');
-    assert.match(statusEvents.at(-1).text,/Đã tải hoàn tất hồ sơ Drive/,'complete reopen should restore the success status');
+    assert.match(statusEvents.at(-1).text,/Đã tải hoàn tất hồ sơ .*từ Google Drive/,'complete reopen should restore the success status');
     console.log('Drive Fusion incomplete-open regression passed: partial loads warn and block writes; full reopen restores saving.');
   }finally{
     global.fetch=originalFetch;console.warn=originalWarn;
