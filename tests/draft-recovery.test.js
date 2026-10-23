@@ -113,7 +113,7 @@ for (const contract of [
 assert.ok(source.includes("const PTI093_SESSION_KEY='pti093_work_session_id'"), 'The session key must remain stable');
 assert.ok(source.includes("const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT'"), 'The legacy automatic draft ID must remain available for backward compatibility');
 assert.ok(source.includes("let activeAutoDraftId=PTI093_AUTO_DRAFT_ID+'-'+PTI093_SESSION_ID"), 'New sessions must use isolated automatic draft IDs');
-assert.ok(source.includes('if(snapshot.legacyMeta.sessionId===PTI093_SESSION_ID)'), 'Legacy AUTO-DRAFT may only be adopted by its owning session');
+assert.ok(source.includes('snapshot.legacyMeta.sessionId===PTI093_SESSION_ID') && source.includes('else foreignDraftFound=true'), 'Legacy AUTO-DRAFT may only be adopted by its owning session; foreign legacy drafts must be rejected');
 assert.ok(source.includes("db.transaction(['drafts','draftImages'],'readonly')"), 'AUTO-DRAFT metadata and image blobs must be read in one readonly transaction to prevent torn snapshots');
 assert.ok(source.includes("Never delete another tab's legacy draft"), 'Foreign legacy draft must never be deleted during restore');
 assert.ok(!source.includes("global.localStorage.removeItem('pti093_driveRecordId')"), 'A tab must not remove the shared localStorage Drive pointer');
