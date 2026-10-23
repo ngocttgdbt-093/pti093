@@ -111,3 +111,8 @@ console.log('093 Drive Fusion tests passed (source contract + storage helpers).'
   assert.match(cleanupEvents.messages[0].text,/Hồ sơ Drive đã lưu thành công/);
   console.log('Drive Fusion post-save cleanup regression passed (successful Drive save is not misreported as failed).');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+assert.ok(driveModule.includes('function readStoredDriveRecordId()'), 'Drive record ID fallback should use a guarded storage helper');
+assert.ok(driveModule.includes('function persistDriveRecordId(recordId)'), 'Drive record ID persistence should be best-effort');
+assert.match(driveModule,/try\{return global\.sessionStorage\.getItem\('pti093_driveRecordId'\)\|\|''\}catch\(e\)\{return ''\}/,'blocked sessionStorage must not break Drive record ID lookup');
+console.log('Drive record ID storage resilience contract passed.');
