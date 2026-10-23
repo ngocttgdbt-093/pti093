@@ -9,14 +9,15 @@
         return relative?base+'|'+relative:base;
       };
       const sameFileKey=(item,key)=>!!item&&(item.key===key||(item.file&&fileKey(item.file)===key));
-      function beginReplace(index){state.replaceIndex=index;$('replaceFile').click();}
-      function beginInsert(index){state.insertIndex=index;$('insertFile').click();}
-      function rotate(item,index){item.rotate=(item.rotate+90)%360;render();scheduleAutoDraftSave(true);msg('Ảnh số '+(index+1)+' đã xoay '+item.rotate+'°.',true);}
-      function deleteCurrent(index){state.current.items.splice(index,1);render();scheduleAutoDraftSave(true);}
-      function captionChange(item,value){item.caption=value;scheduleAutoDraftSave(false);}
+      function beginReplace(index){if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi thay ảnh.',true);return;}state.replaceIndex=index;$('replaceFile').click();}
+      function beginInsert(index){if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi chèn ảnh.',true);return;}state.insertIndex=index;$('insertFile').click();}
+      function rotate(item,index){if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xoay ảnh.',true);return;}item.rotate=(item.rotate+90)%360;render();scheduleAutoDraftSave(true);msg('Ảnh số '+(index+1)+' đã xoay '+item.rotate+'°.',true);}
+      function deleteCurrent(index){if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xóa ảnh.',true);return;}state.current.items.splice(index,1);render();scheduleAutoDraftSave(true);}
+      function captionChange(item,value){if(state.workspaceOpenPending)return;item.caption=value;scheduleAutoDraftSave(false);}
       function handleInsertChange(event){
         const input=event.target,files=[...input.files],index=state.insertIndex;
         input.value='';state.insertIndex=-1;
+        if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi chèn ảnh.',true);return;}
         if(index<0||index>=state.current.items.length||!files.length)return;
         const candidates=[];
         for(const file of files){
@@ -33,6 +34,7 @@
       function handleReplaceChange(event){
         const input=event.target,file=input.files[0],index=state.replaceIndex;
         input.value='';state.replaceIndex=-1;
+        if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi thay ảnh.',true);return;}
         if(!file||index<0||index>=state.current.items.length)return;
         if(!file.type.startsWith('image/')&&!exts.test(file.name))return;
         const old=state.current.items[index],key=fileKey(file);
@@ -44,6 +46,7 @@
         msg('Đã thay ảnh số '+(index+1)+'; vị trí và phần thuyết minh được giữ nguyên.',true);
       }
       function clearCurrent(){
+        if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xóa ảnh.',true);return;}
         if(!state.current.items.length)return;
         if(!confirm('Xóa toàn bộ ảnh của nội dung đang làm?'))return;
         state.current.items=[];render();scheduleAutoDraftSave(true);
