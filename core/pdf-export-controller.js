@@ -94,6 +94,7 @@
           }else{
             const blob=new Blob([result.bytes],{type:'application/pdf'});
             await exportPdfFile(blob,baseName);
+            assertExportSnapshot(exportPages,exportPageDefs);
             $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
             msg('Đã xuất PDF '+size.toFixed(2)+' MB bằng chế độ nén. Vui lòng kiểm tra lại bản ảnh sau khi xuất.',true);
             warnings.showPdfWarning('Dung lượng bản PDF ở chất lượng cao không phù hợp giới hạn 10 MB nên phần mềm đã nén ảnh. Bạn có thể xuất lại ở chất lượng cao; phần mềm sẽ tự tách thành nhiều file.',baseName);
