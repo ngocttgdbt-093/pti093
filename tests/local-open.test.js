@@ -19,6 +19,7 @@ require('../core/local-open.js');
 
 const meta = {
   id: 'LOCAL-TEST-1',
+  sourceDriveIncomplete: true,
   caseNumber: 'HS-123',
   bks: '30A-12345',
   garage: 'Garage A',
@@ -87,6 +88,8 @@ const api = global.PTI093LocalOpenCore.install({
   assert.equal(appState.localDraftId, 'LOCAL-TEST-1');
   assert.equal(appState.driveRecordId, '');
   assert.equal(appState.driveOpenIncomplete, false, 'successful local open must clear the incomplete Drive guard');
+  assert.equal(appState.localCopyFromIncompleteDrive,true,'local open must restore incomplete-Drive provenance');
+  assert.match(calls.status.at(-1),/được tạo từ hồ sơ Drive chưa tải đủ ảnh/,'local open must visibly warn about a partial-origin copy');
   assert.equal(appState.workspaceOpenPending,false,'successful local open must release the shared workspace lock');
   assert.equal(appState.groups.length, 1);
   assert.equal(appState.groups[0].title, 'Ảnh hiện trường');
