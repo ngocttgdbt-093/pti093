@@ -35,10 +35,14 @@ const meta={
 const storedImages=[{sectionIndex:0,itemIndex:0,file:{bytes:'one'},fileName:'one.jpg',type:'image/jpeg',lastModified:1}];
 const db={
   close(){},
-  transaction(storeName){
-    if(storeName==='drafts')return {objectStore:()=>({get(){const req={};queueMicrotask(()=>{req.result=meta;req.onsuccess&&req.onsuccess()});return req}})};
-    if(storeName==='draftImages')return {objectStore:()=>({index:()=>({getAll(){const req={};queueMicrotask(()=>{req.result=storedImages;req.onsuccess&&req.onsuccess()});return req}})})};
-    throw new Error('Unexpected store: '+storeName);
+  transaction(storeNames){
+    const hasStore=name=>Array.isArray(storeNames)?storeNames.includes(name):storeNames===name;
+    if(hasStore('drafts')||hasStore('draftImages'))return {objectStore:name=>{
+      if(name==='drafts')return {get(id){const req={};queueMicrotask(()=>{req.result=id===meta.id?meta:undefined;req.onsuccess&&req.onsuccess()});return req}};
+      if(name==='draftImages')return {index:()=>({getAll(range){const req={};queueMicrotask(()=>{req.result=range===meta.id?storedImages:[];req.onsuccess&&req.onsuccess()});return req}})};
+      throw new Error('Unexpected object store: '+name);
+    }};
+    throw new Error('Unexpected store: '+storeNames);
   }
 };
 const messages=[],statuses=[];
