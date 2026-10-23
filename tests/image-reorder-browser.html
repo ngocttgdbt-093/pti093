@@ -8,7 +8,7 @@
 <script src="../core/image-reorder.js"></script>
 <script>
 window.makeReorderHarness=function(){
-  const state={current:{items:[{label:'A'},{label:'B'},{label:'C'}]}};
+  const state={current:{items:[{label:'A'},{label:'B'},{label:'C'}]},workspaceOpenPending:false};
   let saved=[],layoutCount=0,renderCount=0;
   const grid=document.getElementById('grid');
   const api=window.PTI093ImageReorder.install({
