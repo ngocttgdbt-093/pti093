@@ -66,9 +66,16 @@ const key=f=>f.name+'|'+f.size+'|'+f.lastModified;
   assert.equal(state.current.items.length,2);
   assert.deepEqual(events.saves.slice(-3),[true,false,true]);
 
-  events.confirm=false;api.clearCurrent();assert.equal(state.current.items.length,2);
+  api.beginInsert(0);
+  const folderA={...file('scene.jpg','image/jpeg',12,34),webkitRelativePath:'folderA/scene.jpg'};
+  const folderB={...file('scene.jpg','image/jpeg',12,34),webkitRelativePath:'folderB/scene.jpg'};
+  elements.insertFile.files=[folderA,folderB];listeners['insertFile:change']({target:elements.insertFile});
+  assert.equal(state.current.items.length,4,'same-name files from different folders must both be insertable');
+  assert.notEqual(state.current.items[1].key,state.current.items[2].key,'folder path must distinguish inserted file keys');
+
+  events.confirm=false;api.clearCurrent();assert.equal(state.current.items.length,4);
   events.confirm=true;api.clearCurrent();assert.equal(state.current.items.length,0);
   assert.equal(events.saves.at(-1),true);
-  assert.equal(events.renders,6);
+  assert.equal(events.renders,7);
   console.log('Image Editing Core tests passed (insert/replace/dedupe/caption/rotation/delete/clear and autosave semantics).');
 })();
