@@ -28,7 +28,7 @@
 | `core/image-reorder.js` | Image-order operations and render/save callbacks |
 | `core/case-editor.js` | Case title and filename-caption controls |
 | `core/date-utils.js` | dd/mm/yyyy mask, normalization, ISO conversion and validation |
-| `core/file-naming.js` | Image basename, GĐV code and PDF filename rules |
+| `core/file-naming.js` | Image basename, legacy-compatible/path-aware file keys, GĐV code and PDF filename rules |
 | `core/file-delivery.js` | Browser download and iOS share/popup fallback |
 | `core/pdf-builder.js` | Page sizing, JPEG quality, byte generation, adaptive compression and splitting |
 | `core/image-canvas.js` | Canvas loading/drawing, rotation/containment, page render |
@@ -64,7 +64,7 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 ## Validation status — updated 2026-10-23
 
-- Latest full GitHub Actions runs on the clean review branch both passed: push run **#1090** and PR run **#1091** on head `73e4134d87ab44a24770c1f16797f4bb646a7372`. Subsequent documentation-only corrections are validated by CI after this commit.
+- Latest full GitHub Actions runs verified before this documentation refresh both passed: push run **#1245** and PR run **#1246** on head `fc69942455af1b0630214493d7ff1c07667c3935`. The current review branch also includes the follow-up file-key integration and recovery-race regression; this documentation refresh triggers fresh CI runs.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
