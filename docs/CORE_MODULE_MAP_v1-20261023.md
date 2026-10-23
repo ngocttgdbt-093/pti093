@@ -76,6 +76,6 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 - Static reference audit confirms `index.html` has zero inline JavaScript blocks; all 53 local `src`/`href` references resolve to repository files with no duplicate local references.
 - The DOCX/ZIP draft path removal contract passes. The automatic draft remains IndexedDB-based with the existing `pti093_local_drafts_v1`, `AUTO-DRAFT`, and `pti093_work_session_id` contracts.
 - Local-save success-path tests verify section order, captions, rotations, stored file objects, and Drive-state separation after transaction completion.
-- Direct comparison of `pti093UploadAll` on `main` with `fusion/drive.js` found the normalized executable function body matched; the Drive Fusion contract test explicitly asserts concurrency 5 and awaited per-file processing.
+- The established Drive upload batching/progress implementation remains intact: concurrency 5 and per-file processing/progress are unchanged. Only a preflight guard was added to `pti093UploadAll` to refuse uploads while the currently opened Drive record is incomplete; the Drive Fusion contract test continues to assert concurrency 5 and awaited per-file processing.
 - The clean review branch is intended to be a small, reviewable diff against `main`; the long-history branch/PR #7 is retained only as audit history and must not be merged.
 - Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets. PR #8 remains draft-only; no merge or production deployment is authorized.
