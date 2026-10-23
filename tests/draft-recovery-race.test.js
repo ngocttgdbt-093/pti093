@@ -133,3 +133,20 @@ oldMeta.sessionId=session.get('pti093_work_session_id');
   assert.equal(savedAfterCleanupMeta.localDraftId,'LOCAL-NEW','the post-cleanup autosave should persist the new local draft ID');
   console.log('Draft Recovery race regressions passed: edits during recovery and no-draft cleanup are preserved and saved.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+(async()=>{
+  const state={groups:[],current:{title:'Old workspace',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'DRIVE-OLD',localDraftId:'',driveOpenIncomplete:false,workspaceOpenPending:true,orientation:'portrait',per:6,addSeq:0};
+  let openCalls=0;
+  const api=global.PTI093DraftRecovery.install({
+    state,$:id=>({value:id==='title'?'Old workspace':'',dataset:{},options:[],classList:{add(){},remove(){},toggle(){}},textContent:''}),
+    getDateISO:()=> '2026-10-23',setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:()=>{},msg:()=>{},
+    openLocalDraftDB:async()=>{openCalls++;throw new Error('should not open while workspace is pending')},
+    localDraftTransactionDone:async()=>{},getLocalDrafts:async()=>[]
+  });
+  api.scheduleAutoDraftSave(true);
+  await api.saveAutoDraft();
+  await new Promise(resolve=>setTimeout(resolve,350));
+  assert.equal(openCalls,0,'autosave must not persist a transient old workspace while another case is opening');
+  console.log('Draft Recovery workspace-open lock regression passed (no transient AUTO-DRAFT writes).');
+})().catch(error=>{console.error(error);process.exitCode=1});
