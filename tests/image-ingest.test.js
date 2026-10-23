@@ -16,19 +16,25 @@ require('../core/image-ingest.js');
     {name:'new-photo.jpg',size:10,lastModified:2,type:'image/jpeg'},
     {name:'new-photo.jpg',size:10,lastModified:2,type:'image/jpeg'}, // repeated within one selection batch
     {name:'scan.heic',size:20,lastModified:3,type:''},
+    {name:'scene.jpg',size:12,lastModified:34,type:'image/jpeg',webkitRelativePath:'folderA/scene.jpg'},
+    {name:'scene.jpg',size:12,lastModified:34,type:'image/jpeg',webkitRelativePath:'folderB/scene.jpg'},
     {name:'notes.txt',size:30,lastModified:4,type:'text/plain'}
   ];
   await api.addFiles(files);
-  assert.equal(state.current.items.length,3);
+  assert.equal(state.current.items.length,5);
   assert.deepEqual(state.current.items.slice(1).map(x=>({name:x.file.name,caption:x.caption,addSeq:x.addSeq,rotate:x.rotate})),[
     {name:'new-photo.jpg',caption:'new-photo',addSeq:3,rotate:0},
-    {name:'scan.heic',caption:'scan',addSeq:4,rotate:0}
+    {name:'scan.heic',caption:'scan',addSeq:4,rotate:0},
+    {name:'scene.jpg',caption:'scene',addSeq:5,rotate:0},
+    {name:'scene.jpg',caption:'scene',addSeq:6,rotate:0}
   ]);
+  assert.notEqual(state.current.items[3].key,state.current.items[4].key,
+    'same-name files in different folders must keep distinct keys');
   assert.deepEqual(saves,[true]);
   assert.deepEqual(renders,['render']);
-  assert.match(messages[0].text,/Đã nhận 2 ảnh/);
+  assert.match(messages[0].text,/Đã nhận 4 ảnh/);
   await api.addFiles([{name:'old.jpg',size:5,lastModified:1,type:'image/jpeg'},{name:'notes.txt',size:30,lastModified:4,type:'text/plain'}]);
-  assert.equal(state.current.items.length,3,'existing duplicates and unsupported files should not be added');
+  assert.equal(state.current.items.length,5,'existing duplicates and unsupported files should not be added');
   assert.deepEqual(saves,[true],'no-op ingestion should not schedule another save');
   assert.equal(messages[1].text,'Không có ảnh mới để thêm.');
   console.log('Image Ingest Core tests passed: filtering, duplicate avoidance, caption defaults, add sequence, and save scheduling.');
