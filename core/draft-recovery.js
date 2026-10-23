@@ -47,7 +47,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''
           }))}));
           const meta={id:PTI093_AUTO_DRAFT_ID,auto:true,sessionId:PTI093_SESSION_ID,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
-            gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',driveOpenIncomplete:!!state.driveOpenIncomplete,
+            gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',driveOpenIncomplete:!!state.driveOpenIncomplete,localCopyFromIncompleteDrive:!!state.localCopyFromIncompleteDrive,
             localDraftId:state.localDraftId||'',settings:{orientation:state.orientation,imagesPerPage:state.per},
             currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
           const db=await openLocalDraftDB();
@@ -140,7 +140,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             await clearAutoDraft();
             if(autoDraftUserChangedDuringRestore)return;
             // No active draft means this tab must not fall back to a stale Drive ID on the next save.
-            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;
+            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
             try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             return;
@@ -151,7 +151,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             // Cleanup is async too; if the user started working while it ran, do not blank that work.
             if(autoDraftUserChangedDuringRestore)return;
             state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
-            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.pages=[];state.pageDefs=[];
+            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;state.pages=[];state.pageDefs=[];
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
             try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             $('bks').value='';$('hoso').value='';setDateInput('');$('garage').value='';
@@ -200,7 +200,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
           document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
           state.groups=restoredGroups;
           state.current=currentGroup||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
-          state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';state.driveOpenIncomplete=!!meta.driveOpenIncomplete;
+          state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';state.driveOpenIncomplete=!!meta.driveOpenIncomplete;state.localCopyFromIncompleteDrive=!!meta.localCopyFromIncompleteDrive;
           state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
           if(state.driveRecordId){
             try{global.sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId)}catch(e){}
@@ -211,6 +211,9 @@ function scheduleAutoDraftSave(imagesDirty=true){
           render();renderLayout();autoDraftImagesDirty=false;
           if(state.driveOpenIncomplete){
             const detail='⚠️ Đã khôi phục bản nháp của hồ sơ Drive chưa tải đủ ảnh. Lưu đè/tải ảnh lên Drive đang bị khóa; hãy mở lại hồ sơ để tải đủ ảnh hoặc lưu bản sao tại máy.';
+            setDriveState(detail,false);msg(detail,true);
+          }else if(state.localCopyFromIncompleteDrive){
+            const detail='⚠️ Đã khôi phục bản sao tại máy được tạo từ hồ sơ Drive chưa tải đủ ảnh. Hãy kiểm tra số ảnh trước khi tạo hồ sơ Drive mới.';
             setDriveState(detail,false);msg(detail,true);
           }else{
             if(groups.length||meta.bks||meta.caseNumber)setDriveState('Đã khôi phục bản nháp tự động · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
