@@ -11,6 +11,19 @@
         }
         return out;
       }
+      async function buildPartWithinLimit(canvases){
+        let result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
+        if(pdfPackSize(result.bytes)<=safe)return result;
+        // A single raster page can exceed the cap by itself; page splitting cannot fix that.
+        // Retry that part at progressively lower DPI/quality and never return an oversized file.
+        const fallbacks=[{dpi:120,quality:.72},{dpi:100,quality:.65},{dpi:85,quality:.58},{dpi:72,quality:.52},{dpi:60,quality:.46},{dpi:50,quality:.40},{dpi:40,quality:.34}];
+        for(const attempt of fallbacks){
+          result=makePdfAt(canvases,attempt.dpi,attempt.quality);
+          if(pdfPackSize(result.bytes)<=safe)return result;
+          await new Promise(resolve=>setTimeout(resolve,0));
+        }
+        throw new Error('Một trang PDF vẫn vượt giới hạn an toàn sau khi giảm DPI/chất lượng. Không xuất tệp vượt giới hạn.');
+      }
       async function splitHighQualityPdf(filenameBase,onProgress=()=>{}){
         const pages=state.pages||[],safe=PDF_SAFE_LIMIT;
         if(!pages.length)return [];
@@ -32,8 +45,9 @@
           onProgress(35+Math.round(pi/Math.max(1,ranges.length)*45),'Đang dựng PDF phần '+(pi+1)+'/'+ranges.length+'…');
           await new Promise(resolve=>setTimeout(resolve,0));
           const canvases=await renderPageRangeWithLabel(s,e,label,ranges.length);
-          const result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
+          let result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
           if(pdfPackSize(result.bytes)>safe&&e-s>1){const ne=e-1;ranges[pi]=[s,ne];ranges.splice(pi+1,0,[ne,e]);pi--;continue}
+          if(pdfPackSize(result.bytes)>safe)result=await buildPartWithinLimit(canvases);
           parts.push({blob:new Blob([result.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+(pi+1)+'.pdf',dpi:result.dpi,quality:result.quality});
           onProgress(35+Math.round((pi+1)/Math.max(1,ranges.length)*45),'Đã dựng '+(pi+1)+'/'+ranges.length+' tệp PDF');
         }
@@ -43,7 +57,7 @@
             onProgress(35+Math.round(pi/Math.max(1,total)*45),'Đang hoàn thiện nhãn tệp '+(pi+1)+'/'+total+'…');
             const [s,e]=ranges[pi],label=`${pi+1}/${total}`;
             const canvases=await renderPageRangeWithLabel(s,e,label,total);
-            const result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
+            const result=await buildPartWithinLimit(canvases);
             parts.push({blob:new Blob([result.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+(pi+1)+'.pdf',dpi:result.dpi,quality:result.quality});
             await new Promise(resolve=>setTimeout(resolve,0));
           }
