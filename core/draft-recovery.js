@@ -211,7 +211,11 @@ function scheduleAutoDraftSave(imagesDirty=true){
           render();renderLayout();autoDraftImagesDirty=false;
           if(groups.length||meta.bks||meta.caseNumber)setDriveState('Đã khôi phục bản nháp tự động · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
           msg(missing?'Đã khôi phục bản nháp nhưng thiếu '+missing+' ảnh trong bộ nhớ trình duyệt.':'Đã khôi phục công việc đang làm. Anh có thể tiếp tục ngay.',true);
-        }catch(e){console.warn('Không thể khôi phục bản nháp tự động:',e);msg('Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.',true)}
+        }catch(e){
+          console.warn('Không thể khôi phục bản nháp tự động:',e);
+          const detail='Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.';
+          setDriveState(detail,false);msg(detail,true);
+        }
         finally{
           autoDraftRestoring=false;
           if(autoDraftUserChangedDuringRestore){
