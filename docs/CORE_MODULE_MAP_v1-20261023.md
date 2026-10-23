@@ -19,7 +19,7 @@
 | `core/group-workflow.js` | Group save/next, finish/preview, edit/cancel/confirm coordination; blocks group changes during workspace open |
 | `core/local-draft-store.js` | IndexedDB open/transaction/list primitives |
 | `core/draft-recovery.js` | Autosave scheduling, save/restore/cleanup, session lifecycle binding; persists Drive incomplete/provenance warnings but never persists in-flight open locks, and shows the relevant warning after reload |
-| `core/session-actions.js` | New-case transition and selected-GĐV persistence |
+| `core/session-actions.js` | New-case transition and selected-GĐV persistence; reserves the workspace while AUTO-DRAFT cleanup runs, and releases the lock if cleanup fails |
 | `core/local-save.js` | Save a local case and its image blobs to IndexedDB; blocks stale snapshots while a workspace is opening, never uploads the case to Drive, and preserves provenance warnings for partial-origin local copies |
 | `core/local-open.js` | Open an existing local case and restore fields/images; serializes workspace opens, refreshes AUTO-DRAFT after open, and releases the shared open lock on success/failure |
 | `core/device-context.js` | Device label used by local-open and Drive Fusion |
@@ -47,7 +47,7 @@
 
 ## Skin modules
 
-- **Classic:** `classic-file-intake`, `classic-group-list`, `classic-image-grid`, `classic-image-viewer`, `classic-layout`, `classic-load-progress`, `classic-local-save`, `classic-pdf-warning`, `classic-preview`, `classic-status`.
+- **Classic:** `classic-file-intake`, `classic-group-list`, `classic-image-grid`, `classic-image-viewer`, `classic-layout`, `classic-load-progress`, `classic-local-save`, `classic-pdf-warning`, `classic-preview`, `classic-status`. `classic-preview` rejects a build if the workspace opens or its immutable image/caption/rotation snapshot changes before rendering completes.
 - **Other skin/presentation:** `ui-mode-toggle`, `modern-image-gallery`, `preview-modal`.
 
 All of these live under `skin/`; the stylesheet layers live under `css/`.
@@ -65,7 +65,9 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 ## Validation status — updated 2026-10-23
 
-- Latest code/test head verified before this documentation refresh: `6e5755a424fb71653892d25bdcf622765051b04f`; push run **#1417** and PR run **#1418** both passed. These runs include the shared workspace-open lock across local/Drive opens and mutation workflows, no transient AUTO-DRAFT writes during open, local/Drive open autosave, visible incomplete-Drive and partial-origin local-copy warnings after Chromium/IndexedDB reload, PDF share-cancellation retention/progress tests, and protection against clearing AUTO-DRAFT after partial Drive PDF export. This documentation-only refresh triggers fresh CI runs.
+- Preview race regression: `classic-preview` snapshots group/item identity plus title, caption, rotation, key and file reference before asynchronous canvas generation; if an open starts or the snapshot changes, stale pages are discarded without overwriting PDF pages or hiding editor controls. Chromium-independent unit tests cover pending-open and changed-caption races.
+- New-case transition now reserves `workspaceOpenPending` while AUTO-DRAFT is deleted, preventing concurrent local/Drive opens from racing cleanup and then being discarded by reload; cleanup failure releases the lock and leaves the existing Drive identity intact.
+- The preview-only source/test head `dfd6e08639953423869180db2ca8907dcbfb76b6` passed push run **#1431** and PR run **#1432**. The subsequent new-case locking and test changes are being validated by CI on the latest head; this documentation refresh triggers fresh CI runs as well.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
