@@ -4,6 +4,12 @@ require('../core/session-actions.js');
 assert.ok(global.PTI093SessionActions);
 function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}={}){
   const store=new Map();if(storedCustom)store.set('pti093_gdv_custom',storedCustom);
+  const sessionStore=new Map([['pti093_driveRecordId','DRIVE-OLD']]);
+  global.sessionStorage={
+    getItem:key=>sessionStore.has(key)?sessionStore.get(key):null,
+    setItem:(key,value)=>sessionStore.set(key,String(value)),
+    removeItem:key=>sessionStore.delete(key)
+  };
   const events={order:[],warnings:[],messages:[]};
   const elements={gdv:{value:gdv,dataset:{custom}},newCase:{disabled:false,onclick:null}};
   const localStorage={getItem:key=>store.has(key)?store.get(key):null,setItem:(key,value)=>store.set(key,String(value)),removeItem:key=>store.delete(key)};
@@ -13,14 +19,16 @@ function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}
     localStorage,location:{reload:()=>events.order.push('reload')},
     console:{warn:error=>events.warnings.push(error)},msg:text=>events.messages.push(text)
   });
-  return {api,elements,localStorage,events};
+  return {api,elements,localStorage,sessionStore,events};
 }
 (async()=>{
   {
-    const {api,elements,localStorage,events}=setup();
+    const {api,elements,localStorage,sessionStore,events}=setup();
     assert.equal(typeof elements.newCase.onclick,'function');
     await elements.newCase.onclick();
     assert.equal(localStorage.getItem('pti093_gdv'),'Phạm Bá Lưu');
+    assert.equal(sessionStore.has('pti093_driveRecordId'),false,'starting a new case must clear the old session Drive record ID');
+    assert.equal(localStorage.getItem('pti093_driveRecordId'),null,'starting a new case must clear the old persisted Drive record ID');
     assert.equal(elements.newCase.disabled,true);
     assert.deepEqual(events.order,['clear-start','clear-done','reload']);
   }
@@ -35,6 +43,7 @@ function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}
     const started=await api.startNewCase();
     assert.equal(started,false,'new case must not start when old draft cleanup fails');
     assert.equal(localStorage.getItem('pti093_gdv'),'Tên đã lưu');
+    assert.equal(sessionStore.get('pti093_driveRecordId'),'DRIVE-OLD','failed cleanup must not alter the current Drive record identity');
     assert.equal(elements.newCase.disabled,false,'allow retry after cleanup failure');
     assert.equal(events.warnings.length,1);
     assert.match(events.messages[0],/bản nháp cũ chưa được dọn/);
@@ -47,6 +56,7 @@ function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}
     const order=[],messages=[];
     const elements={gdv:{value:gdvCase.value,dataset:{custom:gdvCase.custom}},newCase:{disabled:false,onclick:null}};
     const blockedStorage={getItem(){throw new Error('storage blocked')},setItem(){throw new Error('storage blocked')},removeItem(){throw new Error('storage blocked')}};
+    global.sessionStorage={getItem(){throw new Error('session storage blocked')},setItem(){throw new Error('session storage blocked')},removeItem(){throw new Error('session storage blocked')}};
     const blockedApi=global.PTI093SessionActions.install({
       $:id=>elements[id],
       clearAutoDraft:async()=>{order.push('clear')},
