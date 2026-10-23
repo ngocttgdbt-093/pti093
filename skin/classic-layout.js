@@ -4,6 +4,10 @@
     install: function(deps){
       const {state,$,layoutDims}=deps,doc=deps.document||document;
       const scheduleAutoDraftSave=deps.scheduleAutoDraftSave||(()=>{});
+      function syncControlSelections(){
+        doc.querySelectorAll('#counts .opt').forEach(item=>item.classList.toggle('on',Number(item.textContent)===state.per));
+        doc.querySelectorAll('#orient .opt').forEach(item=>item.classList.toggle('on',item.dataset.o===state.orientation));
+      }
       function renderLayout(){
         const box=$('layoutPreview'),txt=$('layoutText');
         if(!box)return;
@@ -24,6 +28,7 @@
             button.className='opt'+(n===6?' on':'');
             button.textContent=n;
             button.onclick=()=>{
+              if(state.workspaceOpenPending){syncControlSelections();return;}
               state.per=n;
               counts.querySelectorAll('.opt').forEach(item=>item.classList.remove('on'));
               button.classList.add('on');
@@ -35,6 +40,7 @@
         }
         doc.querySelectorAll('#orient .opt').forEach(button=>{
           button.onclick=()=>{
+            if(state.workspaceOpenPending){syncControlSelections();return;}
             state.orientation=button.dataset.o;
             doc.querySelectorAll('#orient .opt').forEach(item=>item.classList.remove('on'));
             button.classList.add('on');

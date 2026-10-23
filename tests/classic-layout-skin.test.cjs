@@ -21,7 +21,12 @@ const {chromium}=require('playwright');
     const controls=await page.evaluate(()=>{
       document.querySelector('#counts .opt:nth-child(3)').click();
       document.querySelector('#orient [data-o="landscape"]').click();
-      return {per:window.layoutState.per,orientation:window.layoutState.orientation,saveCalls:window.saveCalls,countButtons:document.querySelectorAll('#counts .opt').length,activeCount:document.querySelector('#counts .on')?.textContent,activeOrientation:document.querySelector('#orient .on')?.dataset.o};
+      window.layoutState.workspaceOpenPending=true;
+      document.querySelector('#counts .opt:nth-child(5)').click();
+      document.querySelector('#orient [data-o="portrait"]').click();
+      const blocked={per:window.layoutState.per,orientation:window.layoutState.orientation,activeCount:document.querySelector('#counts .on')?.textContent,activeOrientation:document.querySelector('#orient .on')?.dataset.o};
+      window.layoutState.workspaceOpenPending=false;
+      return {per:window.layoutState.per,orientation:window.layoutState.orientation,saveCalls:window.saveCalls,countButtons:document.querySelectorAll('#counts .opt').length,activeCount:document.querySelector('#counts .on')?.textContent,activeOrientation:document.querySelector('#orient .on')?.dataset.o,blocked};
     });
     assert.equal(controls.per,3);
     assert.equal(controls.orientation,'landscape');
@@ -29,6 +34,8 @@ const {chromium}=require('playwright');
     assert.equal(controls.countButtons,6);
     assert.equal(controls.activeCount,'3');
     assert.equal(controls.activeOrientation,'landscape');
+    assert.deepEqual(controls.blocked,{per:3,orientation:'landscape',activeCount:'3',activeOrientation:'landscape'},
+      'layout controls must not mutate settings while a workspace save/open lock is held');
     console.log('Classic Layout Skin tests passed: portrait/landscape labels, grid dimensions, and slot counts.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
