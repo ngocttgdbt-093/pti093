@@ -77,5 +77,12 @@ function setup(){
   assert.equal(state.editing,0);
   assert.equal(events.renders,4);
   assert.equal(events.saves.length,4);
-  console.log('Group Workflow Core tests passed (save-next, finish/preview, edit/cancel/confirm, and autosave).');
+  state.workspaceOpenPending=true;
+  const pendingCurrent=state.current,pendingGroups=state.groups.slice(),pendingSaves=events.saves.length,pendingRenders=events.renders;
+  api.saveNext();api.finish();api.editGroup(0);
+  assert.equal(state.current,pendingCurrent,'group actions must not replace the workspace during open');
+  assert.deepEqual(state.groups,pendingGroups,'group actions must not mutate the existing group list during open');
+  assert.equal(events.saves.length,pendingSaves,'blocked group actions must not schedule autosave');
+  assert.equal(events.renders,pendingRenders,'blocked group actions must not rerender stale workspace');
+  console.log('Group Workflow Core tests passed (group lifecycle and workspace-open lock).');
 })();
