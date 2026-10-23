@@ -34,7 +34,7 @@
 | `core/image-canvas.js` | Canvas loading/drawing, rotation/containment, page render |
 | `core/preview-builder.js` | Ordered preview pages and page definitions |
 | `core/pdf-export.js` | High-quality split PDF preparation |
-| `core/pdf-export-controller.js` | Standard/high-quality export orchestration and PDF button binding; blocks export during workspace open and preserves draft on cancelled iOS share |
+| `core/pdf-export-controller.js` | Standard/high-quality export orchestration; blocks export during workspace open, preserves draft on cancelled iOS share, and retains AUTO-DRAFT after exporting a partial Drive workspace |
 | `core/app-core.js` | Composition root only |
 
 ## Fusion modules
@@ -65,7 +65,7 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 ## Validation status — updated 2026-10-23
 
-- Latest code/test head verified before this documentation refresh: `11c07283f3421c18d3b6234202288bcad9bbe830`; push run **#1355** and PR run **#1356** both passed. These runs include the shared workspace-open lock, local/Drive open autosave, visible incomplete-Drive warning after Chromium/IndexedDB reload, PDF share-cancellation retention/progress tests, and local-open/local-save guard lifecycle tests. This documentation-only refresh triggers fresh CI runs.
+- Latest code/test head verified before this documentation refresh: `79b4b0279885d982146492968192fa4d6ae0f92b`; push run **#1361** and PR run **#1362** both passed. These runs include the shared workspace-open lock, local/Drive open autosave, visible incomplete-Drive warning after Chromium/IndexedDB reload, PDF share-cancellation retention/progress tests, and protection against clearing AUTO-DRAFT after PDF export of an incomplete Drive workspace. This documentation-only refresh triggers fresh CI runs.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
