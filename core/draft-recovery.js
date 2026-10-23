@@ -138,6 +138,8 @@ function scheduleAutoDraftSave(imagesDirty=true){
           // Chỉ khôi phục nháp trong đúng phiên/tab. Nháp của phiên trước bị dọn, không hiển thị lại.
           if(!meta.sessionId||meta.sessionId!==PTI093_SESSION_ID){
             await clearAutoDraft();
+            // Cleanup is async too; if the user started working while it ran, do not blank that work.
+            if(autoDraftUserChangedDuringRestore)return;
             state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
             state.driveRecordId='';state.localDraftId='';state.pages=[];state.pageDefs=[];
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
