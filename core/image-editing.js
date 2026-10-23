@@ -2,7 +2,13 @@
   'use strict';
   global.PTI093ImageEditing = {
     install: function(deps){
-      const {state,$,exts,fileBaseName,render,scheduleAutoDraftSave,msg,confirm}=deps;
+      const {state,$,exts,fileBaseName,fileKey:makeFileKey,render,scheduleAutoDraftSave,msg,confirm}=deps;
+      const fileKey=makeFileKey||function(file){
+        const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
+        const relative=String(file.webkitRelativePath||'').trim();
+        return relative?base+'|'+relative:base;
+      };
+      const sameFileKey=(item,key)=>!!item&&(item.key===key||(item.file&&fileKey(item.file)===key));
       function beginReplace(index){state.replaceIndex=index;$('replaceFile').click();}
       function beginInsert(index){state.insertIndex=index;$('insertFile').click();}
       function rotate(item,index){item.rotate=(item.rotate+90)%360;render();scheduleAutoDraftSave(true);msg('Ảnh số '+(index+1)+' đã xoay '+item.rotate+'°.',true);}
@@ -15,8 +21,8 @@
         const candidates=[];
         for(const file of files){
           if(!file.type.startsWith('image/')&&!exts.test(file.name))continue;
-          const key=file.name+'|'+file.size+'|'+file.lastModified;
-          if(state.current.items.some(item=>item.key===key)||candidates.some(item=>item.key===key))continue;
+          const key=fileKey(file);
+          if(state.current.items.some(item=>sameFileKey(item,key))||candidates.some(item=>sameFileKey(item,key)))continue;
           candidates.push({file,key,caption:state.filenameCaption?fileBaseName(file.name):'',addSeq:++state.addSeq,rotate:0});
         }
         if(!candidates.length){msg('Không có ảnh mới để chèn.',true);return;}
@@ -29,8 +35,8 @@
         input.value='';state.replaceIndex=-1;
         if(!file||index<0||index>=state.current.items.length)return;
         if(!file.type.startsWith('image/')&&!exts.test(file.name))return;
-        const old=state.current.items[index],key=file.name+'|'+file.size+'|'+file.lastModified;
-        if(state.current.items.some((item,i)=>i!==index&&item.key===key)){
+        const old=state.current.items[index],key=fileKey(file);
+        if(state.current.items.some((item,i)=>i!==index&&sameFileKey(item,key))){
           msg('Ảnh này đã có trong mục hiện tại.',true);return;
         }
         state.current.items[index]={...old,file,key,caption:state.filenameCaption?fileBaseName(file.name):old.caption,driveFileId:'',driveFileName:'',driveUploadKey:''};
