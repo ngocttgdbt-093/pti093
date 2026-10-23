@@ -65,7 +65,7 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 ## Validation status — updated 2026-10-23
 
-- Latest full GitHub Actions runs verified before this documentation refresh both passed: push run **#1283** and PR run **#1284** on head `e5eef0deee9269fc70a9e4a29de3e6ba15abed20`. These runs include Drive partial-open write protection, its AUTO-DRAFT/Chromium round-trip test, and PDF share-cancellation retention tests; this documentation refresh triggers fresh CI runs.
+- Latest code/test head verified before this documentation refresh: `7e89481bbc400351a89ed012f0193d12770a8d81`; push run **#1295** and PR run **#1296** both passed. These runs include Drive partial-open write protection, its AUTO-DRAFT/Chromium round-trip test, PDF share-cancellation retention/progress tests, and local-open/local-save guard lifecycle tests. This documentation-only refresh triggers fresh CI runs.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
