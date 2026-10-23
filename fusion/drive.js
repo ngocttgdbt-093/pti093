@@ -239,9 +239,6 @@
         $('driveId').classList.remove('hidden');
         render();
         renderLayout();
-        // Persist the newly opened workspace (including the incomplete-image guard)
-        // so F5/reload cannot resurrect an older AUTO-DRAFT from this session.
-        scheduleAutoDraftSave(true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
       }
       
@@ -252,8 +249,12 @@
       async function openRecordFromDrive(recordId){
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
         state.workspaceOpenPending=true;
-        try{return await openRecordFromDriveUnlocked(recordId)}
-        finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
+        try{
+          const result=await openRecordFromDriveUnlocked(recordId);
+          state.driveOpenPending=false;state.workspaceOpenPending=false;
+          scheduleAutoDraftSave(true);
+          return result;
+        }finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }
       function recordMatchesQuery(row,query){
         const fields=[row.caseNumber,row.maHoSo,row.bks,row.gdv,row.adjuster,row.status];
