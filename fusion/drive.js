@@ -238,6 +238,9 @@
         $('driveId').classList.remove('hidden');
         render();
         renderLayout();
+        // Persist the newly opened workspace (including the incomplete-image guard)
+        // so F5/reload cannot resurrect an older AUTO-DRAFT from this session.
+        scheduleAutoDraftSave(true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
       }
       
