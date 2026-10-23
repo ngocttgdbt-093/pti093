@@ -217,6 +217,47 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.current.title,completedTitle,'failed Drive open must preserve the active workspace');
     assert.match(statusEvents.at(-1).text,/Không thể đọc hồ sơ từ Google Drive/,'failed Drive open must surface an actionable status');
 
+    // Regression: if Drive Open mutates fields/groups and then throws during final render,
+    // roll the workspace back so a later lifecycle autosave cannot overwrite the prior draft.
+    failOpenRecord=false;
+    const priorGroups=[{title:'Prior draft',items:[{file:{name:'prior.jpg'},key:'prior'}]}];
+    const priorCurrent={title:'Prior current',items:[{file:{name:'current.jpg'},key:'current'}]};
+    state.groups=priorGroups;
+    state.current=priorCurrent;
+    state.driveRecordId='PRIOR-DRIVE';
+    state.localDraftId='PRIOR-LOCAL';
+    state.driveOpenIncomplete=false;
+    element('bks').value='PRIOR-BKS';
+    element('hoso').value='PRIOR-HS';
+    element('title').value='Prior current';
+    const originalRenderLayout=deps.renderLayout;
+    let failFinalLayout=true;
+    const rollbackApi=global.PTI093DriveFusion.install({
+      ...deps,state,$:element,
+      setDriveState:(text,ok)=>statusEvents.push({text,ok}),
+      setOpenLoad:(...args)=>progress.push(args),
+      finishOpenLoad:(...args)=>finished.push(args),
+      getDateISO:()=>'2026-10-23',setDateInput:value=>{element('date').value=value},
+      render:()=>{},
+      renderLayout:()=>{if(failFinalLayout){failFinalLayout=false;throw new Error('synthetic final layout failure')}},
+      msg:(text,show)=>messages.push({text,show})
+    });
+    const revisionBeforeRollback=Number(state.workspaceRevision)||0;
+    await assert.rejects(()=>rollbackApi.openRecordFromDrive('DRIVE-PARTIAL'),/synthetic final layout failure/);
+    assert.equal(state.groups,priorGroups,'failed post-mutation Drive Open must restore prior group collection');
+    assert.equal(state.current,priorCurrent,'failed post-mutation Drive Open must restore prior active group');
+    assert.equal(state.driveRecordId,'PRIOR-DRIVE','failed Drive Open must restore the prior Drive record identity');
+    assert.equal(state.localDraftId,'PRIOR-LOCAL','failed Drive Open must preserve the prior local draft identity');
+    assert.equal(element('bks').value,'PRIOR-BKS','failed Drive Open must restore prior form fields');
+    assert.equal(element('hoso').value,'PRIOR-HS','failed Drive Open must restore prior case number');
+    assert.equal(element('title').value,'Prior current','failed Drive Open must restore prior current title');
+    assert.equal(state.workspaceRevision,revisionBeforeRollback+1,'rollback must retain revision bump to invalidate stale snapshots');
+    assert.equal(state.workspaceOpenPending,false,'rollback must release shared workspace lock');
+    assert.equal(state.driveOpenPending,false,'rollback must release Drive lock');
+    assert.equal(state.driveOpenIncomplete,false,'rollback must restore the prior Drive write guard');
+    assert.equal(autosaveEvents.at(-1),true,'the failed open must not schedule a new autosave for partial state');
+    console.log('Drive Open transactional rollback regression passed.');
+
     // Regression: Local Open shares workspaceOpenPending but does not set the Drive-specific
     // pending flag. The public uploader/save button must still refuse writes during that window.
     state.workspaceOpenPending=true;

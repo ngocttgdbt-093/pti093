@@ -248,8 +248,50 @@
       
       
       
+      function snapshotDriveOpenWorkspace(){
+        const stateSnapshot={...state};
+        const fieldIds=['bks','hoso','date','gdv','garage','title','driveId'];
+        const fields={};
+        for(const id of fieldIds){
+          const el=$(id);
+          if(!el)continue;
+          fields[id]={value:el.value,textContent:el.textContent,innerHTML:el.innerHTML,
+            dataset:el.dataset?{...el.dataset}:null,
+            className:typeof el.className==='string'?el.className:null,
+            hidden:el.hidden};
+        }
+        let storedRecordId='';
+        try{storedRecordId=global.sessionStorage.getItem('pti093_driveRecordId')||''}catch(e){}
+        return {stateSnapshot,fields,storedRecordId};
+      }
+      function restoreDriveOpenWorkspace(snapshot){
+        // Keep the incremented revision so any in-flight PDF/autosave snapshot stays stale.
+        const revision=state.workspaceRevision;
+        for(const key of Object.keys(state))if(!Object.prototype.hasOwnProperty.call(snapshot.stateSnapshot,key))delete state[key];
+        Object.assign(state,snapshot.stateSnapshot);
+        state.workspaceRevision=revision;
+        state.workspaceOpenPending=false;
+        state.driveOpenPending=false;
+        for(const [id,saved] of Object.entries(snapshot.fields)){
+          const el=$(id);
+          if(!el)continue;
+          if('value'in saved)el.value=saved.value;
+          if('textContent'in saved)el.textContent=saved.textContent;
+          if('innerHTML'in saved)el.innerHTML=saved.innerHTML;
+          if(saved.dataset&&el.dataset){for(const key of Object.keys(el.dataset))delete el.dataset[key];Object.assign(el.dataset,saved.dataset)}
+          if(saved.className!==null)el.className=saved.className;
+          if('hidden'in saved)el.hidden=saved.hidden;
+        }
+        try{
+          if(snapshot.storedRecordId)global.sessionStorage.setItem('pti093_driveRecordId',snapshot.storedRecordId);
+          else global.sessionStorage.removeItem('pti093_driveRecordId');
+        }catch(e){}
+        // Restore derived views when possible; a rendering failure must not mask the open error.
+        try{render();renderLayout()}catch(e){}
+      }
       async function openRecordFromDrive(recordId){
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
+        const snapshot=snapshotDriveOpenWorkspace();
         // Advance before asynchronous/mutating work: even a failed Drive open may fail
         // after replacing groups or fields, so old PDF/autosave snapshots must be invalidated.
         state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
@@ -259,6 +301,9 @@
           state.driveOpenPending=false;state.workspaceOpenPending=false;
           scheduleAutoDraftSave(true);
           return result;
+        }catch(error){
+          restoreDriveOpenWorkspace(snapshot);
+          throw error;
         }finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }
       function recordMatchesQuery(row,query){
