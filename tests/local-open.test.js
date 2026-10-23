@@ -66,7 +66,7 @@ function element(id) {
   return elements.get(id);
 }
 global.document = { querySelectorAll: () => [] };
-const calls = { progress: [], status: [], finished: 0, rendered: 0, layout: 0, messages: [] };
+const calls = { progress: [], status: [], finished: 0, rendered: 0, layout: 0, messages: [], autosave: [] };
 const appState = { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', driveOpenIncomplete: true, driveOpenPending:false, workspaceOpenPending:false, addSeq: 0 };
 const api = global.PTI093LocalOpenCore.install({
   state: appState,
@@ -77,6 +77,7 @@ const api = global.PTI093LocalOpenCore.install({
   render: () => { calls.rendered++; },
   renderLayout: () => { calls.layout++; },
   setDriveState: text => calls.status.push(text),
+  scheduleAutoDraftSave: dirty => calls.autosave.push(dirty),
   deviceStorageLabel: () => 'PC',
   setOpenLoad: (...args) => calls.progress.push(args),
   finishOpenLoad: (...args) => { calls.finished++; calls.finishedArgs = args; }
@@ -107,6 +108,7 @@ const api = global.PTI093LocalOpenCore.install({
   assert.equal(calls.finished, 1);
   assert.equal(calls.rendered, 1);
   assert.equal(calls.layout, 1);
+  assert.deepEqual(calls.autosave,[true],'successful local open must replace stale AUTO-DRAFT for this session');
   assert.ok(calls.progress.length >= 2);
   assert.equal(closed, 1);
 
