@@ -25,5 +25,26 @@ require('../core/pdf-export.js');
   assert.deepEqual(drawCalls.map(c=>c[6]),['1/3','2/3','3/3'],'each PDF part should receive its correct part label');
   assert.ok(progress.length>=6,'progress should report planning and rendering');
   assert.ok(parts.every(p=>p.blob.type==='application/pdf'));
-  console.log('PDF Export Core tests passed: empty state, size-based splitting, part labels, metadata, and progress.');
+
+  // Regression: a single page can exceed the cap; splitting by page count alone cannot fix it.
+  const singleState={pages:[{id:'oversized'}],pageDefs:[{group:'G',pageItems:['large'],pageNo:1,groupPageNo:1,groupPages:1,groupStartIndex:0}]};
+  const singleApi=global.PTI093PdfExportCore.install({
+    state:singleState,PDF_SAFE_LIMIT:10,
+    drawPage:async(...args)=>({pageNo:args[2]}),
+    makePdfAt:(items,dpi,quality)=>({bytes:new Uint8Array(dpi===150?20:8),dpi,quality}),
+    pagePixels:()=>({dpi:150}),jpegQuality:()=>0.8,pdfPackSize:bytes=>bytes.length
+  });
+  const singleParts=await singleApi.splitHighQualityPdf('single.pdf');
+  assert.equal(singleParts.length,1);
+  assert.ok(singleParts[0].blob.size<=10,'single-page PDF must be compressed under the size cap');
+  assert.equal(singleParts[0].dpi,120,'single-page overflow should retry at a lower DPI');
+
+  const impossibleApi=global.PTI093PdfExportCore.install({
+    state:singleState,PDF_SAFE_LIMIT:10,
+    drawPage:async()=>({}),
+    makePdfAt:(items,dpi,quality)=>({bytes:new Uint8Array(20),dpi,quality}),
+    pagePixels:()=>({dpi:150}),jpegQuality:()=>0.8,pdfPackSize:bytes=>bytes.length
+  });
+  await assert.rejects(()=>impossibleApi.splitHighQualityPdf('impossible.pdf'),/vượt giới hạn an toàn/,'must fail clearly rather than emit an oversized part');
+  console.log('PDF Export Core tests passed: splitting, labels, progress, single-page compression, and hard size cap.');
 })().catch(e=>{console.error(e);process.exit(1)});
