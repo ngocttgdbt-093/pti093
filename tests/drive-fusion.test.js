@@ -125,7 +125,7 @@ console.log('Drive record ID storage resilience contract passed.');
     classList:{add(){},remove(){},toggle(){}},appendChild(){},setAttribute(){},addEventListener(){},getBoundingClientRect(){return {top:0}}});
   const statusEvents=[],messages=[],progress=[],finished=[];
   const state={groups:[],current:{title:'',items:[]},driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,workspaceOpenPending:false,orientation:'portrait',per:6,addSeq:0};
-  let failSecondImage=true,fetchCalls=0,releaseSecondImage=null,signalSecondImageStarted;
+  let failSecondImage=true,failOpenRecord=false,fetchCalls=0,releaseSecondImage=null,signalSecondImageStarted;
   const secondImageStarted=new Promise(resolve=>{signalSecondImageStarted=resolve});
   global.document={querySelectorAll:()=>[]};
   global.scrollY=0;global.scrollTo=()=>{};
@@ -134,7 +134,7 @@ console.log('Drive record ID storage resilience contract passed.');
   };
   global.fetch=async url=>{
     fetchCalls++;
-    if(String(url).includes('action=openRecord'))return {json:async()=>({
+    if(String(url).includes('action=openRecord')){if(failOpenRecord)throw new Error('record endpoint unavailable');return {json:async()=>({
       success:true,
       project:{recordId:'DRIVE-PARTIAL',caseNumber:'HS-1',bks:'30A-1',sections:[{title:'Section A',items:[
         {fileId:'F1',fileName:'one.jpg',clientKey:'one'},
@@ -142,7 +142,7 @@ console.log('Drive record ID storage resilience contract passed.');
       ]}],settings:{orientation:'portrait',imagesPerPage:6}},
       record:{recordId:'DRIVE-PARTIAL',caseNumber:'HS-1',bks:'30A-1'},
       images:[{fileId:'F1',fileName:'one.jpg'},{fileId:'F2',fileName:'two.jpg'}]
-    })};
+    })};}
     if(String(url).includes('action=getImage')&&String(url).includes('fileId=F1'))return {json:async()=>({success:true,base64:Buffer.from('image-one').toString('base64'),mimeType:'image/jpeg',fileName:'one.jpg'})};
     if(String(url).includes('action=getImage')&&String(url).includes('fileId=F2')){
       if(failSecondImage)return new Promise(resolve=>{
@@ -195,7 +195,14 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.current.items.length,2,'both images should be restored on the successful retry');
     assert.equal(finished.length,1,'only the fully loaded retry should complete the progress bar');
     assert.match(statusEvents.at(-1).text,/Đã tải hoàn tất hồ sơ .*từ Google Drive/,'complete reopen should restore the success status');
-    console.log('Drive Fusion incomplete-open regression passed: partial loads warn and block writes; full reopen restores saving.');
+    const completedTitle=state.current.title;
+    failOpenRecord=true;
+    await assert.rejects(()=>api.openRecordFromDrive('DRIVE-UNAVAILABLE'),/record endpoint unavailable/);
+    assert.equal(state.workspaceOpenPending,false,'failed Drive open must release shared workspace lock');
+    assert.equal(state.driveOpenPending,false,'failed Drive open must release Drive pending lock');
+    assert.equal(state.current.title,completedTitle,'failed Drive open must preserve the active workspace');
+    assert.match(statusEvents.at(-1).text,/Không thể đọc hồ sơ từ Google Drive/,'failed Drive open must surface an actionable status');
+    console.log('Drive Fusion regressions passed: partial loads block writes, full reopen recovers, and network failure releases locks safely.');
   }finally{
     global.fetch=originalFetch;console.warn=originalWarn;
     if(originalDocument===undefined)delete global.document;else global.document=originalDocument;
