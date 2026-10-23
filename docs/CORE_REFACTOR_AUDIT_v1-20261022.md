@@ -535,6 +535,6 @@ See `docs/CORE_MODULE_MAP_v1-20261023.md` for current module responsibilities an
 
 - Active review target: PR #8, branch `refactor/core-modules-review-20261023`. PR #7 / `refactor/core-modules-test-20261022` is historical audit history only; do not merge it.
 - The clean review branch was created to avoid carrying the original branch's 500+ commit history into review. Keep all work isolated from `main` and the separate PTI repository.
-- Latest previously verified full CI runs were push **#1090** and PR **#1091**, both passing on `73e4134d87ab44a24770c1f16797f4bb646a7372`. A documentation-only correction was then committed to make the module map identify the clean review branch and not the historical test branch; the resulting head must pass its own CI before it is called fully validated.
+- Latest full CI runs on this clean review branch passed: push **#1094** and PR **#1095**, both on head `2dea79fbda5bae225122c181567f5085b3f3ddfb`. These runs include the documentation corrections identifying the clean review branch and current handoff status.
 - The known remaining acceptance gap is physical/manual regression on the user's PC and iPhone using real case photos, including the 10-image upload timing comparison, reload recovery, local save/reopen, PDF output, date mask, reorder, caption, and rotation.
 - Do not merge or deploy production until that manual acceptance is completed and a separate release decision is given. No DOCX temporary-draft path should be reintroduced; local draft persistence remains IndexedDB-based.
