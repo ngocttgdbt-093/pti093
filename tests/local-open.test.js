@@ -139,6 +139,29 @@ const api = global.PTI093LocalOpenCore.install({
   assert.match(missingCalls.progress.at(-1)[3],/Không tìm thấy bản lưu tại máy/,
     'missing metadata must not leave the local-open progress stuck');
 
+  const incompleteDb={
+    close(){},
+    transaction(storeName){
+      if(storeName==='drafts')return {objectStore:()=>({get:()=>{const req={};queueMicrotask(()=>{req.result=meta;req.onsuccess&&req.onsuccess()});return req}})};
+      if(storeName==='draftImages')return {objectStore:()=>({index:()=>({getAll:()=>{const req={};queueMicrotask(()=>{req.result=storedImages.slice(0,1);req.onsuccess&&req.onsuccess()});return req}})})};
+      throw new Error('Unexpected store: '+storeName);
+    }
+  };
+  const incompleteCalls={progress:[]};
+  const incompleteApi=global.PTI093LocalOpenCore.install({
+    state:appState,$:element,msg:()=>{},openLocalDraftDB:async()=>incompleteDb,
+    setDateInput:()=>{},render:()=>{throw new Error('Must not render a partial restore')},
+    renderLayout:()=>{throw new Error('Must not render a partial restore')},setDriveState:()=>{},
+    deviceStorageLabel:()=> 'PC',setOpenLoad:(...args)=>incompleteCalls.progress.push(args),finishOpenLoad:()=>{}
+  });
+  const stateBeforeIncompleteOpen=JSON.stringify(appState);
+  await assert.rejects(incompleteApi.openLocalDraft('LOCAL-TEST-1'),/thiếu dữ liệu của 1\/2 ảnh/,
+    'opening a draft with missing image blobs must fail instead of silently dropping photos');
+  assert.equal(JSON.stringify(appState),stateBeforeIncompleteOpen,
+    'an incomplete draft must not replace or mutate the currently open workspace');
+  assert.match(incompleteCalls.progress.at(-1)[3],/Hồ sơ đang mở được giữ nguyên/,
+    'incomplete restore must show an actionable message and preserve the active case');
+
   const originalSessionStorage=global.sessionStorage,originalLocalStorage=global.localStorage;
   global.sessionStorage={getItem(){throw new Error('sessionStorage blocked')},setItem(){throw new Error('sessionStorage blocked')},removeItem(){throw new Error('sessionStorage blocked')}};
   global.localStorage={getItem(){throw new Error('localStorage blocked')},setItem(){throw new Error('localStorage blocked')},removeItem(){throw new Error('localStorage blocked')}};
