@@ -27,8 +27,8 @@
         }
       }
       function mib(n){return n/1048576}
-      function assertExportSnapshot(pages,pageDefs){
-        if(state.workspaceOpenPending||state.pages!==pages||state.pageDefs!==pageDefs){
+      function assertExportSnapshot(pages,pageDefs,workspaceRevisionAtStart){
+        if(state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart||state.pages!==pages||state.pageDefs!==pageDefs){
           const error=new Error('Hồ sơ đã thay đổi trong lúc xuất PDF. Bản nháp hiện tại được giữ nguyên; hãy tạo Preview lại rồi xuất PDF lần nữa.');
           error.code='PDF_WORKSPACE_CHANGED';
           throw error;
@@ -38,7 +38,7 @@
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xuất PDF.',true);return}
         if(pdfHighQualityRunning)return;
         if(!state.pages||!state.pages.length){msg('Không có trang PDF để xuất.',true);return}
-        const exportPages=state.pages,exportPageDefs=state.pageDefs;
+        const exportPages=state.pages,exportPageDefs=state.pageDefs,exportWorkspaceRevision=Number(state.workspaceRevision)||0;
         pdfHighQualityRunning=true;if(button)button.disabled=true;
         const checkbox=$('pdfHighQualityCheck');if(checkbox)checkbox.disabled=true;
         const wrap=$('pdfHighProgressWrap'),label=$('pdfHighProgressLabel'),pct=$('pdfHighProgressPct'),bar=$('pdfHighProgressBar');
@@ -55,13 +55,13 @@
         try{
           update(2,'Đang chuẩn bị xuất PDF chất lượng cao…');await new Promise(resolve=>setTimeout(resolve,40));
           const parts=await splitHighQualityPdf(filenameBase,update,{pages:exportPages,pageDefs:exportPageDefs});
-          assertExportSnapshot(exportPages,exportPageDefs);
+          assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision);
           if(!parts.length)throw new Error('Không tạo được tệp PDF nào.');
           for(let i=0;i<parts.length;i++){
-            assertExportSnapshot(exportPages,exportPageDefs);
+            assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision);
             update(80+Math.round(i/parts.length*19),'Đang xuất tệp '+(i+1)+'/'+parts.length+' · '+parts[i].filename+' ('+mib(parts[i].blob.size).toFixed(2)+' MB)…');
             await new Promise(resolve=>setTimeout(resolve,80));await exportPdfFile(parts[i].blob,parts[i].filename);
-            assertExportSnapshot(exportPages,exportPageDefs);
+            assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision);
             update(80+Math.round((i+1)/parts.length*19),'Đã gửi '+(i+1)+'/'+parts.length+' tệp PDF để lưu.');
             await new Promise(resolve=>setTimeout(resolve,180));
           }
@@ -83,19 +83,19 @@
       async function exportStandardPdf(button){
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xuất PDF.',true);return}
         if(!state.pages||!state.pages.length)return;
-        const exportPages=state.pages,exportPageDefs=state.pageDefs;
+        const exportPages=state.pages,exportPageDefs=state.pageDefs,exportWorkspaceRevision=Number(state.workspaceRevision)||0;
         const btn=button||$('pdf');btn.disabled=true;
         try{
           const baseName=pdfFileName();
           msg('Đang kiểm tra dung lượng PDF...',true);
           const result=await buildAdaptivePdf(exportPages);
-          assertExportSnapshot(exportPages,exportPageDefs);
+          assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision);
           const size=mib(pdfPackSize(result.bytes));
           const warnings=getPdfWarningSkin();
           if(!result.compressed){
             const blob=new Blob([result.bytes],{type:'application/pdf'});
             await exportPdfFile(blob,baseName);
-            assertExportSnapshot(exportPages,exportPageDefs);
+            assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision);
             $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
             msg('Đã xuất PDF '+size.toFixed(2)+' MB · không cần nén ảnh · '+result.dpi+' DPI · JPEG '+Math.round(result.quality*100)+'%.',true);
             warnings.hidePdfWarning();
@@ -103,7 +103,7 @@
           }else{
             const blob=new Blob([result.bytes],{type:'application/pdf'});
             await exportPdfFile(blob,baseName);
-            assertExportSnapshot(exportPages,exportPageDefs);
+            assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision);
             $('backEdit').style.display='inline-block';$('newCase').style.display='inline-block';
             msg('Đã xuất PDF '+size.toFixed(2)+' MB bằng chế độ nén. Vui lòng kiểm tra lại bản ảnh sau khi xuất.',true);
             warnings.showPdfWarning('Dung lượng bản PDF ở chất lượng cao không phù hợp giới hạn 10 MB nên phần mềm đã nén ảnh. Bạn có thể xuất lại ở chất lượng cao; phần mềm sẽ tự tách thành nhiều file.',baseName);
