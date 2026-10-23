@@ -128,6 +128,10 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
         run: node tests/workspace-mutation-revision.test.js
 
+      - name: Test form inputs are guarded during workspace transitions
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
+        run: node tests/workspace-lock-inputs.test.js
+
       - name: Test Local Draft Store when IndexedDB is blocked or unavailable
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
         run: node tests/local-draft-store-storage-blocked.test.js

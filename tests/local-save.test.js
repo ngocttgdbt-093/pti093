@@ -294,3 +294,26 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.ok(messages.some(text=>/Hồ sơ đã thay đổi trong lúc xác nhận lưu/.test(text)),'user should receive a clear stale-confirmation warning');
   console.log('Local Save confirmation-transition race regression passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+(async()=>{
+  let releaseOpen,transactionCount=0;
+  const opened=new Promise(resolve=>{releaseOpen=resolve});
+  const state={groups:[],current:{title:'Metadata race',items:[]},localDraftId:'',driveRecordId:'DRIVE-KEEP',workspaceRevision:8,workspaceMutationRevision:3};
+  const elements={};
+  const db={close(){},transaction(){transactionCount++;throw new Error('transaction must not start after metadata changed')}};
+  const api=global.PTILocalSaveCore.install({
+    state,$:id=>elements[id]||(elements[id]={value:'',textContent:'',disabled:false,style:{},dataset:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[{title:'Metadata race',items:[]}],
+    openLocalDraftDB:async()=>opened,localDraftTransactionDone:async()=>{},getDateISO:()=>'',selectedGdv:()=>'',
+    setDriveState:noop,msg:noop,renderLocalSaveFeedback:noop,showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{}
+  });
+  const saving=api.saveLocalDraft();
+  state.workspaceMutationRevision++;
+  releaseOpen(db);
+  await assert.rejects(saving,/Hồ sơ đã thay đổi trong lúc chuẩn bị lưu/,
+    'local save must reject if form metadata changes while IndexedDB is opening');
+  assert.equal(transactionCount,0,'metadata-stale local save must not start a write transaction');
+  assert.equal(state.driveRecordId,'DRIVE-KEEP','metadata race must preserve the active Drive identity');
+  console.log('Local Save metadata mutation race regression passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
