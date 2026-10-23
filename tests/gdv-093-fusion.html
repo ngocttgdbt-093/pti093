@@ -3,5 +3,5 @@
 <script src="../fusion/gdv-093.js"></script>
 <script>
 window.promptValue='';window.promptCalls=0;
-window.gdvFusion=window.PTI093GdvFusion.install({$:id=>document.getElementById(id),prompt:()=>{window.promptCalls++;return window.promptValue;},storage:localStorage});
+window.gdvState={workspaceOpenPending:false};window.gdvFusion=window.PTI093GdvFusion.install({$:id=>document.getElementById(id),prompt:()=>{window.promptCalls++;return window.promptValue;},storage:localStorage,state:window.gdvState});
 </script></body></html>

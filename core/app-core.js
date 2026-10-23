@@ -11,7 +11,7 @@ const safeLocalStorage={
   setItem(key,value){try{window.localStorage.setItem(key,value)}catch(e){}},
   removeItem(key){try{window.localStorage.removeItem(key)}catch(e){}}
 };
-const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:safeLocalStorage});
+const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:safeLocalStorage,state});
 const {names:PTI093_GDV_NAMES,selectedGdv}=gdvFusion;
 const classicStatusSkin=window.PTI093ClassicStatusSkin.install({$});
 const {msg,setDriveState}=classicStatusSkin;

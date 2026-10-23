@@ -34,6 +34,18 @@ const {chromium}=require('playwright');
     assert.equal(persistence.custom,'Nguyễn Văn C');
     assert.equal(persistence.dataset,'Nguyễn Văn C');
     assert.equal(persistence.autoSaveCalls,2);
+    const workspaceLock=await page.evaluate(()=>{
+      const select=document.getElementById('gdv');
+      const previous=localStorage.getItem('pti093_gdv');
+      const beforeAuto=window.autoSaveCalls;
+      window.gdvState.workspaceOpenPending=true;
+      select.value='Nguyễn Minh Ngọc';select.dispatchEvent(new Event('change'));
+      const during={stored:localStorage.getItem('pti093_gdv'),autoSaveCalls:window.autoSaveCalls,value:select.value};
+      window.gdvState.workspaceOpenPending=false;
+      return {previous,beforeAuto,during};
+    });
+    assert.equal(workspaceLock.during.stored,workspaceLock.previous,'GĐV preference must not be persisted during a workspace transition');
+    assert.equal(workspaceLock.during.autoSaveCalls,workspaceLock.beforeAuto,'transient GĐV selection must not schedule an autosave while the workspace is locked');
     const blocked=await page.evaluate(()=>{
       const originalGet=Storage.prototype.getItem,originalSet=Storage.prototype.setItem;
       try{

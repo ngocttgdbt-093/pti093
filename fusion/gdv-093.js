@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093GdvFusion = {
     install: function(deps){
-      const $=deps.$,promptFn=deps.prompt||global.prompt,storage=deps.storage||global.localStorage;
+      const $=deps.$,promptFn=deps.prompt||global.prompt,storage=deps.storage||global.localStorage,state=deps.state;
       const names=['Phạm Duy Thái','Đặng Xuân Linh','Nguyễn Tuấn Hưng','Đặng Xuân Diệu','Đặng Văn Hiên','Nguyễn Minh Ngọc'];
       function readStored(key){
         try{return storage.getItem(key)||''}catch(e){return ''}
@@ -30,6 +30,9 @@
         if(saved&&[...select.options].some(option=>option.value===saved))select.value=saved;
         else if(custom)select.value='Nhập tên khác';
         select.addEventListener('change',()=>{
+          // Opening/saving a workspace is serialized; don't persist a transient selection
+          // made while the active case is being replaced or saved.
+          if(state&&state.workspaceOpenPending)return;
           if(select.value!=='Nhập tên khác'){
             if(select.value)writeStored('pti093_gdv',select.value);
           }else{
