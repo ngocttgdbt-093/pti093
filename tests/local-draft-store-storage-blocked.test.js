@@ -114,6 +114,14 @@ function restoreIndexedDB() {
     await assert.rejects(abortedPromise, error => error === abortError,
       'an aborted write transaction must reject with the transaction error');
 
+    const erroredTx = {};
+    const erroredPromise = store.localDraftTransactionDone(erroredTx);
+    const transactionError = new Error('Synthetic transaction error');
+    erroredTx.error = transactionError;
+    erroredTx.onerror();
+    await assert.rejects(erroredPromise, error => error === transactionError,
+      'a transaction error must reject with the transaction error');
+
     const completedTx = {};
     const completedPromise = store.localDraftTransactionDone(completedTx);
     completedTx.oncomplete();
