@@ -151,11 +151,11 @@ const api = global.PTI093LocalOpenCore.install({
       throw new Error('Unexpected store: '+storeName);
     }
   };
-  const incompleteCalls={progress:[]};
+  const incompleteCalls={progress:[],status:[]};
   const incompleteApi=global.PTI093LocalOpenCore.install({
     state:appState,$:element,msg:()=>{},openLocalDraftDB:async()=>incompleteDb,
     setDateInput:()=>{},render:()=>{throw new Error('Must not render a partial restore')},
-    renderLayout:()=>{throw new Error('Must not render a partial restore')},setDriveState:()=>{},
+    renderLayout:()=>{throw new Error('Must not render a partial restore')},setDriveState:text=>incompleteCalls.status.push(text),
     deviceStorageLabel:()=> 'PC',setOpenLoad:(...args)=>incompleteCalls.progress.push(args),finishOpenLoad:()=>{}
   });
   const stateBeforeIncompleteOpen=JSON.stringify(appState);
@@ -165,6 +165,8 @@ const api = global.PTI093LocalOpenCore.install({
     'an incomplete draft must not replace or mutate the currently open workspace');
   assert.match(incompleteCalls.progress.at(-1)[3],/Hồ sơ đang mở được giữ nguyên/,
     'incomplete restore must show an actionable message and preserve the active case');
+  assert.match(incompleteCalls.status.at(-1),/thiếu dữ liệu của 1\/2 ảnh/,
+    'incomplete restore must clear the stale loading status with the missing-image error');
 
   const failedListDb={
     close(){closed++},
@@ -188,6 +190,8 @@ const api = global.PTI093LocalOpenCore.install({
   assert.equal(JSON.stringify(appState),stateBeforeImageListFailure,
     'failed image-list read must not partially replace the active workspace or record IDs');
   assert.equal(failedListCalls.rendered,0,'failed image-list read must not render a partial case');
+  assert.match(failedListCalls.status.at(-1),/Không thể đọc bản lưu tại máy/,
+    'failed image-list read must clear the stale loading status');
   assert.match(failedListCalls.progress.at(-1)[3],/Không thể đọc bản lưu tại máy/,
     'failed image-list read must replace the loading message with an actionable error');
   assert.equal(closed,closedBeforeImageListFailure+1,'database connection must close after the failed parallel read');
