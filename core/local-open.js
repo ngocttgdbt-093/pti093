@@ -25,6 +25,7 @@
         const imageMap=new Map((images||[]).map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
         const groups=[];
         let missing=0;
+        let nextAddSeq=state.addSeq||0;
         const expectedImages=(meta.sections||[]).reduce((n,g)=>n+((g.items||[]).length),0);
         let loadedCount=0;
         setOpenLoad(source,0,expectedImages,expectedImages?'Đang tải ảnh từ '+source+' vào ứng dụng...':'Bản lưu không có ảnh.');
@@ -36,10 +37,15 @@
             const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
             loadedCount++;
             setOpenLoad(source,loadedCount,expectedImages,'Đang tải ảnh '+loadedCount+'/'+expectedImages+' từ '+source+'...');
-            items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++state.addSeq),driveFileId:'',driveFileName:'',driveUploadKey:''});
+            items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:'',driveFileName:'',driveUploadKey:''});
           });
           if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
         });
+        if(missing>0){
+          const detail='Không thể mở đầy đủ bản lưu: thiếu dữ liệu của '+missing+'/'+expectedImages+' ảnh. Hồ sơ đang mở được giữ nguyên.';
+          setOpenLoad(source,loadedCount,expectedImages,detail);
+          throw new Error(detail);
+        }
         if(!String(id).startsWith('LOCAL-')){
           state.driveRecordId=id;
           try{global.sessionStorage.setItem('pti093_driveRecordId',id)}catch(e){}
