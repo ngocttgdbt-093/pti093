@@ -93,12 +93,12 @@
       }
       async function openLocalDraft(id){
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
-        // Mark the transition before awaiting IndexedDB. Even a failed open invalidates
-        // any PDF/autosave snapshot that overlapped the attempted workspace switch.
-        state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
         state.workspaceOpenPending=true;
         try{
           const result=await openLocalDraftUnlocked(id);
+          // Local open validates metadata and every image before mutating the workspace.
+          // Increment only after a successful replacement; a failed read leaves state intact.
+          state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
           state.driveOpenPending=false;state.workspaceOpenPending=false;
           if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
           return result;

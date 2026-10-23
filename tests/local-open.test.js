@@ -127,7 +127,7 @@ const api = global.PTI093LocalOpenCore.install({
   });
   const revisionBeforeFailedOpen=Number(appState.workspaceRevision)||0;
   await assert.rejects(failureApi.openLocalDraft('LOCAL-FAIL'),/IndexedDB unavailable/);
-  assert.equal(appState.workspaceRevision,revisionBeforeFailedOpen+1,'failed local-open attempt must invalidate overlapping PDF/autosave snapshots');
+  assert.equal(appState.workspaceRevision,revisionBeforeFailedOpen,'failed local-open must leave the active workspace revision unchanged');
   assert.match(failureCalls.progress.at(-1)[3],/Không thể đọc bản lưu tại máy/,
     'failed local-open must replace the stuck loading message with an actionable error');
   assert.match(failureCalls.status.at(-1),/Không thể đọc bản lưu tại máy/,
