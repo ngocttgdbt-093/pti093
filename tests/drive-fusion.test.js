@@ -123,7 +123,7 @@ console.log('Drive record ID storage resilience contract passed.');
   const elements={};
   const element=id=>elements[id]||(elements[id]={value:'',textContent:'',innerHTML:'',style:{},options:[],dataset:{},disabled:false,onclick:null,
     classList:{add(){},remove(){},toggle(){}},appendChild(){},setAttribute(){},addEventListener(){},getBoundingClientRect(){return {top:0}}});
-  const statusEvents=[],messages=[],progress=[],finished=[];
+  const statusEvents=[],messages=[],progress=[],finished=[],autosaveEvents=[];
   const state={groups:[],current:{title:'',items:[]},driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,workspaceOpenPending:false,orientation:'portrait',per:6,addSeq:0};
   let failSecondImage=true,failOpenRecord=false,fetchCalls=0,releaseSecondImage=null,signalSecondImageStarted;
   const secondImageStarted=new Promise(resolve=>{signalSecondImageStarted=resolve});
@@ -155,7 +155,7 @@ console.log('Drive record ID storage resilience contract passed.');
   };
   console.warn=()=>{};
   const api=global.PTI093DriveFusion.install({
-    ...deps,state,$:element,
+    ...deps,state,$:element,scheduleAutoDraftSave:dirty=>autosaveEvents.push(dirty),
     setDriveState:(text,ok)=>statusEvents.push({text,ok}),
     setOpenLoad:(...args)=>progress.push(args),
     finishOpenLoad:(...args)=>finished.push(args),
@@ -176,6 +176,7 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.workspaceOpenPending,false,'shared workspace lock must clear after the downloads settle');
     assert.equal(state.driveOpenPending,false,'pending-open lock must clear after the downloads settle');
     assert.equal(state.driveOpenIncomplete,true,'a partially loaded Drive record must be marked unsafe to overwrite');
+    assert.equal(autosaveEvents.at(-1),true,'partial Drive open must autosave the partial workspace together with its write guard');
     assert.match(statusEvents.at(-1).text,/chỉ tải được 1\/2 ảnh/,'partial open must not report success');
     assert.equal(statusEvents.at(-1).ok,false,'partial open status must be an error/warning state');
     assert.equal(finished.length,0,'partial open must not mark the progress bar as fully completed');
@@ -192,6 +193,7 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.workspaceOpenPending,false,'complete reopen must clear shared workspace lock');
     assert.equal(state.driveOpenPending,false,'complete reopen must clear pending-open lock');
     assert.equal(state.driveOpenIncomplete,false,'a subsequent complete reopen must clear the guard');
+    assert.equal(autosaveEvents.at(-1),true,'complete Drive open must replace any stale AUTO-DRAFT for this session');
     assert.equal(state.current.items.length,2,'both images should be restored on the successful retry');
     assert.equal(finished.length,1,'only the fully loaded retry should complete the progress bar');
     assert.match(statusEvents.at(-1).text,/Đã tải hoàn tất hồ sơ .*từ Google Drive/,'complete reopen should restore the success status');
