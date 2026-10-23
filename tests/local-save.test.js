@@ -133,7 +133,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   const itemA={file:{name:'scene.jpg',type:'image/jpeg',lastModified:111,size:10},key:'scene-key',caption:'Toàn cảnh',rotate:90,addSeq:4,driveFileId:'DRIVE-A',driveFileName:'scene.jpg',driveUploadKey:'upload-a'};
   const itemB={file:{name:'damage.jpg',type:'image/jpeg',lastModified:222,size:20},key:'damage-key',caption:'Mặt trước',rotate:180,addSeq:7,driveFileId:'DRIVE-B',driveFileName:'damage.jpg',driveUploadKey:'upload-b'};
   const savedMetadata=[],savedImages=[],elements={};
-  const localState={groups:[{title:'Ảnh hiện trường',items:[itemA]}],current:{title:'Ảnh thiệt hại',items:[itemB]},localDraftId:'',driveRecordId:'DRIVE-CASE-1',orientation:'portrait',per:6};
+  const localState={groups:[{title:'Ảnh hiện trường',items:[itemA]}],current:{title:'Ảnh thiệt hại',items:[itemB]},localDraftId:'',driveRecordId:'DRIVE-CASE-1',driveOpenIncomplete:true,orientation:'portrait',per:6};
   global.IDBKeyRange={only:value=>value};
   const db={
     close(){},
@@ -173,6 +173,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.equal(savedImages[1].file,itemB.file);
   assert.equal(localState.localDraftId,id);
   assert.equal(localState.driveRecordId,'');
+  assert.equal(localState.driveOpenIncomplete,false,'successful local copy must clear the Drive incomplete-open guard');
   assert.equal(itemA.driveFileId,'');
   assert.equal(itemA.driveUploadKey,'');
   assert.equal(itemB.driveFileId,'');
@@ -187,7 +188,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   // transaction can fail after requests are queued. The Drive state must still survive.
   const item={file:{name:'transaction-failure.jpg',type:'image/jpeg',lastModified:7,size:9},driveFileId:'DRIVE-FILE-KEEP',driveFileName:'transaction-failure.jpg',driveUploadKey:'upload-keep'};
   const elements={};
-  const appState={groups:[],current:{title:'Thiệt hại',items:[item]},localDraftId:'LOCAL-PREVIOUS',driveRecordId:'DRIVE-CASE-KEEP',orientation:'portrait',per:6};
+  const appState={groups:[],current:{title:'Thiệt hại',items:[item]},localDraftId:'LOCAL-PREVIOUS',driveRecordId:'DRIVE-CASE-KEEP',driveOpenIncomplete:true,orientation:'portrait',per:6};
   global.IDBKeyRange={only:value=>value};
   const tx={objectStore(name){
     if(name==='drafts')return {put(){}};
@@ -207,6 +208,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   await assert.rejects(failureApi.saveLocalDraft(),/Synthetic write transaction aborted/);
   assert.equal(appState.driveRecordId,'DRIVE-CASE-KEEP','aborted IndexedDB writes must preserve the active Drive record ID');
   assert.equal(appState.localDraftId,'LOCAL-PREVIOUS','aborted IndexedDB writes must preserve the previous local record ID');
+  assert.equal(appState.driveOpenIncomplete,true,'failed local copy must retain the incomplete-Drive guard');
   assert.equal(item.driveFileId,'DRIVE-FILE-KEEP','aborted IndexedDB writes must preserve image Drive references');
   assert.equal(item.driveUploadKey,'upload-keep','aborted IndexedDB writes must preserve upload tracking');
   assert.match(elements.driveId.textContent,/DRIVE-CASE-KEEP/,'UI should keep the valid Drive ID after an aborted local save');
