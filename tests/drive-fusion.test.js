@@ -243,8 +243,21 @@ console.log('Drive record ID storage resilience contract passed.');
       renderLayout:()=>{if(failFinalLayout){failFinalLayout=false;throw new Error('synthetic final layout failure')}},
       msg:(text,show)=>messages.push({text,show})
     });
+    state.orientation='landscape';
+    state.per=4;
+    const countButtons=[1,2,4,6].map(n=>({textContent:String(n),dataset:{},on:false,classList:{toggle(name,on){this.owner.on=on},owner:null}}));
+    countButtons.forEach(b=>{b.classList.owner=b;b.classList.toggle('on',Number(b.textContent)===4)});
+    const orientButtons=[{textContent:'Portrait',dataset:{o:'portrait'},on:false,classList:{toggle(name,on){this.owner.on=on},owner:null}},{textContent:'Landscape',dataset:{o:'landscape'},on:false,classList:{toggle(name,on){this.owner.on=on},owner:null}}];
+    orientButtons.forEach(b=>{b.classList.owner=b;b.classList.toggle('on',b.dataset.o==='landscape')});
+    const priorDocument=global.document;
+    global.document={querySelectorAll(selector){return selector==='#counts .opt'?countButtons:selector==='#orient .opt'?orientButtons:[]}};
     const revisionBeforeRollback=Number(state.workspaceRevision)||0;
     await assert.rejects(()=>rollbackApi.openRecordFromDrive('DRIVE-PARTIAL'),/synthetic final layout failure/);
+    assert.equal(state.orientation,'landscape','failed Drive Open must restore prior orientation setting');
+    assert.equal(state.per,4,'failed Drive Open must restore prior images-per-page setting');
+    assert.deepEqual(countButtons.filter(b=>b.on).map(b=>Number(b.textContent)),[4],'failed Drive Open must restore the visible image-count selection');
+    assert.deepEqual(orientButtons.filter(b=>b.on).map(b=>b.dataset.o),['landscape'],'failed Drive Open must restore the visible orientation selection');
+    global.document=priorDocument;
     assert.equal(state.groups,priorGroups,'failed post-mutation Drive Open must restore prior group collection');
     assert.equal(state.current,priorCurrent,'failed post-mutation Drive Open must restore prior active group');
     assert.equal(state.driveRecordId,'PRIOR-DRIVE','failed Drive Open must restore the prior Drive record identity');

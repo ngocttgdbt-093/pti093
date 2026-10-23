@@ -286,6 +286,12 @@
           if(snapshot.storedRecordId)global.sessionStorage.setItem('pti093_driveRecordId',snapshot.storedRecordId);
           else global.sessionStorage.removeItem('pti093_driveRecordId');
         }catch(e){}
+        // Restore layout controls directly before rendering: if rendering itself caused the
+        // failure, a second render may fail too, but the visible selections must still match state.
+        try{
+          document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per));
+          document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
+        }catch(e){}
         // Restore derived views when possible; a rendering failure must not mask the open error.
         try{render();renderLayout()}catch(e){}
       }
