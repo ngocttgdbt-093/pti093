@@ -12,7 +12,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     state:{pages},
     $:id=>elements[id]||(elements[id]={style:{},textContent:''}),
     splitHighQualityPdf:async(name,update)=>{events.splitName=name;events.update=update;return parts;},
-    exportPdfFile:async(blob,name)=>{if(failExport)throw new Error('download failed');events.exports.push({blob,name});},
+    exportPdfFile:async(blob,name)=>{if(failExport)throw failExport==='abort'?Object.assign(new Error('user cancelled'),{name:'AbortError'}):new Error('download failed');events.exports.push({blob,name});},
     buildAdaptivePdf:async pages=>{events.pagesPassed=pages;if(failBuild)throw new Error('build failed');return pdfResult;},
     pdfPackSize:bytes=>bytes.length,
     pdfFileName:()=> 'case.pdf',
@@ -55,6 +55,20 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(elements.pdfHighQualityCheck.disabled,false);
     assert.match(events.alerts[0],/download failed/);
     assert.equal(events.finalized,0,'failed high-quality export must retain the auto-draft for recovery');
+  }
+  {
+    const {api,events}=setup({failExport:'abort'});
+    await api.exportHighQualitySplit('case',{disabled:false},{textContent:''});
+    assert.equal(events.finalized,0,'cancelling iOS share must not clear AUTO-DRAFT');
+    assert.equal(events.alerts.length,0,'user cancellation should not be reported as an export error');
+    assert.match(events.messages.at(-1).text,/Đã hủy chia sẻ PDF/);
+  }
+  {
+    const {api,events}=setup({failExport:'abort'});
+    await api.exportStandardPdf({disabled:false});
+    assert.equal(events.finalized,0,'cancelling standard PDF share must retain AUTO-DRAFT');
+    assert.equal(events.alerts.length,0,'standard PDF cancellation should not show an error alert');
+    assert.match(events.messages.at(-1).text,/Đã hủy chia sẻ PDF/);
   }
   {
     const {api,events}=setup({pages:[]});
