@@ -30,6 +30,14 @@ assert.equal(api.resamplePdfCanvases([canvas], 150)[0], canvas);
   assert.equal(parts[0].filename, 'sample Phan 1.pdf');
   assert.equal(parts[0].blob.type, 'application/pdf');
 
+  global.document = {
+    createElement: () => ({
+      width: 1, height: 1,
+      getContext: () => ({ fillStyle: '', fillRect() {}, drawImage() {} }),
+      toDataURL: () => 'data:image/jpeg;base64,' + fakeJpeg
+    })
+  };
+
   // Regression: the byte splitter must treat an oversized multi-page candidate as a split signal.
   const splitLimit=built.bytes.length+10;
   const splitApi=global.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT:splitLimit});
@@ -39,13 +47,6 @@ assert.equal(api.resamplePdfCanvases([canvas], 150)[0], canvas);
   assert.deepEqual(splitParts.map(part=>part.filename),['two-pages Phan 1.pdf','two-pages Phan 2.pdf']);
 
   // Regression: standard adaptive export must never return a PDF above its configured cap.
-  global.document = {
-    createElement: () => ({
-      width: 1, height: 1,
-      getContext: () => ({ fillStyle: '', fillRect() {}, drawImage() {} }),
-      toDataURL: () => 'data:image/jpeg;base64,' + fakeJpeg
-    })
-  };
   const strictApi = global.PTI093PdfBuilder.install({ state, PDF_SAFE_LIMIT: 1 });
   await assert.rejects(
     () => strictApi.buildAdaptivePdf([canvas]),
