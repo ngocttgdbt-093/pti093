@@ -47,7 +47,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''
           }))}));
           const meta={id:PTI093_AUTO_DRAFT_ID,auto:true,sessionId:PTI093_SESSION_ID,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
-            gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',
+            gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',driveOpenIncomplete:!!state.driveOpenIncomplete,
             localDraftId:state.localDraftId||'',settings:{orientation:state.orientation,imagesPerPage:state.per},
             currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
           const db=await openLocalDraftDB();
