@@ -102,3 +102,11 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 - Found a shared IndexedDB ownership hazard: a fresh tab previously cleared the single `AUTO-DRAFT` record when its `sessionId` differed, deleting another tab's recovery metadata and image blobs.
 - New tabs now use `AUTO-DRAFT-<sessionId>`; an existing legacy `AUTO-DRAFT` is adopted only when its `sessionId` matches the current tab. A foreign or owner-unknown legacy draft is left untouched. Active Drive record pointers remain in `sessionStorage`; tab-specific open/new-case/save operations no longer erase or update the same active-record key in shared `localStorage`.
 - Regression coverage is being added to assert that restoring and autosaving in a second session leaves the first session's metadata and image blobs intact. Existing same-session legacy recovery remains supported.
+
+
+## PDF export workspace-revision guard — 2026-10-23
+
+- PDF Export Controller now captures `workspaceRevision` at export start and checks it alongside page/page-definition identity and the pending-open lock after every asynchronous build/share boundary. This closes the case where a local/Drive open completes during PDF generation without replacing the `pages`/ `pageDefs` array references.
+- Standard PDF and high-quality split export regressions simulate a completed workspace switch while keeping the same page-array references; both assert that the stale export is not sent and the current session draft is not finalized/cleared.
+- CI **#1490** passed on head `37f773a4`: all 73 steps successful, including Chromium IndexedDB draft recovery, local-save Core, PDF Export Controller Core, and browser smoke tests.
+- The earlier CI runs **#1482–#1487** failed while the cross-tab isolation changes were being developed; the failures exposed outdated browser-test expectations that assumed one tab should erase another tab's shared pointer/draft. Updated browser fixtures now assert the intended isolation behavior. Latest validated head is `37f773a4`; documentation-only follow-up will trigger another CI run.
