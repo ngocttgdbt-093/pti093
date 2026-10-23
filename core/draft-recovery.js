@@ -31,6 +31,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
       }
       
       async function saveAutoDraft(){
+        if(state.workspaceOpenPending)return;
         if(autoDraftRestoring){autoDraftUserChangedDuringRestore=true;return}
         if(autoDraftResetting)return;
         if(autoDraftSaving){autoDraftAgain=true;return}
