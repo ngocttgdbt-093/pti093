@@ -215,3 +215,19 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   delete global.IDBKeyRange;
   console.log('Local Save transaction-abort regression passed (Drive/local identifiers and image references remain intact).');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+(async()=>{
+  const state={groups:[],current:{title:'Đang mở',items:[]},localDraftId:'',driveRecordId:'',workspaceOpenPending:true};
+  let opened=false;
+  const api=global.PTILocalSaveCore.install({
+    state,$:()=>({value:'',textContent:'',disabled:false,style:{},dataset:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[],openLocalDraftDB:async()=>{opened=true;throw new Error('should not open DB')},
+    localDraftTransactionDone:async()=>{},getDateISO:()=>'',selectedGdv:()=>'',setDriveState:noop,msg:noop,
+    renderLocalSaveFeedback:noop,showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{}
+  });
+  await assert.rejects(api.saveLocalDraft(),/Đang mở hồ sơ khác/,
+    'local save must not snapshot stale workspace while another record is opening');
+  assert.equal(opened,false,'blocked local save must not start an IndexedDB transaction');
+  console.log('Local Save workspace-open lock regression passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
