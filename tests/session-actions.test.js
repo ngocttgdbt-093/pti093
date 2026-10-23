@@ -3,7 +3,7 @@ global.window=global;
 require('../core/session-actions.js');
 assert.ok(global.PTI093SessionActions);
 function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}={}){
-  const store=new Map();if(storedCustom)store.set('pti093_gdv_custom',storedCustom);
+  const store=new Map([['pti093_driveRecordId','DRIVE-OLD']]);if(storedCustom)store.set('pti093_gdv_custom',storedCustom);
   const sessionStore=new Map([['pti093_driveRecordId','DRIVE-OLD']]);
   global.sessionStorage={
     getItem:key=>sessionStore.has(key)?sessionStore.get(key):null,
@@ -44,6 +44,7 @@ function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}
     assert.equal(started,false,'new case must not start when old draft cleanup fails');
     assert.equal(localStorage.getItem('pti093_gdv'),'Tên đã lưu');
     assert.equal(sessionStore.get('pti093_driveRecordId'),'DRIVE-OLD','failed cleanup must not alter the current Drive record identity');
+    assert.equal(localStorage.getItem('pti093_driveRecordId'),'DRIVE-OLD','failed cleanup must not clear the persisted Drive record ID');
     assert.equal(elements.newCase.disabled,false,'allow retry after cleanup failure');
     assert.equal(events.warnings.length,1);
     assert.match(events.messages[0],/bản nháp cũ chưa được dọn/);
