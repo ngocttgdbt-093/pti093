@@ -62,5 +62,22 @@ assert.equal(typeof api.restoreAutoDraft,'function');
     assert.equal(await failedCleanupApi.finalizeCompletedSession(),false,'finalizer must return false when AUTO-DRAFT cleanup fails');
     assert.equal(failedState.localDraftId,'LOCAL-1','failed cleanup must preserve the local draft ID for recovery/retry');
   }finally{console.warn=originalWarn2}
-  console.log('Draft Recovery storage-blocked tests passed (startup and explicit finalization success/failure results).');
+  const readStatuses=[],readMessages=[];
+  const readFailApi=global.PTI093DraftRecovery.install({
+    state:{groups:[],current:{title:'Active case',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'DRIVE-ACTIVE',localDraftId:'LOCAL-ACTIVE',orientation:'portrait',per:6,addSeq:0},
+    $:id=>({value:'',textContent:'',dataset:{},options:[],classList:{add(){},remove(){},toggle(){}}}),
+    getDateISO:()=> '2026-10-23',setDateInput:()=>{},render:()=>{},renderLayout:()=>{},
+    setDriveState:(text,ok)=>readStatuses.push({text,ok}),msg:text=>readMessages.push(text),
+    openLocalDraftDB:async()=>{throw new Error('IndexedDB read failed')},
+    localDraftTransactionDone:async()=>{},getLocalDrafts:async()=>[]
+  });
+  const originalWarn3=console.warn;console.warn=()=>{};
+  try{
+    await assert.doesNotReject(readFailApi.restoreAutoDraft(),'recovery read errors should be handled and surfaced without an unhandled rejection');
+    assert.match(readStatuses.at(-1).text,/Chưa đọc được bản nháp tự động/,
+      'failed recovery must replace any stale status with an actionable error');
+    assert.match(readMessages.at(-1),/Chưa đọc được bản nháp tự động/,
+      'failed recovery must also notify the user');
+  }finally{console.warn=originalWarn3}
+  console.log('Draft Recovery storage-blocked tests passed (startup, read-error status, and finalization success/failure).');
 })().catch(error=>{console.error(error);process.exitCode=1});
