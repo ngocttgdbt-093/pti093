@@ -5,6 +5,15 @@ const {chromium}=require('playwright');
   try{
     const page=await browser.newPage();
     await page.goto('http://127.0.0.1:4173/tests/classic-image-grid-skin.html');
+    await page.evaluate(()=>{
+      const original=URL.revokeObjectURL.bind(URL);
+      window.__revokedImageUrls=0;
+      URL.revokeObjectURL=url=>{window.__revokedImageUrls++;return original(url)};
+      window.gridSkin.render();
+    });
+    await page.waitForFunction(()=>window.__revokedImageUrls===2,{timeout:1500});
+    assert.equal(await page.evaluate(()=>window.__revokedImageUrls),2,
+      'thumbnail object URLs must be released even when an image cannot be decoded');
     const initial=await page.evaluate(()=>({
       thumbs:document.querySelectorAll('#grid .thumb').length,
       numbers:[...document.querySelectorAll('#grid .thumb .n')].map(x=>x.textContent),
