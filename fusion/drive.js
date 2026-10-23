@@ -4,6 +4,13 @@
     install: function(deps){
       const {state, $, msg, setDriveState, setOpenLoad, finishOpenLoad, getAllGroups, snapshotGroupsForProject, selectedGdv, scheduleAutoDraftSave, finalizeCompletedSession, getDateISO, setDateInput, render, renderLayout, deviceStorageLabel, searchQueryVariants, getLocalDrafts, openLocalDraft, normalizeRecordSearch, gdvSearchMatches, gdvInitials, wrap} = deps;
       const PTI093_API='https://script.google.com/macros/s/AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/exec';
+      function readStoredDriveRecordId(){
+        try{return global.sessionStorage.getItem('pti093_driveRecordId')||''}catch(e){return ''}
+      }
+      function persistDriveRecordId(recordId){
+        try{global.sessionStorage.setItem('pti093_driveRecordId',recordId)}catch(e){}
+        try{global.localStorage.setItem('pti093_driveRecordId',recordId)}catch(e){}
+      }
       
       
       /* Core workspace snapshot is injected by the app. */
@@ -98,8 +105,8 @@
         if(!data.success)throw new Error(data.error||'Không mở được hồ sơ');
         const p=data.project||{},rec=data.record||{};
         state.driveRecordId=rec.recordId||p.recordId||recordId;state.localDraftId='';
-        sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);
-        localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
+        // Storage chỉ là tiện ích khôi phục ID; không để chính sách chặn storage làm hỏng việc mở hồ sơ Drive.
+        persistDriveRecordId(state.driveRecordId);
         // Khi mở hồ sơ Drive trên thiết bị khác, không để dữ liệu AUTO-DRAFT cũ
         // tiếp tục hiển thị trong ô "Mã hồ sơ".
         $('bks').value=p.bks||rec.bks||'';
@@ -293,7 +300,7 @@
       }
 
       async function saveProjectToDrive(showMsg=true){
-        const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||'';
+        const id=state.driveRecordId||readStoredDriveRecordId()||'';
         if(!id)throw new Error('Chưa có hồ sơ Drive.');
         const revision=String(Date.now())+'-'+Math.random().toString(36).slice(2,8),payload=JSON.stringify({action:'saveProject',recordId:id,revision,project:buildProjectData()});
         await fetch(PTI093_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:payload,cache:'no-store',keepalive:false});
@@ -553,7 +560,7 @@
         try{
           const bks=($('bks').value||'').trim(),caseNumber=($('hoso').value||'').trim(),gdv=selectedGdv();
           const res=await fetch(PTI093_API+'?action=createRecord&bks='+encodeURIComponent(bks)+'&caseNumber='+encodeURIComponent(caseNumber)+'&gdv='+encodeURIComponent(gdv)+'&status='+encodeURIComponent('Đang xử lý'),{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
-          const data=await res.json();if(!data.success)throw new Error(data.error||'API không tạo được hồ sơ');state.driveRecordId=data.recordId||'';state.localDraftId='';sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId);localStorage.setItem('pti093_driveRecordId',state.driveRecordId);
+          const data=await res.json();if(!data.success)throw new Error(data.error||'API không tạo được hồ sơ');state.driveRecordId=data.recordId||'';state.localDraftId='';persistDriveRecordId(state.driveRecordId);
           $('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden');
           const result=await pti093UploadAll();if(!result||result.failures&&result.failures.length)throw new Error('Có ảnh chưa được xác nhận lưu lên Drive.');
           await saveProjectToDrive(false);const cleanupOk=await finalizeAfterSuccessfulDriveSave();if(cleanupOk){setDriveState('Đã tạo hồ sơ, lưu ảnh và lưu dữ liệu nháp.');msg('Đã tạo và lưu hồ sơ thành công. Có thể tìm lại theo Mã HS hoặc BKS.',true);}
