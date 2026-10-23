@@ -2,14 +2,14 @@ const assert=require('node:assert/strict');
 global.window=global;
 require('../core/pdf-export-controller.js');
 assert.ok(global.PTI093PdfExportController);
-function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false,failFinalize=false}={}){
+function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false,failFinalize=false,workspaceOpenPending=false}={}){
   const elements={};
   for(const id of ['pdfHighQualityCheck','pdfHighProgressWrap','pdfHighProgressLabel','pdfHighProgressPct','pdfHighProgressBar']){
     elements[id]={disabled:false,textContent:'',style:{display:'',width:''}};
   }
   const events={messages:[],exports:[],alerts:[],warnings:[],finalized:0};
   const api=global.PTI093PdfExportController.install({
-    state:{pages},
+    state:{pages,workspaceOpenPending},
     $:id=>elements[id]||(elements[id]={style:{},textContent:''}),
     splitHighQualityPdf:async(name,update)=>{events.splitName=name;events.update=update;return parts;},
     exportPdfFile:async(blob,name)=>{if(failExport)throw failExport==='abort'?Object.assign(new Error('user cancelled'),{name:'AbortError'}):new Error('download failed');events.exports.push({blob,name});},
@@ -71,6 +71,14 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(events.finalized,0,'cancelling standard PDF share must retain AUTO-DRAFT');
     assert.equal(events.alerts.length,0,'standard PDF cancellation should not show an error alert');
     assert.match(events.messages.at(-1).text,/Đã hủy chia sẻ PDF/);
+  }
+  {
+    const {api,events}=setup({workspaceOpenPending:true});
+    await api.exportStandardPdf({disabled:false});
+    await api.exportHighQualitySplit('case',{disabled:false},{textContent:''});
+    assert.equal(events.exports.length,0,'PDF export must not use stale pages while another record is opening');
+    assert.equal(events.finalized,0,'blocked PDF export must not clear AUTO-DRAFT');
+    assert.match(events.messages.at(-1).text,/Đang mở hồ sơ khác/);
   }
   {
     const {api,events}=setup({pages:[]});
