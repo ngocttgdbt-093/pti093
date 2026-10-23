@@ -9,12 +9,21 @@
           msg('PDF đã xuất, nhưng hồ sơ Drive đang thiếu ảnh. Bản nháp được giữ lại; hãy mở lại hồ sơ để tải đủ ảnh trước khi hoàn tất.',true);
           return;
         }
+        if(state.workspaceOpenPending){
+          msg('PDF đã xuất nhưng một thao tác mở hồ sơ khác đang diễn ra. Bản nháp hiện tại được giữ nguyên.',true);
+          return;
+        }
+        // Serialize AUTO-DRAFT cleanup with local/Drive opens so a newly opened case
+        // cannot race the post-export delete and lose its recovery draft.
+        state.workspaceOpenPending=true;
         try{
           const cleaned=await finalizeCompletedSession();
           if(cleaned===false)throw new Error('Không dọn được nháp tự động.');
         }catch(error){
           const detail=error&&error.message?error.message:String(error);
           msg('⚠️ PDF đã xuất thành công, nhưng chưa dọn được nháp tự động: '+detail+'. Hồ sơ đã xuất vẫn được giữ lại.',true);
+        }finally{
+          state.workspaceOpenPending=false;
         }
       }
       function mib(n){return n/1048576}
