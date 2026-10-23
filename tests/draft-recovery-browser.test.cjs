@@ -30,8 +30,12 @@ const { chromium } = require('playwright');
     await page.evaluate(()=>window.testHarness.seedIncompleteDriveDraft());
     await page.reload();
     const incompleteDraft=await page.evaluate(()=>window.testHarness.restoreIncompleteDriveDraft());
-    assert.deepEqual(incompleteDraft,{driveRecordId:'DRIVE-INCOMPLETE',driveOpenIncomplete:true,caseNumber:'HS-PARTIAL'},
+    assert.equal(incompleteDraft.driveRecordId,'DRIVE-INCOMPLETE');
+    assert.equal(incompleteDraft.driveOpenIncomplete,true,
       'AUTO-DRAFT reload must preserve the write guard for a partially loaded Drive record');
+    assert.equal(incompleteDraft.caseNumber,'HS-PARTIAL');
+    assert.match(incompleteDraft.status,/chưa tải đủ ảnh/,
+      'AUTO-DRAFT reload must visibly warn that the Drive record is incomplete');
     const incompleteCounts=await page.evaluate(()=>window.testHarness.cleanup());
     assert.deepEqual(incompleteCounts,{drafts:0,images:0});
 
