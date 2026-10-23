@@ -624,7 +624,7 @@
       }
       
       async function pti093UploadAll(){
-        if(state.driveOpenPending||state.driveOpenIncomplete){
+        if(state.workspaceOpenPending||state.driveOpenPending||state.driveOpenIncomplete){
           const detail=driveWriteBlockedMessage();
           setDriveState(detail,false);msg(detail,true);
           return {failures:[{index:0,name:'Hồ sơ Drive',error:detail}]};

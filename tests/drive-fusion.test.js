@@ -204,7 +204,25 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.driveOpenPending,false,'failed Drive open must release Drive pending lock');
     assert.equal(state.current.title,completedTitle,'failed Drive open must preserve the active workspace');
     assert.match(statusEvents.at(-1).text,/Không thể đọc hồ sơ từ Google Drive/,'failed Drive open must surface an actionable status');
-    console.log('Drive Fusion regressions passed: partial loads block writes, full reopen recovers, and network failure releases locks safely.');
+
+    // Regression: Local Open shares workspaceOpenPending but does not set the Drive-specific
+    // pending flag. The public uploader/save button must still refuse writes during that window.
+    state.workspaceOpenPending=true;
+    state.driveOpenPending=false;
+    state.driveOpenIncomplete=false;
+    (state.current.items||[]).forEach(item=>{
+      item.driveFileId='';
+      item.driveFileName='';
+      item.driveUploadKey='';
+      item.drivePendingUploadKey='';
+    });
+    const uploadCallsBeforeWorkspaceLock=fetchCalls;
+    const lockedUpload=await api.pti093UploadAll();
+    assert.equal(lockedUpload.failures.length,1,'uploader must reject while a local workspace transition holds the shared lock');
+    assert.match(lockedUpload.failures[0].error,/Đang mở hồ sơ/,'workspace lock rejection must explain that an open is in progress');
+    assert.equal(fetchCalls,uploadCallsBeforeWorkspaceLock,'upload must not start a Drive request while another workspace is opening');
+    state.workspaceOpenPending=false;
+    console.log('Drive Fusion regressions passed: partial loads block writes, full reopen recovers, network failure releases locks, and the shared workspace lock blocks upload.');
   }finally{
     global.fetch=originalFetch;console.warn=originalWarn;
     if(originalDocument===undefined)delete global.document;else global.document=originalDocument;
