@@ -17,7 +17,7 @@ function setup(groups,options={}){
   const win={scrollY:100,scrollTo:opts=>{events.scroll=opts;},pti093ClosePreview:()=>{events.closed=(events.closed||0)+1;}};
   const api=global.PTI093ClassicPreviewSkin.install({
     state,$:id=>elements[id],document:doc,window:win,
-    buildPreview:options.buildPreview||async(gs,per)=>{events.buildArgs={gs,per};return {pages:[{id:'page1'},{id:'page2'}],defs:[{pageNo:1},{pageNo:2}],totalImages:3};},
+    buildPreview:options.buildPreview||(async(gs,per)=>{events.buildArgs={gs,per};return {pages:[{id:'page1'},{id:'page2'}],defs:[{pageNo:1},{pageNo:2}],totalImages:3};}),
     getAllGroups:()=>groups,selectedGdv:()=> 'GĐV thử',
     setSelectedGdvCache:value=>{events.selected=value;},
     hidePdfWarning:()=>{events.hidden++;},msg:(text,ok)=>events.messages.push({text,ok}),
