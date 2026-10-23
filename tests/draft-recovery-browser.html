@@ -58,7 +58,7 @@
       restoreIncompleteDriveDraft:async()=>{
         state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;
         await api.restoreAutoDraft();
-        return {driveRecordId:state.driveRecordId,driveOpenIncomplete:state.driveOpenIncomplete,caseNumber:$('hoso').value};
+        return {driveRecordId:state.driveRecordId,driveOpenIncomplete:state.driveOpenIncomplete,caseNumber:$('hoso').value,status:document.body.dataset.driveState||''};
       },
       restoreNewSession:async()=>{
         await api.restoreAutoDraft();
