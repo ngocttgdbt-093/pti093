@@ -143,8 +143,8 @@
           return result;
         }catch(error){
           const mutated=(Number(state.workspaceRevision)||0)!==(Number(snapshot.stateSnapshot.workspaceRevision)||0);
-          restoreLocalOpenWorkspace(snapshot);
           if(mutated){
+            restoreLocalOpenWorkspace(snapshot);
             const detail='Không thể hoàn tất mở bản lưu tại máy: '+(error&&error.message?error.message:String(error))+'. Hồ sơ đang làm việc trước đó đã được khôi phục.';
             setDriveState(detail,false);msg(detail,true);
             if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
