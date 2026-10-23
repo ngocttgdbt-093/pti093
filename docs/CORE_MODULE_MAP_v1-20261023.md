@@ -18,10 +18,10 @@
 | `core/workspace.js` | Workspace group access and non-mutating project snapshots |
 | `core/group-workflow.js` | Group save/next, finish/preview, edit/cancel/confirm coordination |
 | `core/local-draft-store.js` | IndexedDB open/transaction/list primitives |
-| `core/draft-recovery.js` | Autosave scheduling, save/restore/cleanup, session lifecycle binding; persists the incomplete-Drive write guard but never persists an in-flight open lock |
+| `core/draft-recovery.js` | Autosave scheduling, save/restore/cleanup, session lifecycle binding; persists the incomplete-Drive write guard but never persists an in-flight open lock, and shows a warning when that guard is restored |
 | `core/session-actions.js` | New-case transition and selected-GĐV persistence |
 | `core/local-save.js` | Save a local case and its image blobs to IndexedDB; blocks stale snapshots while a workspace is opening, and never uploads the case to Drive |
-| `core/local-open.js` | Open an existing local case and restore fields/images; serializes workspace opens and releases the shared open lock on success/failure |
+| `core/local-open.js` | Open an existing local case and restore fields/images; serializes workspace opens, refreshes AUTO-DRAFT after open, and releases the shared open lock on success/failure |
 | `core/device-context.js` | Device label used by local-open and Drive Fusion |
 | `core/image-ingest.js` | File filtering, duplicate handling, default captions, append sequence |
 | `core/image-editing.js` | Insert/replace, caption, rotate, delete, clear and autosave semantics |
@@ -41,7 +41,7 @@
 
 | Module | Responsibility |
 |---|---|
-| `fusion/drive.js` | 093-only Drive record search/open/create/save/upload, SHA-256 upload keys, pending/uploaded state and progress; partial opens keep a write guard until a complete reopen or explicit local copy |
+| `fusion/drive.js` | 093-only Drive record search/open/create/save/upload, SHA-256 upload keys, pending/uploaded state and progress; serializes opens, autosaves opened records, and protects partial opens until a complete reopen or explicit local copy |
 | `fusion/gdv-093.js` | 093-specific GĐV list, custom-name prompt/cache, selected-GĐV persistence |
 | `fusion/drive-recovery-guard.js` | Drive upload-entry guard and legacy stray-text cleanup |
 
@@ -65,7 +65,7 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 ## Validation status — updated 2026-10-23
 
-- Latest code/test head verified before this documentation refresh: `28b47d6b0a207639c9283d9ea8d4d22446a3ed70`; push run **#1335** and PR run **#1336** both passed. These runs include the shared workspace-open lock, Drive partial-open write protection, AUTO-DRAFT/Chromium round-trip, PDF share-cancellation retention/progress tests, and local-open/local-save guard lifecycle tests. This documentation-only refresh triggers fresh CI runs.
+- Latest code/test head verified before this documentation refresh: `11c07283f3421c18d3b6234202288bcad9bbe830`; push run **#1355** and PR run **#1356** both passed. These runs include the shared workspace-open lock, local/Drive open autosave, visible incomplete-Drive warning after Chromium/IndexedDB reload, PDF share-cancellation retention/progress tests, and local-open/local-save guard lifecycle tests. This documentation-only refresh triggers fresh CI runs.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
