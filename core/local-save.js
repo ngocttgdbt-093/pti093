@@ -5,6 +5,8 @@
       const {state, $, snapshotGroupsForProject, openLocalDraftDB, localDraftTransactionDone, getDateISO, selectedGdv, setDriveState, msg, renderLocalSaveFeedback, showLocalSaveConfirm, clearAutoDraft} = deps;
       async function saveLocalDraft(){
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi lưu tại máy.');
+        const workspaceRevisionAtStart=Number(state.workspaceRevision)||0;
+        const workspaceChanged=()=>state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart;
         // LƯU LOCAL THUẦN TÚY: ID riêng LOCAL-..., không tạo record hoặc đồng bộ metadata lên Drive.
         const progress=(pct,label,detail='')=>{
           renderLocalSaveFeedback(state.localDraftId||'',pct,label,detail,false);
@@ -28,6 +30,8 @@
         let db;
         try{
           db=await openLocalDraftDB();
+          // IndexedDB open yields control: reject a stale snapshot if another case opened meanwhile.
+          if(workspaceChanged())throw new Error('Hồ sơ đã thay đổi trong lúc chuẩn bị lưu. Hãy lưu lại trên hồ sơ đang mở.');
           progress(15,'Đang chuẩn bị dữ liệu lưu…',total+' ảnh');
           const sections=groups.map((g,si)=>({
             title:g.title,
@@ -60,6 +64,13 @@
             }));
           };
           await localDraftTransactionDone(tx);
+          // A transition can also begin while the write transaction is pending. The local copy
+          // may exist, but never detach Drive/local references from the newly active workspace.
+          if(workspaceChanged()){
+            const error=new Error('Bản sao đã được ghi tại máy, nhưng hồ sơ đang làm việc đã thay đổi; trạng thái hồ sơ mới được giữ nguyên. Hãy kiểm tra danh sách hồ sơ tại máy.');
+            error.code='LOCAL_SAVE_WORKSPACE_CHANGED_AFTER_WRITE';
+            throw error;
+          }
           // Bản local đã được ghi hoàn tất; từ thời điểm này mới tách trạng thái khỏi Drive.
           for(const g of [...(state.groups||[]),state.current||{}])for(const it of (g.items||[])){
             it.driveFileId='';it.driveFileName='';it.driveUploadKey='';
@@ -74,6 +85,10 @@
           if(copiedFromIncompleteDrive)setDriveState(successLabel,false);
           return id;
         }catch(e){
+          if(e&&e.code==='LOCAL_SAVE_WORKSPACE_CHANGED_AFTER_WRITE'){
+            setDriveState(e.message,false);msg('⚠️ '+e.message,true);
+            throw e;
+          }
           const idBox=$('driveId');
           if(idBox){
             if(state.driveRecordId){idBox.textContent='Hồ sơ: '+state.driveRecordId;idBox.classList.remove('hidden')}
@@ -116,6 +131,10 @@
             msg('⚠️ Hồ sơ đã lưu tại máy thành công. Chưa dọn được nháp tự động; hãy tải lại trang sau khi kiểm tra hồ sơ đã lưu.',true);
           }
         }catch(e){
+          if(e&&e.code==='LOCAL_SAVE_WORKSPACE_CHANGED_AFTER_WRITE'){
+            // The snapshot write completed, but it must not clear AUTO-DRAFT for the newly opened case.
+            return;
+          }
           setDriveState('Chưa lưu được nháp tại máy: '+e.message,false);
           msg('❌ Lưu tại máy thất bại: '+e.message,true);
         }finally{b.disabled=false}

@@ -236,3 +236,32 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.equal(opened,false,'blocked local save must not start an IndexedDB transaction');
   console.log('Local Save workspace-open lock regression passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+(async()=>{
+  let releaseOpen, transactionCount=0;
+  const opened=new Promise(resolve=>{releaseOpen=resolve});
+  const state={groups:[],current:{title:'Old workspace',items:[]},localDraftId:'',driveRecordId:'DRIVE-OLD',workspaceRevision:8};
+  const elements={};
+  const db={close(){},transaction(){transactionCount++;throw new Error('transaction must not start for stale snapshot')}};
+  const api=global.PTILocalSaveCore.install({
+    state,$:id=>elements[id]||(elements[id]={value:'',textContent:'',disabled:false,style:{},dataset:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[{title:'Old workspace',items:[]}],
+    openLocalDraftDB:async()=>opened,
+    localDraftTransactionDone:async()=>{},getDateISO:()=>'',selectedGdv:()=>'',setDriveState:noop,msg:noop,
+    renderLocalSaveFeedback:noop,showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{}
+  });
+  const saving=api.saveLocalDraft();
+  state.workspaceOpenPending=true;
+  state.workspaceRevision++;
+  state.driveRecordId='DRIVE-NEW';
+  state.current={title:'New workspace',items:[]};
+  state.workspaceOpenPending=false;
+  releaseOpen(db);
+  await assert.rejects(saving,/Hồ sơ đã thay đổi trong lúc chuẩn bị lưu/,
+    'local save must reject a snapshot captured before a workspace transition');
+  assert.equal(transactionCount,0,'stale local save must not start a write transaction');
+  assert.equal(state.driveRecordId,'DRIVE-NEW','stale local save must preserve the new Drive record ID');
+  assert.equal(state.current.title,'New workspace','stale local save must not alter the new workspace');
+  console.log('Local Save async workspace-transition race regression passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
