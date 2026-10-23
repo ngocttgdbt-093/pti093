@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093LocalOpenCore = {
     install: function(deps){
-      const {state, $, msg, openLocalDraftDB, setDateInput, render, renderLayout, setDriveState, deviceStorageLabel, setOpenLoad, finishOpenLoad, fileKey:makeFileKey} = deps;
+      const {state, $, msg, openLocalDraftDB, setDateInput, render, renderLayout, setDriveState, deviceStorageLabel, setOpenLoad, finishOpenLoad, scheduleAutoDraftSave, fileKey:makeFileKey} = deps;
       const fileKey=makeFileKey||function(file){
         const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
         const relative=String(file.webkitRelativePath||'').trim();
@@ -84,6 +84,9 @@
         finishOpenLoad(source,groups.reduce((n,g)=>n+g.items.length,0));
         setDriveState('✓ Đã tải hoàn tất ảnh từ '+source+' · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
         render();renderLayout();
+        // Replace any older AUTO-DRAFT with the case just opened; otherwise an immediate
+        // F5 could restore a different case from the same browser session.
+        if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
         msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
       }
