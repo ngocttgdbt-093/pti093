@@ -16,6 +16,7 @@
         dragMoved=true;
       }
       function syncOrderFromDOM(){
+        if(state.workspaceOpenPending)return false;
         const nodes=[...$('grid').querySelectorAll('.thumb[data-drag-id]')];
         if(!nodes.length)return false;
         const map=new Map(state.current.items.map(it=>[ensureDragId(it),it]));
