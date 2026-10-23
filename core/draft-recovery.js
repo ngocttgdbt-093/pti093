@@ -2,7 +2,12 @@
   'use strict';
   global.PTI093DraftRecovery = {
     install: function(deps){
-      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg, openLocalDraftDB, localDraftTransactionDone} = deps;
+      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg, openLocalDraftDB, localDraftTransactionDone, fileKey:makeFileKey} = deps;
+      const fileKey=makeFileKey||function(file){
+        const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
+        const relative=String(file.webkitRelativePath||'').trim();
+        return relative?base+'|'+relative:base;
+      };
       const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT';
       // Mỗi tab có một mã phiên riêng: F5 giữ nguyên sessionStorage, tab mới sẽ tạo phiên mới.
       const PTI093_SESSION_KEY='pti093_work_session_id';
@@ -37,7 +42,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
           const sections=groups.map((g,si)=>({title:g.title,isCurrent:!!g.isCurrent,items:g.items.map((it,ii)=>({
             sectionIndex:si,itemIndex:ii,fileName:(it.file&&it.file.name)||it.driveFileName||('anh-'+(ii+1)+'.jpg'),
             type:(it.file&&it.file.type)||'image/jpeg',lastModified:(it.file&&it.file.lastModified)||Date.now(),
-            size:(it.file&&it.file.size)||0,key:it.key||'',caption:it.caption||'',
+            size:(it.file&&it.file.size)||0,key:it.key||(it.file?fileKey(it.file):''),caption:it.caption||'',
             rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||ii+1,
             driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''
           }))}));
@@ -163,7 +168,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
               const stored=imageMap.get(si+':'+ii);
               if(!stored||!stored.file){missing++;return}
               const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
-              items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
+              items.push({file:f,key:it.key||fileKey(f),caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
             });
             if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
           });
