@@ -166,10 +166,13 @@ function scheduleAutoDraftSave(imagesDirty=true){
             (Number(state.workspaceMutationRevision)||0)!==workspaceMutationRevisionAtRestoreStart)return;
           // A successful restore is itself a workspace transition. Invalidate any PDF/export
           // snapshot started before the restored data is applied, and discard stale Preview.
-          state.workspaceRevision=workspaceRevisionAtRestoreStart+1;
-          state.workspaceMutationRevision=workspaceMutationRevisionAtRestoreStart+1;
-          state.pages=[];state.pageDefs=[];
+          const invalidateWorkspaceForRestore=()=>{
+            state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
+            state.workspaceMutationRevision=(Number(state.workspaceMutationRevision)||0)+1;
+            state.pages=[];state.pageDefs=[];
+          };
           if(foreignDraftFound){
+            invalidateWorkspaceForRestore();
             // Never delete another tab's legacy draft or its image blobs.
             state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
@@ -183,6 +186,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             // Cleanup awaits IndexedDB. Hold the workspace lock so a newly opened case cannot
             // race this orphan cleanup or have its first autosave suppressed by autoDraftResetting.
             state.workspaceOpenPending=true;
+            invalidateWorkspaceForRestore();
             try{
               await clearAutoDraft();
               // No active draft means this tab must not fall back to a stale Drive ID on the next save.
@@ -193,6 +197,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
           }
           // Defensive guard: never delete a draft whose recorded owner differs from this tab.
           if(!meta.sessionId||meta.sessionId!==PTI093_SESSION_ID){
+            invalidateWorkspaceForRestore();
             state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
             state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;state.pages=[];state.pageDefs=[];
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
@@ -221,6 +226,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             msg(detail,true);
             return;
           }
+          invalidateWorkspaceForRestore();
           $('bks').value=meta.bks||'';$('hoso').value=meta.caseNumber||'';setDateInput(meta.date||'');$('garage').value=meta.garage||'';
           const gdv=meta.gdv||'';
           if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
