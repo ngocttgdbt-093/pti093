@@ -65,6 +65,10 @@ console.log('Shared Core draft-recovery tests passed (module API + session contr
 // Integration contract: the app must initialize the extracted modules in dependency order
 // and keep the existing autosave/reload lifecycle wired to the extracted API.
 const appCore = fs.readFileSync('core/app-core.js', 'utf8');
+assert.ok(appCore.includes('const safeLocalStorage={'), 'App startup should inject a guarded storage adapter instead of reading browser storage directly');
+assert.ok(appCore.includes('getItem(key){try{return window.localStorage.getItem(key)}catch(e){return null}}'), 'Storage property-access failures must be treated as unavailable preferences');
+assert.ok(appCore.includes('storage:safeLocalStorage'), 'GĐV Fusion must receive the guarded storage adapter');
+assert.ok(appCore.includes('localStorage:safeLocalStorage'), 'Session Actions must receive the guarded storage adapter');
 const moduleScripts = [
   './core/local-draft-store.js',
   './core/draft-recovery.js',
