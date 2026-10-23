@@ -56,6 +56,9 @@
           setDriveState(detail,false);
           throw new Error(detail);
         }
+        // All metadata and image blobs are validated above. From this point the active
+        // workspace begins changing, so invalidate any PDF/autosave snapshot before mutation.
+        state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
         if(!String(id).startsWith('LOCAL-')){
           state.driveRecordId=id;
           try{global.sessionStorage.setItem('pti093_driveRecordId',id)}catch(e){}
@@ -91,17 +94,62 @@
         else msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
       }
+      function snapshotLocalOpenWorkspace(){
+        const stateSnapshot={...state};
+        const fields={};
+        for(const id of ['bks','hoso','date','gdv','garage','title','driveId']){
+          const el=$(id);if(!el)continue;
+          fields[id]={value:el.value,textContent:el.textContent,innerHTML:el.innerHTML,
+            dataset:el.dataset?{...el.dataset}:null,
+            className:typeof el.className==='string'?el.className:null,hidden:el.hidden};
+        }
+        let storedRecordId='';
+        try{storedRecordId=global.sessionStorage.getItem('pti093_driveRecordId')||''}catch(e){}
+        return {stateSnapshot,fields,storedRecordId};
+      }
+      function restoreLocalOpenWorkspace(snapshot){
+        const revision=state.workspaceRevision;
+        for(const key of Object.keys(state))if(!Object.prototype.hasOwnProperty.call(snapshot.stateSnapshot,key))delete state[key];
+        Object.assign(state,snapshot.stateSnapshot);
+        state.workspaceRevision=revision;
+        state.workspaceOpenPending=false;state.driveOpenPending=false;
+        for(const [id,saved] of Object.entries(snapshot.fields)){
+          const el=$(id);if(!el)continue;
+          if('value'in saved)el.value=saved.value;
+          if('textContent'in saved)el.textContent=saved.textContent;
+          if('innerHTML'in saved)el.innerHTML=saved.innerHTML;
+          if(saved.dataset&&el.dataset){for(const key of Object.keys(el.dataset))delete el.dataset[key];Object.assign(el.dataset,saved.dataset)}
+          if(saved.className!==null)el.className=saved.className;
+          if('hidden'in saved)el.hidden=saved.hidden;
+        }
+        try{
+          if(snapshot.storedRecordId)global.sessionStorage.setItem('pti093_driveRecordId',snapshot.storedRecordId);
+          else global.sessionStorage.removeItem('pti093_driveRecordId');
+        }catch(e){}
+        try{
+          document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per));
+          document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
+        }catch(e){}
+        try{render();renderLayout()}catch(e){}
+      }
       async function openLocalDraft(id){
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
+        const snapshot=snapshotLocalOpenWorkspace();
         state.workspaceOpenPending=true;
         try{
           const result=await openLocalDraftUnlocked(id);
-          // Local open validates metadata and every image before mutating the workspace.
-          // Increment only after a successful replacement; a failed read leaves state intact.
-          state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
           state.driveOpenPending=false;state.workspaceOpenPending=false;
           if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
           return result;
+        }catch(error){
+          const mutated=(Number(state.workspaceRevision)||0)!==(Number(snapshot.stateSnapshot.workspaceRevision)||0);
+          restoreLocalOpenWorkspace(snapshot);
+          if(mutated){
+            const detail='Không thể hoàn tất mở bản lưu tại máy: '+(error&&error.message?error.message:String(error))+'. Hồ sơ đang làm việc trước đó đã được khôi phục.';
+            setDriveState(detail,false);msg(detail,true);
+            if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
+          }
+          throw error;
         }finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }
       return {openLocalDraft};

@@ -179,6 +179,36 @@ const api = global.PTI093LocalOpenCore.install({
   assert.match(incompleteCalls.status.at(-1),/thiếu dữ liệu của 1\/2 ảnh/,
     'incomplete restore must clear the stale loading status with the missing-image error');
 
+  // Regression: the draft validates successfully, then rendering fails after the workspace
+  // has been replaced. The old workspace must be restored and only that restored state autosaved.
+  const preRenderGroups=appState.groups,preRenderCurrent=appState.current;
+  const preRenderDraftId=appState.localDraftId,preRenderDriveId=appState.driveRecordId;
+  const preRenderBks=element('bks').value,preRenderHoso=element('hoso').value;
+  const revisionBeforeRenderFailure=Number(appState.workspaceRevision)||0;
+  const renderFailureCalls={status:[],autosave:[]};
+  const renderFailureApi=global.PTI093LocalOpenCore.install({
+    state:appState,$:element,msg:()=>{},openLocalDraftDB:async()=>db,
+    setDateInput:value=>{element('date').value=value||''},
+    render:()=>{throw new Error('synthetic local render failure')},renderLayout:()=>{},
+    setDriveState:(text,ok)=>renderFailureCalls.status.push({text,ok}),
+    scheduleAutoDraftSave:dirty=>renderFailureCalls.autosave.push({dirty,groups:appState.groups,current:appState.current}),
+    deviceStorageLabel:()=> 'PC',setOpenLoad:()=>{},finishOpenLoad:()=>{}
+  });
+  await assert.rejects(renderFailureApi.openLocalDraft('LOCAL-TEST-1'),/synthetic local render failure/);
+  assert.equal(appState.groups,preRenderGroups,'failed post-mutation local open must restore the previous group collection');
+  assert.equal(appState.current,preRenderCurrent,'failed post-mutation local open must restore the previous current group');
+  assert.equal(appState.localDraftId,preRenderDraftId,'failed local open must restore prior local draft identity');
+  assert.equal(appState.driveRecordId,preRenderDriveId,'failed local open must restore prior Drive identity');
+  assert.equal(element('bks').value,preRenderBks,'failed local open must restore prior form values');
+  assert.equal(element('hoso').value,preRenderHoso,'failed local open must restore prior case number');
+  assert.equal(appState.workspaceRevision,revisionBeforeRenderFailure+1,'failed post-mutation open must invalidate stale PDF/autosave snapshots');
+  assert.equal(appState.workspaceOpenPending,false,'failed post-mutation local open must release the workspace lock');
+  assert.equal(renderFailureCalls.autosave.length,1,'rollback must queue autosave after restoring the previous workspace');
+  assert.equal(renderFailureCalls.autosave[0].groups,preRenderGroups,'rollback autosave must capture restored groups, not partial local data');
+  assert.equal(renderFailureCalls.autosave[0].current,preRenderCurrent,'rollback autosave must capture the restored current group');
+  assert.match(renderFailureCalls.status.at(-1).text,/Hồ sơ đang làm việc trước đó đã được khôi phục/);
+  console.log('Local Open post-mutation rollback regression passed.');
+
   const failedListDb={
     close(){closed++},
     transaction(storeName){
