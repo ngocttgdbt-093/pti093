@@ -133,7 +133,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   const itemA={file:{name:'scene.jpg',type:'image/jpeg',lastModified:111,size:10},key:'scene-key',caption:'Toàn cảnh',rotate:90,addSeq:4,driveFileId:'DRIVE-A',driveFileName:'scene.jpg',driveUploadKey:'upload-a'};
   const itemB={file:{name:'damage.jpg',type:'image/jpeg',lastModified:222,size:20},key:'damage-key',caption:'Mặt trước',rotate:180,addSeq:7,driveFileId:'DRIVE-B',driveFileName:'damage.jpg',driveUploadKey:'upload-b'};
   const savedMetadata=[],savedImages=[],elements={};
-  const localState={groups:[{title:'Ảnh hiện trường',items:[itemA]}],current:{title:'Ảnh thiệt hại',items:[itemB]},localDraftId:'',driveRecordId:'DRIVE-CASE-1',driveOpenIncomplete:true,orientation:'portrait',per:6};
+  const localState={groups:[{title:'Ảnh hiện trường',items:[itemA]}],current:{title:'Ảnh thiệt hại',items:[itemB]},localDraftId:'',driveRecordId:'DRIVE-CASE-1',driveOpenIncomplete:true,localCopyFromIncompleteDrive:false,orientation:'portrait',per:6};
   global.IDBKeyRange={only:value=>value};
   const db={
     close(){},
@@ -164,6 +164,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.equal(savedMetadata.length,1);
   assert.equal(savedMetadata[0].id,id);
   assert.equal(savedMetadata[0].storageType,'local');
+  assert.equal(savedMetadata[0].sourceDriveIncomplete,true,'local copy metadata must preserve incomplete-Drive provenance');
   assert.deepEqual(savedMetadata[0].sections.map(s=>s.title),['Ảnh hiện trường','Ảnh thiệt hại']);
   assert.deepEqual(savedMetadata[0].sections.map(s=>s.items[0].caption),['Toàn cảnh','Mặt trước']);
   assert.deepEqual(savedMetadata[0].sections.map(s=>s.items[0].rotate),[90,180]);
@@ -174,6 +175,8 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.equal(localState.localDraftId,id);
   assert.equal(localState.driveRecordId,'');
   assert.equal(localState.driveOpenIncomplete,false,'successful local copy must clear the Drive incomplete-open guard');
+  assert.equal(localState.localCopyFromIncompleteDrive,true,'successful local copy must retain a visible provenance warning');
+  assert.match(elements.driveProgressText.textContent,/chưa tải đủ ảnh/,'local-save status must warn when the copy is partial');
   assert.equal(itemA.driveFileId,'');
   assert.equal(itemA.driveUploadKey,'');
   assert.equal(itemB.driveFileId,'');
