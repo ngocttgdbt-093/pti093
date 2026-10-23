@@ -178,3 +178,51 @@ oldMeta.sessionId=session.get('pti093_work_session_id');
   assert.equal(openCalls,0,'autosave must not persist a transient old workspace while another case is opening');
   console.log('Draft Recovery workspace-open lock regression passed (no transient AUTO-DRAFT writes).');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+(async()=>{
+  const sessionId=session.get('pti093_work_session_id');
+  const foreignMeta={id:'AUTO-DRAFT',auto:true,sessionId:'another-tab-session',caseNumber:'HS-FOREIGN',sections:[{title:'Foreign',items:[{fileName:'foreign.jpg'}]}]};
+  const foreignImage={id:'AUTO-DRAFT|0|0',draftId:'AUTO-DRAFT',sectionIndex:0,itemIndex:0,file:new File(['foreign'],'foreign.jpg',{type:'image/jpeg',lastModified:5}),fileName:'foreign.jpg'};
+  const drafts=new Map([['AUTO-DRAFT',foreignMeta]]), images=[foreignImage];
+  let deleteCount=0;
+  const db={
+    close(){},
+    transaction(storeNames){
+      return {objectStore(name){
+        if(name==='drafts')return {
+          get(id){const req={};queueMicrotask(()=>{req.result=drafts.get(id);req.onsuccess&&req.onsuccess()});return req},
+          put(meta){drafts.set(meta.id,meta)},
+          delete(id){deleteCount++;drafts.delete(id)}
+        };
+        if(name==='draftImages')return {
+          index(){return {
+            getAll(range){const req={};queueMicrotask(()=>{req.result=images.filter(x=>x.draftId===range);req.onsuccess&&req.onsuccess()});return req},
+            openCursor(range){const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}
+          }},
+          put(image){images.push(image)}
+        };
+        throw new Error('Unexpected store '+name);
+      }};
+    }
+  };
+  const state={groups:[],current:{title:'New tab work',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,orientation:'portrait',per:6,addSeq:0,workspaceRevision:0};
+  const values={gdv:{value:'',dataset:{},options:[]},hoso:{value:'HS-NEW-TAB'},bks:{value:'NEW'},garage:{value:''},date:{value:'2026-10-23'},title:{value:'New tab work'},driveId:{textContent:'',classList:{add(){},remove(){}}}};
+  const $=id=>values[id]||(values[id]={value:'',textContent:'',dataset:{},options:[],classList:{add(){},remove(){},toggle(){}}});
+  const api=global.PTI093DraftRecovery.install({
+    state,$,getDateISO:()=>'2026-10-23',setDateInput:value=>{values.date.value=value||''},
+    render:()=>{},renderLayout:()=>{},setDriveState:()=>{},msg:()=>{},
+    openLocalDraftDB:async()=>db,localDraftTransactionDone:async()=>{}
+  });
+  await api.restoreAutoDraft();
+  assert.equal(drafts.get('AUTO-DRAFT'),foreignMeta,'a new tab must not delete or rewrite another session AUTO-DRAFT');
+  assert.equal(images.length,1,'a new tab must not delete another session image blobs');
+  assert.equal(deleteCount,0,'foreign-session restore must not issue any draft delete');
+  await api.saveAutoDraft();
+  const ownId='AUTO-DRAFT-'+sessionId;
+  assert.ok(drafts.has(ownId),'new tab autosave must use its own session-specific draft key');
+  assert.equal(drafts.get(ownId).sessionId,sessionId,'new tab autosave metadata must carry its own session ID');
+  assert.equal(drafts.get('AUTO-DRAFT'),foreignMeta,'new tab autosave must not overwrite the legacy draft owned by another session');
+  assert.equal(images.length,1,'empty own draft must not remove foreign session images');
+  console.log('Foreign-session AUTO-DRAFT isolation regression passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
