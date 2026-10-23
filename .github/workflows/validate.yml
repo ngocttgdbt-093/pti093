@@ -120,6 +120,10 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023'
         run: node tests/draft-recovery-incomplete.test.js
 
+      - name: Test AUTO-DRAFT recovery preserves edits made while IndexedDB is pending
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023'
+        run: node tests/draft-recovery-race.test.js
+
       - name: Test Local Draft Store when IndexedDB is blocked or unavailable
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023'
         run: node tests/local-draft-store-storage-blocked.test.js
