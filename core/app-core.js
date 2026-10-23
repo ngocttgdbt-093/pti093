@@ -28,7 +28,7 @@ const {deviceStorageLabel}=deviceContext;
 const workspaceCore=window.PTIWorkspaceCore;
 const getAllGroups=()=>workspaceCore.getAllGroups(state);
 const fileNaming=window.PTI093FileNaming.install({getAllGroups,$,selectedGdv});
-const {fileBaseName,pdfFileName}=fileNaming;
+const {fileBaseName,fileKey,pdfFileName}=fileNaming;
 const imageReorder=window.PTI093ImageReorder.install({state,$,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),renderLayout:()=>renderLayout(),render:()=>render()});
 const snapshotGroupsForProject=()=>workspaceCore.snapshotGroupsForProject(state);
 const pdfBuilder=window.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT});
@@ -62,11 +62,11 @@ const exts=/\.(jpe?g|png|webp|gif|heic|heif)$/i;
 // ===== THỨ TỰ ẢNH: LUÔN GIỮ ĐÚNG THỨ TỰ GĐV THÊM ẢNH =====
 // Không đọc EXIF, không đọc ngày chụp và không tự động sắp xếp theo thời gian.
 // addSeq được gán ngay khi GĐV thêm ảnh; ảnh mới luôn nối vào cuối.
-const imageIngest=window.PTI093ImageIngest.install({state,exts,fileBaseName,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),render:()=>render(),msg});
+const imageIngest=window.PTI093ImageIngest.install({state,exts,fileBaseName,fileKey,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),render:()=>render(),msg});
 const {addFiles}=imageIngest;
 const caseEditor=window.PTI093CaseEditor.install({state,$,fileBaseName,render:()=>render(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg});
 caseEditor.bindControls();
-const imageEditing=window.PTI093ImageEditing.install({state,$,exts,fileBaseName,render:()=>render(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,confirm});
+const imageEditing=window.PTI093ImageEditing.install({state,$,exts,fileBaseName,fileKey,render:()=>render(),scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args),msg,confirm});
 window.PTI093ClassicFileIntakeSkin.install({$,addFiles});
 function render(){return classicImageGridSkin.render()}function renderGroups(){return classicGroupListSkin.renderGroups()}
 
