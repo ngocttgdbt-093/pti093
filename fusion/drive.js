@@ -214,6 +214,7 @@
         loadedGroups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
       
         // Mở hồ sơ ở đúng nội dung đầu tiên để ảnh hiện ngay trong vùng chỉnh sửa.
+        state.localCopyFromIncompleteDrive=false;
         state.groups=loadedGroups.slice(1);
         state.current=loadedGroups[0]||{title:'Bản ảnh chi tiết thiệt hại',items:[]};
         state.editing=-1;
