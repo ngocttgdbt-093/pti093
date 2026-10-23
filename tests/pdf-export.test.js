@@ -46,5 +46,23 @@ require('../core/pdf-export.js');
     pagePixels:()=>({dpi:150}),jpegQuality:()=>0.8,pdfPackSize:bytes=>bytes.length
   });
   await assert.rejects(()=>impossibleApi.splitHighQualityPdf('impossible.pdf'),/vượt giới hạn an toàn/,'must fail clearly rather than emit an oversized part');
-  console.log('PDF Export Core tests passed: splitting, labels, progress, single-page compression, and hard size cap.');
+  const snapshotCalls=[];
+  const snapshotPages=[{id:'old-1'},{id:'old-2'}];
+  const snapshotDefs=[
+    {group:'OLD-G1',pageItems:['old-a'],pageNo:11,groupPageNo:1,groupPages:1,groupStartIndex:0},
+    {group:'OLD-G2',pageItems:['old-b'],pageNo:12,groupPageNo:1,groupPages:1,groupStartIndex:1}
+  ];
+  const liveState={pages:[{id:'new-1'}],pageDefs:[{group:'NEW-G',pageItems:['new'],pageNo:99,groupPageNo:1,groupPages:1,groupStartIndex:0}]};
+  const snapshotApi=global.PTI093PdfExportCore.install({
+    state:liveState,PDF_SAFE_LIMIT:100,
+    drawPage:async(...args)=>{snapshotCalls.push(args);return {pageNo:args[2]};},
+    makePdfAt:items=>({bytes:new Uint8Array(items.length),dpi:150,quality:.8}),
+    pagePixels:()=>({dpi:150}),jpegQuality:()=>.8,pdfPackSize:bytes=>bytes.length
+  });
+  const snapshotParts=await snapshotApi.splitHighQualityPdf('snapshot.pdf',()=>{},{pages:snapshotPages,pageDefs:snapshotDefs});
+  assert.equal(snapshotParts.length,1);
+  assert.deepEqual(snapshotCalls.map(args=>args[0]),['OLD-G1','OLD-G2'],
+    'split export must render using captured page definitions, not a concurrently opened workspace');
+  assert.deepEqual(snapshotCalls.map(args=>args[2]),[11,12]);
+  console.log('PDF Export Core tests passed: splitting, labels, progress, single-page compression, hard size cap, and stable snapshots.');
 })().catch(e=>{console.error(e);process.exit(1)});
