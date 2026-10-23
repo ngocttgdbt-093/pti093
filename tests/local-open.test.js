@@ -162,11 +162,12 @@ const api = global.PTI093LocalOpenCore.install({
       throw new Error('Unexpected store: '+storeName);
     }
   };
-  const incompleteCalls={progress:[],status:[]};
+  const incompleteCalls={progress:[],status:[],autosave:[]};
   const incompleteApi=global.PTI093LocalOpenCore.install({
     state:appState,$:element,msg:()=>{},openLocalDraftDB:async()=>incompleteDb,
     setDateInput:()=>{},render:()=>{throw new Error('Must not render a partial restore')},
     renderLayout:()=>{throw new Error('Must not render a partial restore')},setDriveState:text=>incompleteCalls.status.push(text),
+    scheduleAutoDraftSave:dirty=>incompleteCalls.autosave.push(dirty),
     deviceStorageLabel:()=> 'PC',setOpenLoad:(...args)=>incompleteCalls.progress.push(args),finishOpenLoad:()=>{}
   });
   const stateBeforeIncompleteOpen=JSON.stringify(appState);
@@ -178,6 +179,8 @@ const api = global.PTI093LocalOpenCore.install({
     'incomplete restore must show an actionable message and preserve the active case');
   assert.match(incompleteCalls.status.at(-1),/thiếu dữ liệu của 1\/2 ảnh/,
     'incomplete restore must clear the stale loading status with the missing-image error');
+  assert.deepEqual(incompleteCalls.autosave,[true],
+    'failed pre-mutation local open must reschedule autosave for the preserved active workspace');
 
   // Regression: the draft validates successfully, then rendering fails after the workspace
   // has been replaced. The old workspace must be restored and only that restored state autosaved.

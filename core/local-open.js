@@ -147,8 +147,10 @@
             restoreLocalOpenWorkspace(snapshot);
             const detail='Không thể hoàn tất mở bản lưu tại máy: '+(error&&error.message?error.message:String(error))+'. Hồ sơ đang làm việc trước đó đã được khôi phục.';
             setDriveState(detail,false);msg(detail,true);
-            if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
           }
+          // A pending-open timer may have fired and skipped saving while the lock was held.
+          // Queue the still-active workspace after every failed attempt; never save partial data.
+          if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
           throw error;
         }finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }
