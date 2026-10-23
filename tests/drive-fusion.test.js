@@ -116,3 +116,75 @@ assert.ok(driveModule.includes('function readStoredDriveRecordId()'), 'Drive rec
 assert.ok(driveModule.includes('function persistDriveRecordId(recordId)'), 'Drive record ID persistence should be best-effort');
 assert.match(driveModule,/try\{return global\.sessionStorage\.getItem\('pti093_driveRecordId'\)\|\|''\}catch\(e\)\{return ''\}/,'blocked sessionStorage must not break Drive record ID lookup');
 console.log('Drive record ID storage resilience contract passed.');
+
+
+(async()=>{
+  const originalFetch=global.fetch,originalDocument=global.document,originalScrollY=global.scrollY,originalScrollTo=global.scrollTo,originalFile=global.File,originalWarn=console.warn;
+  const elements={};
+  const element=id=>elements[id]||(elements[id]={value:'',textContent:'',innerHTML:'',style:{},options:[],dataset:{},disabled:false,onclick:null,
+    classList:{add(){},remove(){},toggle(){}},appendChild(){},setAttribute(){},addEventListener(){},getBoundingClientRect(){return {top:0}}});
+  const statusEvents=[],messages=[],progress=[],finished=[];
+  const state={groups:[],current:{title:'',items:[]},driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,orientation:'portrait',per:6,addSeq:0};
+  let failSecondImage=true,fetchCalls=0;
+  global.document={querySelectorAll:()=>[]};
+  global.scrollY=0;global.scrollTo=()=>{};
+  global.File=class TestFile{
+    constructor(parts,name,options={}){this.name=name;this.type=options.type||'application/octet-stream';this.size=parts.reduce((n,p)=>n+(p&&p.size||p&&p.byteLength||String(p).length),0);this.lastModified=options.lastModified||0}
+  };
+  global.fetch=async url=>{
+    fetchCalls++;
+    if(String(url).includes('action=openRecord'))return {json:async()=>({
+      success:true,
+      project:{recordId:'DRIVE-PARTIAL',caseNumber:'HS-1',bks:'30A-1',sections:[{title:'Section A',items:[
+        {fileId:'F1',fileName:'one.jpg',clientKey:'one'},
+        {fileId:'F2',fileName:'two.jpg',clientKey:'two'}
+      ]}],settings:{orientation:'portrait',imagesPerPage:6}},
+      record:{recordId:'DRIVE-PARTIAL',caseNumber:'HS-1',bks:'30A-1'},
+      images:[{fileId:'F1',fileName:'one.jpg'},{fileId:'F2',fileName:'two.jpg'}]
+    })};
+    if(String(url).includes('action=getImage')&&String(url).includes('fileId=F1'))return {json:async()=>({success:true,base64:Buffer.from('image-one').toString('base64'),mimeType:'image/jpeg',fileName:'one.jpg'})};
+    if(String(url).includes('action=getImage')&&String(url).includes('fileId=F2')){
+      if(failSecondImage)return {json:async()=>({success:false,error:'image unavailable'})};
+      return {json:async()=>({success:true,base64:Buffer.from('image-two').toString('base64'),mimeType:'image/jpeg',fileName:'two.jpg'})};
+    }
+    throw new Error('Unexpected fetch in partial-open test: '+url);
+  };
+  console.warn=()=>{};
+  const api=global.PTI093DriveFusion.install({
+    ...deps,state,$:element,
+    setDriveState:(text,ok)=>statusEvents.push({text,ok}),
+    setOpenLoad:(...args)=>progress.push(args),
+    finishOpenLoad:(...args)=>finished.push(args),
+    getDateISO:()=>'2026-10-23',setDateInput:value=>{element('date').value=value},
+    render:()=>{},renderLayout:()=>{},msg:(text,show)=>messages.push({text,show})
+  });
+  try{
+    await api.openRecordFromDrive('DRIVE-PARTIAL');
+    assert.equal(state.current.items.length,1,'only the successfully downloaded image should enter the workspace');
+    assert.equal(state.driveOpenIncomplete,true,'a partially loaded Drive record must be marked unsafe to overwrite');
+    assert.match(statusEvents.at(-1).text,/tải thiếu 1\/2 ảnh/,'partial open must not report success');
+    assert.equal(statusEvents.at(-1).ok,false,'partial open status must be an error/warning state');
+    assert.equal(finished.length,0,'partial open must not mark the progress bar as fully completed');
+    assert.match(progress.at(-1)[3],/Không lưu đè lên Drive/,'progress detail must warn against overwriting the incomplete record');
+    const beforeBlockedCalls=fetchCalls;
+    await assert.rejects(()=>api.saveProjectToDrive(false),/Hồ sơ Drive chưa tải đủ ảnh/,'project save must be blocked for an incomplete Drive open');
+    const uploadResult=await api.pti093UploadAll();
+    assert.equal(uploadResult.failures.length,1,'upload must be blocked rather than silently sending a partial set');
+    await api.createDriveRecord();
+    assert.equal(fetchCalls,beforeBlockedCalls,'save/create/upload guards must not send another request while incomplete');
+
+    failSecondImage=false;
+    await api.openRecordFromDrive('DRIVE-PARTIAL');
+    assert.equal(state.driveOpenIncomplete,false,'a subsequent complete reopen must clear the guard');
+    assert.equal(state.current.items.length,2,'both images should be restored on the successful retry');
+    assert.equal(finished.length,1,'only the fully loaded retry should complete the progress bar');
+    assert.match(statusEvents.at(-1).text,/Đã tải hoàn tất hồ sơ Drive/,'complete reopen should restore the success status');
+    console.log('Drive Fusion incomplete-open regression passed: partial loads warn and block writes; full reopen restores saving.');
+  }finally{
+    global.fetch=originalFetch;console.warn=originalWarn;
+    if(originalDocument===undefined)delete global.document;else global.document=originalDocument;
+    if(originalScrollY===undefined)delete global.scrollY;else global.scrollY=originalScrollY;
+    if(originalScrollTo===undefined)delete global.scrollTo;else global.scrollTo=originalScrollTo;
+    if(originalFile===undefined)delete global.File;else global.File=originalFile;
+  }
+})().catch(error=>{console.error(error);process.exitCode=1});
