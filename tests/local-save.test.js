@@ -132,7 +132,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
 (async()=>{
   const itemA={file:{name:'scene.jpg',type:'image/jpeg',lastModified:111,size:10},key:'scene-key',caption:'Toàn cảnh',rotate:90,addSeq:4,driveFileId:'DRIVE-A',driveFileName:'scene.jpg',driveUploadKey:'upload-a'};
   const itemB={file:{name:'damage.jpg',type:'image/jpeg',lastModified:222,size:20},key:'damage-key',caption:'Mặt trước',rotate:180,addSeq:7,driveFileId:'DRIVE-B',driveFileName:'damage.jpg',driveUploadKey:'upload-b'};
-  const savedMetadata=[],savedImages=[],elements={};
+  const savedMetadata=[],savedImages=[],elements={},statuses=[];
   const localState={groups:[{title:'Ảnh hiện trường',items:[itemA]}],current:{title:'Ảnh thiệt hại',items:[itemB]},localDraftId:'',driveRecordId:'DRIVE-CASE-1',driveOpenIncomplete:true,localCopyFromIncompleteDrive:false,orientation:'portrait',per:6};
   global.IDBKeyRange={only:value=>value};
   const db={
@@ -156,7 +156,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
     ],
     openLocalDraftDB:async()=>db,localDraftTransactionDone:async()=>{},
     getDateISO:()=> '2026-10-23',selectedGdv:()=> 'GĐV test',
-    setDriveState:noop,msg:noop,renderLocalSaveFeedback:noop,
+    setDriveState:(...args)=>statuses.push(args),msg:noop,renderLocalSaveFeedback:noop,
     showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{}
   });
   const id=await api.saveLocalDraft();
@@ -177,6 +177,8 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.equal(localState.driveOpenIncomplete,false,'successful local copy must clear the Drive incomplete-open guard');
   assert.equal(localState.localCopyFromIncompleteDrive,true,'successful local copy must retain a visible provenance warning');
   assert.match(elements.driveProgressText.textContent,/chưa tải đủ ảnh/,'local-save status must warn when the copy is partial');
+  assert.match(statuses.at(-1)[0],/chưa tải đủ ảnh/,'shared status must identify the partial-origin copy');
+  assert.equal(statuses.at(-1)[1],false,'partial-origin local-copy status must not be styled as success');
   assert.equal(itemA.driveFileId,'');
   assert.equal(itemA.driveUploadKey,'');
   assert.equal(itemB.driveFileId,'');
