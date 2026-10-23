@@ -62,7 +62,7 @@
           for(const g of [...(state.groups||[]),state.current||{}])for(const it of (g.items||[])){
             it.driveFileId='';it.driveFileName='';it.driveUploadKey='';
           }
-          state.driveRecordId='';state.localDraftId=id;
+          state.driveRecordId='';state.localDraftId=id;state.driveOpenIncomplete=false;
           try{sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
           try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
           $('driveId').textContent='💻 ID hồ sơ local: '+id;
