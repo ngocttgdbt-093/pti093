@@ -104,6 +104,22 @@ function restoreIndexedDB() {
       'an asynchronous open request error should reject'
     );
 
+    // Transaction completion is part of the persistence contract: abort/error must reject,
+    // while complete resolves. This prevents callers from treating partial writes as success.
+    const abortedTx = {};
+    const abortedPromise = store.localDraftTransactionDone(abortedTx);
+    const abortError = new Error('Synthetic transaction abort');
+    abortedTx.error = abortError;
+    abortedTx.onabort();
+    await assert.rejects(abortedPromise, error => error === abortError,
+      'an aborted write transaction must reject with the transaction error');
+
+    const completedTx = {};
+    const completedPromise = store.localDraftTransactionDone(completedTx);
+    completedTx.oncomplete();
+    await assert.doesNotReject(completedPromise,
+      'a completed write transaction should resolve');
+
     console.log('Local Draft Store IndexedDB blocked/unavailable tests passed.');
   } finally {
     restoreIndexedDB();
