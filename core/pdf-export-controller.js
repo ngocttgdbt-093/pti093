@@ -65,6 +65,9 @@
             update(80+Math.round((i+1)/parts.length*19),'Đã gửi '+(i+1)+'/'+parts.length+' tệp PDF để lưu.');
             await new Promise(resolve=>setTimeout(resolve,180));
           }
+          // The final wait after the last file is also an async gap: edits there must
+          // keep the current AUTO-DRAFT instead of being cleared as a completed session.
+          assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision,exportWorkspaceMutationRevision);
           update(100,'Hoàn tất gửi '+parts.length+' tệp PDF. Kiểm tra thư mục Tải xuống hoặc hộp thoại Chia sẻ.');
           await finalizeAfterSuccessfulExport();
         }catch(e){

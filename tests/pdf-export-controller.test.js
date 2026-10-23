@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 global.window=global;
 require('../core/pdf-export-controller.js');
 assert.ok(global.PTI093PdfExportController);
-function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false,failFinalize=false,workspaceOpenPending=false,driveOpenIncomplete=false,onBuild=null,onSplit=null,onExport=null}={}){
+function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false,failFinalize=false,workspaceOpenPending=false,driveOpenIncomplete=false,onBuild=null,onSplit=null,onExport=null,onWait=null}={}){
   const elements={};
   for(const id of ['pdfHighQualityCheck','pdfHighProgressWrap','pdfHighProgressLabel','pdfHighProgressPct','pdfHighProgressBar']){
     elements[id]={disabled:false,textContent:'',style:{display:'',width:''}};
@@ -21,7 +21,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     finalizeCompletedSession:async()=>{events.finalized++;events.finalizeLockStates.push(state.workspaceOpenPending);if(failFinalize)return false;return true;},
     msg:(text,ok)=>events.messages.push({text,ok}),
     alert:text=>events.alerts.push(text),
-    setTimeout:fn=>{fn();return 1;}
+    setTimeout:(fn,delay)=>{if(onWait)onWait(state,delay,events);fn();return 1;}
   });
   return {api,elements,events,state};
 }
@@ -199,4 +199,13 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
   assert.equal(high.events.finalized,0,'content changes during split export must never clear AUTO-DRAFT');
   assert.match(high.events.messages.at(-1).text,/hồ sơ thay đổi trong lúc xuất/i);
   console.log('PDF content-mutation revision race regressions passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
+
+(async()=>{
+  const high=setup({onWait:(state,delay,events)=>{if(delay===180&&events.exports.length===2)state.workspaceMutationRevision++;}});
+  await high.api.exportHighQualitySplit('case',{disabled:false},{textContent:''});
+  assert.equal(high.events.exports.length,2,'already-sent PDF parts remain saved when an edit occurs during the final wait');
+  assert.equal(high.events.finalized,0,'an edit during the final post-export wait must prevent AUTO-DRAFT cleanup');
+  assert.match(high.events.messages.at(-1).text,/Không xóa bản nháp hiện tại/);
+  console.log('PDF final-wait content mutation regression passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
