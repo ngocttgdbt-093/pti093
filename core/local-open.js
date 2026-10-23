@@ -2,7 +2,12 @@
   'use strict';
   global.PTI093LocalOpenCore = {
     install: function(deps){
-      const {state, $, msg, openLocalDraftDB, setDateInput, render, renderLayout, setDriveState, deviceStorageLabel, setOpenLoad, finishOpenLoad} = deps;
+      const {state, $, msg, openLocalDraftDB, setDateInput, render, renderLayout, setDriveState, deviceStorageLabel, setOpenLoad, finishOpenLoad, fileKey:makeFileKey} = deps;
+      const fileKey=makeFileKey||function(file){
+        const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
+        const relative=String(file.webkitRelativePath||'').trim();
+        return relative?base+'|'+relative:base;
+      };
       async function openLocalDraft(id){
         const source=deviceStorageLabel();
         setOpenLoad(source,0,0,'Đang đọc bản lưu ảnh từ '+source+'...');
@@ -37,7 +42,7 @@
             const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
             loadedCount++;
             setOpenLoad(source,loadedCount,expectedImages,'Đang tải ảnh '+loadedCount+'/'+expectedImages+' từ '+source+'...');
-            items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:'',driveFileName:'',driveUploadKey:''});
+            items.push({file:f,key:it.key||fileKey(f),caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:'',driveFileName:'',driveUploadKey:''});
           });
           if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
         });
