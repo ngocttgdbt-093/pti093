@@ -209,8 +209,13 @@ function scheduleAutoDraftSave(imagesDirty=true){
           $('title').value=state.current.title||meta.currentTitle||'Bản ảnh chi tiết thiệt hại';
           if(state.driveRecordId){$('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden')}
           render();renderLayout();autoDraftImagesDirty=false;
-          if(groups.length||meta.bks||meta.caseNumber)setDriveState('Đã khôi phục bản nháp tự động · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
-          msg(missing?'Đã khôi phục bản nháp nhưng thiếu '+missing+' ảnh trong bộ nhớ trình duyệt.':'Đã khôi phục công việc đang làm. Anh có thể tiếp tục ngay.',true);
+          if(state.driveOpenIncomplete){
+            const detail='⚠️ Đã khôi phục bản nháp của hồ sơ Drive chưa tải đủ ảnh. Lưu đè/tải ảnh lên Drive đang bị khóa; hãy mở lại hồ sơ để tải đủ ảnh hoặc lưu bản sao tại máy.';
+            setDriveState(detail,false);msg(detail,true);
+          }else{
+            if(groups.length||meta.bks||meta.caseNumber)setDriveState('Đã khôi phục bản nháp tự động · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
+            msg(missing?'Đã khôi phục bản nháp nhưng thiếu '+missing+' ảnh trong bộ nhớ trình duyệt.':'Đã khôi phục công việc đang làm. Anh có thể tiếp tục ngay.',true);
+          }
         }catch(e){
           console.warn('Không thể khôi phục bản nháp tự động:',e);
           const detail='Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.';
