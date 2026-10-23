@@ -232,8 +232,9 @@ console.log('Drive record ID storage resilience contract passed.');
     element('title').value='Prior current';
     const originalRenderLayout=deps.renderLayout;
     let failFinalLayout=true;
+    const rollbackAutosaveEvents=[];
     const rollbackApi=global.PTI093DriveFusion.install({
-      ...deps,state,$:element,
+      ...deps,state,$:element,scheduleAutoDraftSave:dirty=>rollbackAutosaveEvents.push(dirty),
       setDriveState:(text,ok)=>statusEvents.push({text,ok}),
       setOpenLoad:(...args)=>progress.push(args),
       finishOpenLoad:(...args)=>finished.push(args),
@@ -242,8 +243,6 @@ console.log('Drive record ID storage resilience contract passed.');
       renderLayout:()=>{if(failFinalLayout){failFinalLayout=false;throw new Error('synthetic final layout failure')}},
       msg:(text,show)=>messages.push({text,show})
     });
-    const rollbackAutosaveEvents=[];
-    rollbackApi.scheduleAutoDraftSave = dirty => rollbackAutosaveEvents.push(dirty);
     const revisionBeforeRollback=Number(state.workspaceRevision)||0;
     await assert.rejects(()=>rollbackApi.openRecordFromDrive('DRIVE-PARTIAL'),/synthetic final layout failure/);
     assert.equal(state.groups,priorGroups,'failed post-mutation Drive Open must restore prior group collection');
