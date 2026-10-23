@@ -16,6 +16,7 @@
           setDriveState(label);msg(label+(detail?' · '+detail:''),true);
         };
         progress(3,'Đang chuẩn bị lưu tại máy…','Đang đọc thông tin hồ sơ');
+        const copiedFromIncompleteDrive=!!(state.driveOpenIncomplete||state.localCopyFromIncompleteDrive);
         const groups=snapshotGroupsForProject();
         const existingLocalId=String(state.localDraftId||'').startsWith('LOCAL-')?state.localDraftId:'';
         const id=existingLocalId||('LOCAL-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,7).toUpperCase());
@@ -39,7 +40,7 @@
               rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||ii+1
             }))
           }));
-          const meta={id,storageType:'local',caseNumber:($('hoso').value||'').trim(),
+          const meta={id,storageType:'local',sourceDriveIncomplete:copiedFromIncompleteDrive,caseNumber:($('hoso').value||'').trim(),
             bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),date:getDateISO(),gdv:selectedGdv(),
             status:'Bản lưu tại máy',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},
             sections,updatedAt:new Date().toISOString()};
@@ -63,12 +64,12 @@
           for(const g of [...(state.groups||[]),state.current||{}])for(const it of (g.items||[])){
             it.driveFileId='';it.driveFileName='';it.driveUploadKey='';
           }
-          state.driveRecordId='';state.localDraftId=id;state.driveOpenIncomplete=false;state.driveOpenPending=false;
+          state.driveRecordId='';state.localDraftId=id;state.driveOpenIncomplete=false;state.driveOpenPending=false;state.localCopyFromIncompleteDrive=copiedFromIncompleteDrive;
           try{sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
           try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
           $('driveId').textContent='💻 ID hồ sơ local: '+id;
           $('driveId').classList.remove('hidden');
-          progress(100,'✓ Đã lưu hồ sơ tại máy thành công',total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');
+          progress(100,copiedFromIncompleteDrive?'⚠️ Đã lưu bản sao tại máy từ hồ sơ Drive chưa tải đủ ảnh':'✓ Đã lưu hồ sơ tại máy thành công',total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');
           return id;
         }catch(e){
           const idBox=$('driveId');
