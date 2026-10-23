@@ -13,13 +13,13 @@
       }
       async function buildPartWithinLimit(canvases){
         let result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
-        if(pdfPackSize(result.bytes)<=safe)return result;
+        if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT)return result;
         // A single raster page can exceed the cap by itself; page splitting cannot fix that.
         // Retry that part at progressively lower DPI/quality and never return an oversized file.
         const fallbacks=[{dpi:120,quality:.72},{dpi:100,quality:.65},{dpi:85,quality:.58},{dpi:72,quality:.52},{dpi:60,quality:.46},{dpi:50,quality:.40},{dpi:40,quality:.34}];
         for(const attempt of fallbacks){
           result=makePdfAt(canvases,attempt.dpi,attempt.quality);
-          if(pdfPackSize(result.bytes)<=safe)return result;
+          if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT)return result;
           await new Promise(resolve=>setTimeout(resolve,0));
         }
         throw new Error('Một trang PDF vẫn vượt giới hạn an toàn sau khi giảm DPI/chất lượng. Không xuất tệp vượt giới hạn.');
