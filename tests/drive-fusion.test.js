@@ -125,7 +125,8 @@ console.log('Drive record ID storage resilience contract passed.');
     classList:{add(){},remove(){},toggle(){}},appendChild(){},setAttribute(){},addEventListener(){},getBoundingClientRect(){return {top:0}}});
   const statusEvents=[],messages=[],progress=[],finished=[];
   const state={groups:[],current:{title:'',items:[]},driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,orientation:'portrait',per:6,addSeq:0};
-  let failSecondImage=true,fetchCalls=0,releaseSecondImage=null,signalSecondImageStarted;\n  const secondImageStarted=new Promise(resolve=>{signalSecondImageStarted=resolve});
+  let failSecondImage=true,fetchCalls=0,releaseSecondImage=null,signalSecondImageStarted;
+  const secondImageStarted=new Promise(resolve=>{signalSecondImageStarted=resolve});
   global.document={querySelectorAll:()=>[]};
   global.scrollY=0;global.scrollTo=()=>{};
   global.File=class TestFile{
