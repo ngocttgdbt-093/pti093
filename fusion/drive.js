@@ -309,6 +309,9 @@
           return result;
         }catch(error){
           restoreDriveOpenWorkspace(snapshot);
+          // Persist the restored workspace, not the failed/partial Drive payload. A timer
+          // that fired during the pending-open lock may have been skipped, so queue recovery.
+          scheduleAutoDraftSave(true);
           throw error;
         }finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }

@@ -269,7 +269,9 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.workspaceOpenPending,false,'rollback must release shared workspace lock');
     assert.equal(state.driveOpenPending,false,'rollback must release Drive lock');
     assert.equal(state.driveOpenIncomplete,false,'rollback must restore the prior Drive write guard');
-    assert.equal(rollbackAutosaveEvents.length,0,'the failed open must not schedule a new autosave for partial state');
+    assert.equal(rollbackAutosaveEvents.length,1,'failed Drive Open must queue autosave after rollback so valid prior edits are not lost');
+    assert.equal(rollbackAutosaveEvents[0],true,'rollback autosave must include the restored prior images');
+    assert.equal(state.current,priorCurrent,'rollback autosave must be queued only after prior workspace state is restored');
     console.log('Drive Open transactional rollback regression passed.');
 
     // Regression: Local Open shares workspaceOpenPending but does not set the Drive-specific
