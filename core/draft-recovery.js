@@ -140,7 +140,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             await clearAutoDraft();
             if(autoDraftUserChangedDuringRestore)return;
             // No active draft means this tab must not fall back to a stale Drive ID on the next save.
-            state.driveRecordId='';state.localDraftId='';
+            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
             try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             return;
@@ -151,7 +151,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             // Cleanup is async too; if the user started working while it ran, do not blank that work.
             if(autoDraftUserChangedDuringRestore)return;
             state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
-            state.driveRecordId='';state.localDraftId='';state.pages=[];state.pageDefs=[];
+            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.pages=[];state.pageDefs=[];
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
             try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             $('bks').value='';$('hoso').value='';setDateInput('');$('garage').value='';
@@ -200,7 +200,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
           document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
           state.groups=restoredGroups;
           state.current=currentGroup||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
-          state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';
+          state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';state.driveOpenIncomplete=!!meta.driveOpenIncomplete;
           state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
           if(state.driveRecordId){
             try{global.sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId)}catch(e){}
