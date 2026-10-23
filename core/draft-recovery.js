@@ -141,17 +141,24 @@ function scheduleAutoDraftSave(imagesDirty=true){
             return;
           }
           const imageMap=new Map(images.map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
-          const groups=[];let missing=0;
+          const groups=[];let missing=0;let nextAddSeq=state.addSeq||0;
+          const expectedImages=(meta.sections||[]).reduce((n,g)=>n+((g.items||[]).length),0);
           (meta.sections||[]).forEach((g,si)=>{
             const items=[];
             (g.items||[]).forEach((it,ii)=>{
               const stored=imageMap.get(si+':'+ii);
               if(!stored||!stored.file){missing++;return}
               const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
-              items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++state.addSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
+              items.push({file:f,key:it.key||f.name+'|'+f.size+'|'+f.lastModified,caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
             });
             if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
           });
+          if(missing>0){
+            const detail='Không thể khôi phục đầy đủ bản nháp tự động: thiếu dữ liệu của '+missing+'/'+expectedImages+' ảnh. Bản nháp được giữ nguyên; hồ sơ đang mở không bị thay đổi.';
+            setDriveState(detail,false);
+            msg(detail,true);
+            return;
+          }
           $('bks').value=meta.bks||'';$('hoso').value=meta.caseNumber||'';setDateInput(meta.date||'');$('garage').value=meta.garage||'';
           const gdv=meta.gdv||'';
           if([...$('gdv').options].some(o=>o.value===gdv))$('gdv').value=gdv;
