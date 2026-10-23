@@ -21,8 +21,9 @@
         const checkbox=$('pdfHighQualityCheck');if(checkbox)checkbox.disabled=true;
         const wrap=$('pdfHighProgressWrap'),label=$('pdfHighProgressLabel'),pct=$('pdfHighProgressPct'),bar=$('pdfHighProgressBar');
         if(wrap)wrap.style.display='block';
+        let lastProgress=0;
         const update=(percent,text)=>{
-          const p=Math.max(0,Math.min(100,Math.round(percent)));
+          const p=Math.max(0,Math.min(100,Math.round(percent)));lastProgress=p;
           if(progress)progress.textContent=text;
           if(label)label.textContent=text;
           if(pct)pct.textContent=p+'%';
@@ -43,7 +44,7 @@
           await finalizeAfterSuccessfulExport();
         }catch(e){
           if(e&&e.name==='AbortError'){
-            update(100,'Đã hủy chia sẻ PDF. Bản nháp vẫn được giữ để anh có thể xuất lại; kiểm tra các tệp đã lưu trước khi thử lại.');
+            update(lastProgress,'Đã hủy chia sẻ PDF. Bản nháp vẫn được giữ để anh có thể xuất lại; kiểm tra các tệp đã lưu trước khi thử lại.');
           }else{
             const message='Xuất PDF chất lượng cao bị gián đoạn: '+(e&&e.message?e.message:String(e))+'. Hãy kiểm tra các tệp đã lưu trước khi thử lại.';
             update(100,message);alert(message);
