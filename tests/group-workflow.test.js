@@ -84,5 +84,22 @@ function setup(){
   assert.deepEqual(state.groups,pendingGroups,'group actions must not mutate the existing group list during open');
   assert.equal(events.saves.length,pendingSaves,'blocked group actions must not schedule autosave');
   assert.equal(events.renders,pendingRenders,'blocked group actions must not rerender stale workspace');
+
+  // If the user has removed every image from a group being edited, the group is
+  // still an uncommitted edit. Switching to another group must ask for confirmation.
+  {
+    const {api,state,events}=setup();
+    state.groups=[{title:'Nhóm B',items:[{file:{name:'b.png'}}]}];
+    state.current={title:'Nhóm A đang sửa',items:[]};
+    state.editing=0;
+    events.confirm=false;
+    const beforeCurrent=state.current;
+    api.editGroup(0);
+    assert.equal(state.current,beforeCurrent,'cancel must preserve an empty in-progress group edit');
+    assert.equal(state.current.title,'Nhóm A đang sửa');
+    assert.equal(state.editing,0);
+    assert.equal(state.groups[0].title,'Nhóm B','cancel must preserve the target saved group');
+    assert.equal(events.renders,0,'cancel must not rerender or mutate the workspace');
+  }
   console.log('Group Workflow Core tests passed (group lifecycle and workspace-open lock).');
 })();

@@ -5,7 +5,7 @@
       const {state,$,workspaceCore,render,makePreview,scheduleAutoDraftSave,msg,confirm,window}=deps;
       function editGroup(index){
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi sửa nhóm ảnh.',true);return;}
-        if(state.current.items.length&&!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return;
+        if((state.current.items.length||state.editing>=0)&&!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return;
         if(!workspaceCore.beginEditGroup(state,index))return;
         $('filenameCaption').checked=false;
         $('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');
