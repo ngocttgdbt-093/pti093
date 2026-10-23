@@ -12,8 +12,8 @@
           thumb.dataset.dragId=imageReorder.ensureDragId(item);thumb.title='Kéo ảnh để đổi thứ tự';thumb.draggable=true;
           imageReorder.bindThumb(thumb,grid);
           const imageBox=doc.createElement('div');imageBox.className='imgBox';
-          const image=doc.createElement('img');image.src=urlApi.createObjectURL(item.file);
-          image.style.transform=`rotate(${item.rotate}deg)`;image.onload=()=>urlApi.revokeObjectURL(image.src);imageBox.appendChild(image);
+          const image=doc.createElement('img'),imageUrl=urlApi.createObjectURL(item.file);image.src=imageUrl;
+          image.style.transform=`rotate(${item.rotate}deg)`;const releaseImageUrl=()=>{try{urlApi.revokeObjectURL(imageUrl)}catch(e){}};image.onload=releaseImageUrl;image.onerror=releaseImageUrl;imageBox.appendChild(image);
           const number=doc.createElement('span');number.className='n';number.textContent=index+1;
           const actions=doc.createElement('div');actions.className='thumbActions';
           const replace=doc.createElement('button');replace.className='replace';replace.textContent='🖼 Thay';replace.title='Thay ảnh, giữ nguyên vị trí';replace.onclick=()=>onReplace(index);
