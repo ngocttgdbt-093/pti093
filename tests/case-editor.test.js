@@ -37,3 +37,17 @@ assert.equal(state.filenameCaption,false);
 assert.equal(events.saves.length,2);
 assert.equal(events.messages.length,2);
 console.log('Case Editor Core tests passed (title updates, filename captions, render, and autosave semantics).');
+
+
+state.workspaceOpenPending=true;
+const titleBefore=state.current.title,savesBefore=events.saves.length,rendersBefore=events.renders;
+element('title').value='Stale title while opening';
+element('title').listeners.change();
+assert.equal(state.current.title,titleBefore,'title edits must not mutate the old workspace during open');
+assert.equal(element('title').value,titleBefore,'the old title input should be restored while opening');
+element('filenameCaption').checked=true;
+element('filenameCaption').listeners.change({target:element('filenameCaption')});
+assert.equal(state.filenameCaption,false,'filename-caption mode must not change while opening');
+assert.equal(events.saves.length,savesBefore,'blocked case-editor changes must not autosave');
+assert.equal(events.renders,rendersBefore,'blocked case-editor changes must not rerender');
+console.log('Case Editor workspace-open lock regression passed.');
