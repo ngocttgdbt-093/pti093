@@ -7,7 +7,7 @@ function setup(){
   for(const id of ['clear','insertFile','replaceFile']){
     elements[id]={value:'chosen',files:[],clickCount:0,addEventListener:(name,fn)=>{listeners[id+':'+name]=fn;},click(){this.clickCount++;}};
   }
-  const state={current:{items:[{file:{name:'old.png'},key:'old.png|3|1',caption:'caption to keep',rotate:270,addSeq:1}]},addSeq:1,insertIndex:-1,replaceIndex:-1,filenameCaption:false};
+  const state={current:{items:[{file:{name:'old.png'},key:'old.png|3|1',caption:'caption to keep',rotate:270,addSeq:1,driveFileId:'OLD-DRIVE-ID',driveFileName:'old.png',driveUploadKey:'old-upload-key'}]},addSeq:1,insertIndex:-1,replaceIndex:-1,filenameCaption:false};
   const events={renders:0,saves:[],messages:[],confirm:true};
   const api=global.PTI093ImageEditing.install({
     state,$:id=>elements[id],exts:/\.(jpe?g|png|webp|gif|heic|heif)$/i,
@@ -54,6 +54,9 @@ const key=f=>f.name+'|'+f.size+'|'+f.lastModified;
   assert.equal(state.current.items[0].rotate,270);
   assert.equal(state.current.items[0].addSeq,1);
   assert.equal(state.current.items[0].key,key(replacement));
+  assert.equal(state.current.items[0].driveFileId,'','replaced image must not retain the old Drive file ID');
+  assert.equal(state.current.items[0].driveFileName,'','replaced image must not retain the old Drive filename');
+  assert.equal(state.current.items[0].driveUploadKey,'','replaced image must not retain the old upload key');
 
   api.rotate(state.current.items[0],0);
   assert.equal(state.current.items[0].rotate,0);
