@@ -11,6 +11,9 @@
         try{global.sessionStorage.setItem('pti093_driveRecordId',recordId)}catch(e){}
         try{global.localStorage.setItem('pti093_driveRecordId',recordId)}catch(e){}
       }
+      function incompleteDriveOpenMessage(){
+        return 'Hồ sơ Drive chưa tải đủ ảnh. Không thể lưu đè hoặc tải ảnh lên cho đến khi mở lại hồ sơ và xác nhận đã tải đủ ảnh; có thể lưu một bản sao tại máy.';
+      }
       
       
       /* Core workspace snapshot is injected by the app. */
@@ -192,13 +195,23 @@
         $('title').value=state.current.title;
         $('driveId').textContent='Hồ sơ: '+state.driveRecordId;
         $('driveId').classList.remove('hidden');
-        finishOpenLoad('Google Drive',total);
-        setDriveState('✓ Đã tải hoàn tất hồ sơ '+state.driveRecordId+' từ Google Drive · '+total+' ảnh.');
+        const incomplete=expectedImages>0&&total<expectedImages;
+        state.driveOpenIncomplete=incomplete;
+        if(incomplete){
+          const missing=expectedImages-total;
+          const detail='⚠️ Đã mở hồ sơ Drive nhưng chỉ tải được '+total+'/'+expectedImages+' ảnh; còn thiếu '+missing+' ảnh. Không lưu đè lên Drive cho đến khi mở lại và tải đủ ảnh.';
+          setOpenLoad('Google Drive',total,expectedImages,detail);
+          setDriveState(detail,false);
+          msg(detail+' Có thể lưu một bản sao tại máy để giữ các ảnh đã tải được.',true);
+        }else{
+          finishOpenLoad('Google Drive',total);
+          setDriveState('✓ Đã tải hoàn tất hồ sơ '+state.driveRecordId+' từ Google Drive · '+total+' ảnh.');
+          msg(total?'✓ Đã tải hoàn tất ảnh từ Google Drive. Có thể chỉnh sửa và lưu tiếp.':'Đã mở hồ sơ Drive nhưng hồ sơ này không có ảnh để tải.',true);
+        }
         $('driveId').textContent='☁️ Hồ sơ Drive: '+state.driveRecordId;
         $('driveId').classList.remove('hidden');
         render();
         renderLayout();
-        msg(total?'✓ Đã tải hoàn tất ảnh từ Google Drive. Có thể chỉnh sửa và lưu tiếp.':'Đã mở hồ sơ nhưng chưa tải được ảnh. Hồ sơ vẫn có thể tiếp tục chỉnh sửa.',true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
       }
       
@@ -300,6 +313,7 @@
       }
 
       async function saveProjectToDrive(showMsg=true){
+        if(state.driveOpenIncomplete)throw new Error(incompleteDriveOpenMessage());
         const id=state.driveRecordId||readStoredDriveRecordId()||'';
         if(!id)throw new Error('Chưa có hồ sơ Drive.');
         const revision=String(Date.now())+'-'+Math.random().toString(36).slice(2,8),payload=JSON.stringify({action:'saveProject',recordId:id,revision,project:buildProjectData()});
@@ -555,6 +569,10 @@
       }
 
       async function createDriveRecord(){
+        if(state.driveOpenIncomplete){
+          const detail=incompleteDriveOpenMessage();
+          setDriveState(detail,false);msg(detail,true);return;
+        }
         if(state.driveRecordId){try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();const cleanupOk=await finalizeAfterSuccessfulDriveSave();if(cleanupOk)setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
         const btn=$('driveCreate');btn.disabled=true;setDriveState('Đang tạo hồ sơ và lưu dữ liệu...');
         try{
@@ -568,6 +586,11 @@
       }
       
       async function pti093UploadAll(){
+        if(state.driveOpenIncomplete){
+          const detail=incompleteDriveOpenMessage();
+          setDriveState(detail,false);msg(detail,true);
+          return {failures:[{index:0,name:'Hồ sơ Drive',error:detail}]};
+        }
         const id=state.driveRecordId||readStoredDriveRecordId()||'';
         if(!id){
           setDriveState('Chưa có Record ID Drive.',false);
