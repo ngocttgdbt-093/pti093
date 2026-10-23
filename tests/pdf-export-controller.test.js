@@ -8,7 +8,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     elements[id]={disabled:false,textContent:'',style:{display:'',width:''}};
   }
   const events={messages:[],exports:[],alerts:[],warnings:[],finalized:0,finalizeLockStates:[]};
-  const state={pages,workspaceOpenPending,driveOpenIncomplete,pageDefs:[{pageNo:1}],workspaceRevision:0};
+  const state={pages,workspaceOpenPending,driveOpenIncomplete,pageDefs:[{pageNo:1}],workspaceRevision:0,workspaceMutationRevision:0};
   const api=global.PTI093PdfExportController.install({
     state,
     $:id=>elements[id]||(elements[id]={style:{},textContent:''}),
@@ -185,4 +185,18 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
   assert.equal(high.events.finalized,0,'a stale high-quality export must not clear the new workspace draft');
   assert.match(high.events.messages.at(-1).text,/hồ sơ thay đổi trong lúc xuất/i);
   console.log('PDF workspace revision race regressions passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
+
+(async()=>{
+  const standard=setup({onBuild:async state=>{state.workspaceMutationRevision++;}});
+  await standard.api.exportStandardPdf({disabled:false});
+  assert.equal(standard.events.exports.length,0,'standard PDF must abort when content changes but page-array references remain identical');
+  assert.equal(standard.events.finalized,0,'content changes during standard export must never clear AUTO-DRAFT');
+  assert.match(standard.events.messages.at(-1).text,/hồ sơ đã thay đổi trong lúc xuất PDF/i);
+  const high=setup({onSplit:async state=>{state.workspaceMutationRevision++;}});
+  await high.api.exportHighQualitySplit('case',{disabled:false},{textContent:''});
+  assert.equal(high.events.exports.length,0,'high-quality PDF must abort when content changes but page-array references remain identical');
+  assert.equal(high.events.finalized,0,'content changes during split export must never clear AUTO-DRAFT');
+  assert.match(high.events.messages.at(-1).text,/hồ sơ thay đổi trong lúc xuất/i);
+  console.log('PDF content-mutation revision race regressions passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
