@@ -162,7 +162,7 @@ console.log('Drive record ID storage resilience contract passed.');
     await api.openRecordFromDrive('DRIVE-PARTIAL');
     assert.equal(state.current.items.length,1,'only the successfully downloaded image should enter the workspace');
     assert.equal(state.driveOpenIncomplete,true,'a partially loaded Drive record must be marked unsafe to overwrite');
-    assert.match(statusEvents.at(-1).text,/tải thiếu 1\/2 ảnh/,'partial open must not report success');
+    assert.match(statusEvents.at(-1).text,/chỉ tải được 1\/2 ảnh/,'partial open must not report success');
     assert.equal(statusEvents.at(-1).ok,false,'partial open status must be an error/warning state');
     assert.equal(finished.length,0,'partial open must not mark the progress bar as fully completed');
     assert.match(progress.at(-1)[3],/Không lưu đè lên Drive/,'progress detail must warn against overwriting the incomplete record');
