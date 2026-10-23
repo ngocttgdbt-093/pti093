@@ -4,7 +4,14 @@ const PDF_SAFE_LIMIT=9.5*1048576;
 const fileDelivery=window.PTI093FileDelivery.install({navigator,window,document,URL,File,location,setTimeout});
 const {exportPdfFile}=fileDelivery;
 const $=id=>document.getElementById(id);
-const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:localStorage});
+// Storage is a preference/draft convenience, not a prerequisite for starting the app.
+// Access the browser storage property itself inside try/catch because some privacy policies throw on access.
+const safeLocalStorage={
+  getItem(key){try{return window.localStorage.getItem(key)}catch(e){return null}},
+  setItem(key,value){try{window.localStorage.setItem(key,value)}catch(e){}},
+  removeItem(key){try{window.localStorage.removeItem(key)}catch(e){}}
+};
+const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:safeLocalStorage});
 const {names:PTI093_GDV_NAMES,selectedGdv}=gdvFusion;
 const classicStatusSkin=window.PTI093ClassicStatusSkin.install({$});
 const {msg,setDriveState}=classicStatusSkin;
@@ -90,7 +97,7 @@ const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_dr
 const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
 const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone});
 const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery;
-window.PTI093SessionActions.install({$,clearAutoDraft,localStorage,location,console,msg});
+window.PTI093SessionActions.install({$,clearAutoDraft,localStorage:safeLocalStorage,location,console,msg});
 const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
 localSaveCore.bindControls();
 const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad});
