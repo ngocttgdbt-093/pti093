@@ -59,11 +59,9 @@
         if(!String(id).startsWith('LOCAL-')){
           state.driveRecordId=id;
           try{global.sessionStorage.setItem('pti093_driveRecordId',id)}catch(e){}
-          try{global.localStorage.setItem('pti093_driveRecordId',id)}catch(e){}
         }else{
           state.driveRecordId='';
           try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
-          try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
         }
         state.localDraftId=id;state.driveOpenIncomplete=false;state.driveOpenPending=false;state.localCopyFromIncompleteDrive=!!meta.sourceDriveIncomplete;
         $('bks').value=meta.bks||'';

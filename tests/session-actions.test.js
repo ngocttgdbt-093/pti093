@@ -29,7 +29,7 @@ function setup({gdv='Phạm Bá Lưu',custom='',storedCustom='',clearError=null}
     await elements.newCase.onclick();
     assert.equal(localStorage.getItem('pti093_gdv'),'Phạm Bá Lưu');
     assert.equal(sessionStore.has('pti093_driveRecordId'),false,'starting a new case must clear the old session Drive record ID');
-    assert.equal(localStorage.getItem('pti093_driveRecordId'),null,'starting a new case must clear the old persisted Drive record ID');
+    assert.equal(localStorage.getItem('pti093_driveRecordId'),'DRIVE-OLD','starting a new case must not erase the shared Drive ID used by another tab');
     assert.equal(elements.newCase.disabled,true);
     assert.equal(state.workspaceOpenPending,true,'workspace remains locked until page reload begins');
     assert.deepEqual(events.order,['clear-start','clear-done','reload']);

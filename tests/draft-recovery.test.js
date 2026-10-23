@@ -111,7 +111,11 @@ for (const contract of [
   assert.ok(appCore.includes(contract), 'App integration contract should remain: ' + contract);
 }
 assert.ok(source.includes("const PTI093_SESSION_KEY='pti093_work_session_id'"), 'The session key must remain stable');
-assert.ok(source.includes("const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT'"), 'The automatic draft ID must remain stable');
+assert.ok(source.includes("const PTI093_AUTO_DRAFT_ID='AUTO-DRAFT'"), 'The legacy automatic draft ID must remain available for backward compatibility');
+assert.ok(source.includes("let activeAutoDraftId=PTI093_AUTO_DRAFT_ID+'-'+PTI093_SESSION_ID"), 'New sessions must use isolated automatic draft IDs');
+assert.ok(source.includes('if(legacyMeta.sessionId===PTI093_SESSION_ID)'), 'Legacy AUTO-DRAFT may only be adopted by its owning session');
+assert.ok(source.includes("Never delete another tab's legacy draft"), 'Foreign legacy draft must never be deleted during restore');
+assert.ok(!source.includes("global.localStorage.removeItem('pti093_driveRecordId')"), 'A tab must not remove the shared localStorage Drive pointer');
 assert.ok(source.includes("document.addEventListener('visibilitychange'"), 'Draft Recovery Core should own visibility lifecycle binding');
 assert.ok(source.includes("window.addEventListener('pagehide'"), 'Draft Recovery Core should own pagehide lifecycle binding');
 console.log('Draft-recovery integration wiring contract passed.');

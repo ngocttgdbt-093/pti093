@@ -9,7 +9,6 @@
       }
       function persistDriveRecordId(recordId){
         try{global.sessionStorage.setItem('pti093_driveRecordId',recordId)}catch(e){}
-        try{global.localStorage.setItem('pti093_driveRecordId',recordId)}catch(e){}
       }
       function incompleteDriveOpenMessage(){
         return 'Hồ sơ Drive chưa tải đủ ảnh. Không thể lưu đè hoặc tải ảnh lên cho đến khi mở lại hồ sơ và xác nhận đã tải đủ ảnh; có thể lưu một bản sao tại máy.';

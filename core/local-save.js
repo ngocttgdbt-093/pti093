@@ -77,8 +77,7 @@
           }
           state.driveRecordId='';state.localDraftId=id;state.driveOpenIncomplete=false;state.driveOpenPending=false;state.localCopyFromIncompleteDrive=copiedFromIncompleteDrive;
           try{sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
-          try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
-          $('driveId').textContent='💻 ID hồ sơ local: '+id;
+            $('driveId').textContent='💻 ID hồ sơ local: '+id;
           $('driveId').classList.remove('hidden');
           const successLabel=copiedFromIncompleteDrive?'⚠️ Đã lưu bản sao tại máy từ hồ sơ Drive chưa tải đủ ảnh':'✓ Đã lưu hồ sơ tại máy thành công';
           progress(100,successLabel,total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');

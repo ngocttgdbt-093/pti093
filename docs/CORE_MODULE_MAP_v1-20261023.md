@@ -95,3 +95,10 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 - `saveDraftWithoutPhotos()` now captures the workspace revision before showing the asynchronous confirmation and refuses to save if a local/Drive case switch completes while the confirmation is open. This prevents confirming one case and accidentally saving a different one; the stale confirmation also cannot clear the new case's AUTO-DRAFT.
 - If a workspace transition occurs during an already-started local IndexedDB write, the code preserves the active workspace's Drive/local identifiers, restores the visible case ID in the UI, reports that a local copy may have been written, and skips AUTO-DRAFT cleanup for the new workspace.
 - Regression coverage in `tests/local-save.test.js` covers both the pending-IndexedDB race and the asynchronous confirmation race. PR runs **#1476/#1477** passed on the confirmation-race head; runs **#1478/#1479** passed on the final code head `20184fb0`. These automated results do not replace manual acceptance on the user's PC/iPhone.
+
+
+## Cross-tab draft isolation — 2026-10-23
+
+- Found a shared IndexedDB ownership hazard: a fresh tab previously cleared the single `AUTO-DRAFT` record when its `sessionId` differed, deleting another tab's recovery metadata and image blobs.
+- New tabs now use `AUTO-DRAFT-<sessionId>`; an existing legacy `AUTO-DRAFT` is adopted only when its `sessionId` matches the current tab. A foreign or owner-unknown legacy draft is left untouched. Active Drive record pointers remain in `sessionStorage`; tab-specific open/new-case/save operations no longer erase or update the same active-record key in shared `localStorage`.
+- Regression coverage is being added to assert that restoring and autosaving in a second session leaves the first session's metadata and image blobs intact. Existing same-session legacy recovery remains supported.

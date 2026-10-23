@@ -30,7 +30,6 @@
         // A new case must not inherit the previous Drive record ID; otherwise Fusion may
         // interpret the next "create" action as an update to the previous record.
         try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
-        try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
         location.reload();
         return true;
       }
