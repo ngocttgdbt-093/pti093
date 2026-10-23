@@ -143,6 +143,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
             state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
             state.driveRecordId='';state.localDraftId='';state.pages=[];state.pageDefs=[];
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+            try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             $('bks').value='';$('hoso').value='';setDateInput('');$('garage').value='';
             $('title').value=state.current.title;render();renderLayout();
             setDriveState('Phiên mới — chưa có ảnh hoặc thông tin hồ sơ cũ.');
