@@ -120,6 +120,10 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
         run: node tests/draft-recovery-restore-open-race.test.js
 
+      - name: Test AUTO-DRAFT preserves edited group order and empty edits across reload
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
+        run: node tests/draft-recovery-group-edit.test.js
+
       - name: Test AUTO-DRAFT recovery refuses incomplete image sets
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
         run: node tests/draft-recovery-incomplete.test.js

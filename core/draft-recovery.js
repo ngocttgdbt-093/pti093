@@ -45,7 +45,12 @@ function scheduleAutoDraftSave(imagesDirty=true){
         autoDraftSaving=true;
         const imagesNeedSaving=autoDraftImagesDirty,imageRevision=autoDraftImageRevision;
         try{
-          const groups=[...state.groups.map(g=>({title:g.title,items:(g.items||[]).slice(),isCurrent:false})),...((state.current&&state.current.items&&state.current.items.length)?[{title:state.current.title,items:state.current.items.slice(),isCurrent:true}]:[])];
+          const groups=(state.groups||[]).map(g=>({title:g.title,items:(g.items||[]).slice(),isCurrent:false}));
+          if(state.current&&state.current.items&&(state.current.items.length||Number(state.editing)>=0)){
+            const currentGroup={title:state.current.title,items:state.current.items.slice(),isCurrent:true};
+            if(Number.isInteger(state.editing)&&state.editing>=0)groups.splice(Math.min(state.editing,groups.length),0,currentGroup);
+            else groups.push(currentGroup);
+          }
           const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||''):$('gdv').value;
           const sections=groups.map((g,si)=>({title:g.title,isCurrent:!!g.isCurrent,items:g.items.map((it,ii)=>({
             sectionIndex:si,itemIndex:ii,fileName:(it.file&&it.file.name)||it.driveFileName||('anh-'+(ii+1)+'.jpg'),
@@ -57,7 +62,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
           const draftId=activeAutoDraftId;
           const meta={id:draftId,auto:true,sessionId:PTI093_SESSION_ID,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
             gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',driveOpenIncomplete:!!state.driveOpenIncomplete,localCopyFromIncompleteDrive:!!state.localCopyFromIncompleteDrive,
-            localDraftId:state.localDraftId||'',settings:{orientation:state.orientation,imagesPerPage:state.per},
+            localDraftId:state.localDraftId||'',editing:Number.isInteger(state.editing)&&state.editing>=0?state.editing:-1,settings:{orientation:state.orientation,imagesPerPage:state.per},
             currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
           const db=await openLocalDraftDB();
           try{
@@ -218,7 +223,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
               const f=stored.file instanceof File?stored.file:new File([stored.file],stored.fileName||it.fileName||'image.jpg',{type:stored.type||it.type||'image/jpeg',lastModified:stored.lastModified||it.lastModified||Date.now()});
               items.push({file:f,key:it.key||fileKey(f),caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''});
             });
-            if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
+            if(items.length||g.isCurrent)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
           });
           if(missing>0){
             const detail='Không thể khôi phục đầy đủ bản nháp tự động: thiếu dữ liệu của '+missing+'/'+expectedImages+' ảnh. Bản nháp được giữ nguyên; hồ sơ đang mở không bị thay đổi.';
@@ -249,7 +254,8 @@ function scheduleAutoDraftSave(imagesDirty=true){
           document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
           state.groups=restoredGroups;
           state.current=currentGroup||{title:meta.currentTitle||'Bản ảnh chi tiết thiệt hại',items:[]};
-          state.editing=-1;state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';state.driveOpenIncomplete=!!meta.driveOpenIncomplete;state.localCopyFromIncompleteDrive=!!meta.localCopyFromIncompleteDrive;
+          state.editing=currentGroup&&Number.isInteger(meta.editing)&&meta.editing>=0&&meta.editing<=restoredGroups.length?meta.editing:-1;
+          state.localDraftId=meta.localDraftId||'';state.driveRecordId=meta.driveRecordId||'';state.driveOpenIncomplete=!!meta.driveOpenIncomplete;state.localCopyFromIncompleteDrive=!!meta.localCopyFromIncompleteDrive;
           state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
           if(state.driveRecordId){
             try{global.sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId)}catch(e){}
