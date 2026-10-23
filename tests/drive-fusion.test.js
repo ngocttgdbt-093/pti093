@@ -124,7 +124,7 @@ console.log('Drive record ID storage resilience contract passed.');
   const element=id=>elements[id]||(elements[id]={value:'',textContent:'',innerHTML:'',style:{},options:[],dataset:{},disabled:false,onclick:null,
     classList:{add(){},remove(){},toggle(){}},appendChild(){},setAttribute(){},addEventListener(){},getBoundingClientRect(){return {top:0}}});
   const statusEvents=[],messages=[],progress=[],finished=[];
-  const state={groups:[],current:{title:'',items:[]},driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,orientation:'portrait',per:6,addSeq:0};
+  const state={groups:[],current:{title:'',items:[]},driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,workspaceOpenPending:false,orientation:'portrait',per:6,addSeq:0};
   let failSecondImage=true,fetchCalls=0,releaseSecondImage=null,signalSecondImageStarted;
   const secondImageStarted=new Promise(resolve=>{signalSecondImageStarted=resolve});
   global.document={querySelectorAll:()=>[]};
@@ -165,13 +165,15 @@ console.log('Drive record ID storage resilience contract passed.');
   try{
     const opening=api.openRecordFromDrive('DRIVE-PARTIAL');
     await secondImageStarted;
-    assert.equal(state.driveOpenPending,true,'the pending-open lock must remain active until all image downloads settle');
+    assert.equal(state.workspaceOpenPending,true,'the shared workspace lock must remain active during Drive open');
+    assert.equal(state.driveOpenPending,true,'the Drive pending-open lock must remain active until all image downloads settle');
     assert.equal(state.driveOpenIncomplete,true,'Drive writes must be guarded while the record is still downloading images');
-    await assert.rejects(()=>api.openRecordFromDrive('DRIVE-OTHER'),/Đang mở một hồ sơ Drive khác/,'a second Drive open must not race the first open');
+    await assert.rejects(()=>api.openRecordFromDrive('DRIVE-OTHER'),/Đang mở hồ sơ khác/,'a second Drive open must not race the first open');
     await assert.rejects(()=>api.saveProjectToDrive(false),/Hồ sơ Drive chưa tải đủ ảnh/,'writes must be blocked during an in-progress open');
     releaseSecondImage();
     await opening;
     assert.equal(state.current.items.length,1,'only the successfully downloaded image should enter the workspace');
+    assert.equal(state.workspaceOpenPending,false,'shared workspace lock must clear after the downloads settle');
     assert.equal(state.driveOpenPending,false,'pending-open lock must clear after the downloads settle');
     assert.equal(state.driveOpenIncomplete,true,'a partially loaded Drive record must be marked unsafe to overwrite');
     assert.match(statusEvents.at(-1).text,/chỉ tải được 1\/2 ảnh/,'partial open must not report success');
@@ -187,6 +189,7 @@ console.log('Drive record ID storage resilience contract passed.');
 
     failSecondImage=false;
     await api.openRecordFromDrive('DRIVE-PARTIAL');
+    assert.equal(state.workspaceOpenPending,false,'complete reopen must clear shared workspace lock');
     assert.equal(state.driveOpenPending,false,'complete reopen must clear pending-open lock');
     assert.equal(state.driveOpenIncomplete,false,'a subsequent complete reopen must clear the guard');
     assert.equal(state.current.items.length,2,'both images should be restored on the successful retry');
