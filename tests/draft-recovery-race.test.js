@@ -39,8 +39,8 @@ const db={
     };
   }
 };
-const state={groups:[{title:'User group',items:[]}],current:{title:'User's new section',items:[{file:new File(['new'],'new.jpg',{type:'image/jpeg',lastModified:2}),key:'new',caption:'New caption',rotate:0,addSeq:9}]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',orientation:'portrait',per:6,addSeq:9};
-const values={gdv:{value:'New GĐV',dataset:{custom:''},options:[{value:'New GĐV'}]},hoso:{value:'HS-NEW'},bks:{value:'NEW-PLATE'},garage:{value:'New garage'},date:{value:'2026-10-23'},title:{value:'User's new section'}};
+const state={groups:[{title:'User group',items:[]}],current:{title:"User's new section",items:[{file:new File(['new'],'new.jpg',{type:'image/jpeg',lastModified:2}),key:'new',caption:'New caption',rotate:0,addSeq:9}]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',orientation:'portrait',per:6,addSeq:9};
+const values={gdv:{value:'New GĐV',dataset:{custom:''},options:[{value:'New GĐV'}]},hoso:{value:'HS-NEW'},bks:{value:'NEW-PLATE'},garage:{value:'New garage'},date:{value:'2026-10-23'},title:{value:"User's new section"}};
 const $=id=>values[id]||(values[id]={value:'',textContent:'',dataset:{},options:[],classList:{add(){},remove(){},toggle(){}}});
 const api=global.PTI093DraftRecovery.install({
   state,$,getDateISO:()=>'2026-10-23',setDateInput:value=>{values.date.value=value||''},
