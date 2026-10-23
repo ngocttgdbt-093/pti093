@@ -12,7 +12,7 @@
   <script src="../core/draft-recovery.js"></script>
   <script>
   (function(){
-    const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,orientation:'portrait',per:6,addSeq:0};
+    const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,localCopyFromIncompleteDrive:false,orientation:'portrait',per:6,addSeq:0};
     const $=id=>document.getElementById(id);
     const store=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
     const api=window.PTI093DraftRecovery.install({
@@ -59,6 +59,18 @@
         state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;
         await api.restoreAutoDraft();
         return {driveRecordId:state.driveRecordId,driveOpenIncomplete:state.driveOpenIncomplete,caseNumber:$('hoso').value,status:document.body.dataset.driveState||''};
+      },
+      seedLocalCopyFromIncompleteDrive:async()=>{
+        $('bks').value='30A-PARTIAL';$('hoso').value='HS-LOCAL-PARTIAL';$('garage').value='Garage local partial';$('date').value='2026-10-23';$('title').value='Local partial copy';
+        state.driveRecordId='';state.localDraftId='LOCAL-PARTIAL';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=true;
+        state.current={title:'Local partial copy',items:[{file:new File([new Uint8Array([1,2,3])],'partial-local.jpg',{type:'image/jpeg',lastModified:4322}),key:'partial-local.jpg|3|4322',caption:'Partial local',rotate:0,addSeq:1}]};
+        state.groups=[];state.addSeq=1;
+        await api.saveAutoDraft();
+      },
+      restoreLocalCopyFromIncompleteDrive:async()=>{
+        state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
+        await api.restoreAutoDraft();
+        return {localDraftId:state.localDraftId,localCopyFromIncompleteDrive:state.localCopyFromIncompleteDrive,status:document.body.dataset.driveState||''};
       },
       restoreNewSession:async()=>{
         await api.restoreAutoDraft();
