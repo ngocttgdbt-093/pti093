@@ -36,6 +36,37 @@ function restoreIndexedDB() {
       'a blocked IndexedDB getter should reject instead of crashing or hanging'
     );
 
+    // Draft Recovery must convert that rejection into a recoverable warning, not a false success.
+    require('../core/draft-recovery.js');
+    const messages = [];
+    const element = id => ({
+      value: id === 'gdv' ? '' : '',
+      textContent: '',
+      dataset: {},
+      options: [],
+      classList: { add() {}, remove() {}, toggle() {} }
+    });
+    const recovery = global.PTI093DraftRecovery.install({
+      state: {
+        groups: [], current: { title: 'Bản ảnh chi tiết thiệt hại', items: [] },
+        editing: -1, pages: [], pageDefs: [], driveRecordId: '',
+        localDraftId: '', orientation: 'portrait', per: 6, addSeq: 0
+      },
+      $: element,
+      getDateISO: () => '2026-10-23',
+      setDateInput() {},
+      render() {},
+      renderLayout() {},
+      setDriveState() {},
+      msg: text => messages.push(text),
+      openLocalDraftDB: () => store.openLocalDraftDB(),
+      localDraftTransactionDone: async () => {},
+      getLocalDrafts: async () => []
+    });
+    await assert.doesNotReject(recovery.restoreAutoDraft(), 'blocked IndexedDB should not escape the recovery boundary');
+    assert.equal(messages.some(text => /Đã khôi phục công việc/.test(text)), false, 'blocked IndexedDB must never be reported as restored');
+    assert.ok(messages.some(text => /Chưa đọc được bản nháp/.test(text)), 'blocked IndexedDB should show a recoverable draft warning');
+
     // Some implementations expose IndexedDB but throw synchronously from open().
     Object.defineProperty(global, 'indexedDB', {
       configurable: true,
