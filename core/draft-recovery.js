@@ -134,6 +134,8 @@ function scheduleAutoDraftSave(imagesDirty=true){
       }
       
       async function restoreAutoDraft(){
+        const workspaceRevisionAtRestoreStart=Number(state.workspaceRevision)||0;
+        const workspaceMutationRevisionAtRestoreStart=Number(state.workspaceMutationRevision)||0;
         autoDraftRestoring=true;
         autoDraftUserChangedDuringRestore=false;
         try{
@@ -156,7 +158,12 @@ function scheduleAutoDraftSave(imagesDirty=true){
           }finally{db.close()}
           // Người dùng có thể thao tác trong lúc IndexedDB đang đọc. Không cho bản nháp cũ
           // ghi đè các thay đổi mới phát sinh trong tab; phần finally sẽ lưu trạng thái hiện tại.
-          if(autoDraftUserChangedDuringRestore)return;
+          // Opening a local/Drive case can complete while this IndexedDB read is pending.
+          // Never let the older AUTO-DRAFT restore overwrite that newer workspace, even if
+          // the open operation began and finished between async read steps.
+          if(autoDraftUserChangedDuringRestore||state.workspaceOpenPending||
+            (Number(state.workspaceRevision)||0)!==workspaceRevisionAtRestoreStart||
+            (Number(state.workspaceMutationRevision)||0)!==workspaceMutationRevisionAtRestoreStart)return;
           if(foreignDraftFound){
             // Never delete another tab's legacy draft or its image blobs.
             state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
