@@ -3,7 +3,7 @@ global.window = global;
 require('../core/file-delivery.js');
 assert.ok(global.PTI093FileDelivery, 'File Delivery Core module should load');
 
-function setup({userAgent='Windows NT',maxTouchPoints=0,shareSupported=false,popupSupported=true}={}){
+function setup({userAgent='Windows NT',maxTouchPoints=0,shareSupported=false,popupSupported=true,shareError=null}={}){
   const events={clicked:false,removed:false,appended:false,shared:null,opened:null,revoked:[],created:[],href:''};
   const fakeURL={
     createObjectURL(blob){events.created.push(blob);return 'blob:test-'+events.created.length;},
@@ -15,7 +15,7 @@ function setup({userAgent='Windows NT',maxTouchPoints=0,shareSupported=false,pop
   const fakeNavigator={
     userAgent,maxTouchPoints,
     canShare:shareSupported?()=>true:undefined,
-    share:shareSupported?async payload=>{events.shared=payload;}:undefined
+    share:shareSupported?async payload=>{if(shareError)throw shareError;events.shared=payload;}:undefined
   };
   const fakeWindow={open(url,target){events.opened={url,target};return popupSupported?{}:null;}};
   const location={set href(value){events.href=value;},get href(){return events.href;}};
@@ -51,5 +51,11 @@ function setup({userAgent='Windows NT',maxTouchPoints=0,shareSupported=false,pop
     assert.equal(events.href,'blob:test-1');
     assert.deepEqual(events.revoked,['blob:test-1']);
   }
-  console.log('File Delivery Core tests passed (desktop download, iOS share, and iOS popup fallback).');
+  {
+    const {api,events}=setup({userAgent:'iPhone',shareSupported:true,shareError:Object.assign(new Error('user cancelled'),{name:'AbortError'})});
+    await assert.rejects(()=>api.exportPdfFile(new Blob(['pdf']),'cancelled.pdf'),error=>error.name==='AbortError',
+      'cancelled iOS share must propagate cancellation so the draft is not cleared');
+    assert.equal(events.created.length,0);
+  }
+  console.log('File Delivery Core tests passed (desktop download, iOS share, cancellation propagation, and iOS popup fallback).');
 })().catch(error=>{console.error(error);process.exitCode=1;});
