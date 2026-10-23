@@ -20,11 +20,15 @@
             new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),r=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(id));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})
           ]);
         }catch(error){
-          setOpenLoad(source,0,0,'Không thể đọc bản lưu tại máy: '+(error&&error.message?error.message:String(error)));
+          const detail='Không thể đọc bản lưu tại máy: '+(error&&error.message?error.message:String(error));
+          setOpenLoad(source,0,0,detail);
+          setDriveState(detail,false);
           throw error;
         }finally{if(db)db.close()}
         if(!meta){
-          setOpenLoad(source,0,0,'Không tìm thấy bản lưu tại máy này.');
+          const detail='Không tìm thấy bản lưu tại máy này.';
+          setOpenLoad(source,0,0,detail);
+          setDriveState(detail,false);
           throw new Error('Không tìm thấy bản nháp tại máy này.');
         }
         const imageMap=new Map((images||[]).map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
@@ -49,6 +53,7 @@
         if(missing>0){
           const detail='Không thể mở đầy đủ bản lưu: thiếu dữ liệu của '+missing+'/'+expectedImages+' ảnh. Hồ sơ đang mở được giữ nguyên.';
           setOpenLoad(source,loadedCount,expectedImages,detail);
+          setDriveState(detail,false);
           throw new Error(detail);
         }
         if(!String(id).startsWith('LOCAL-')){
