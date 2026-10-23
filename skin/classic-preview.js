@@ -3,14 +3,20 @@
   global.PTI093ClassicPreviewSkin = {
     install: function(deps){
       const {state,$,document:doc,window:win,buildPreview,getAllGroups,selectedGdv,setSelectedGdvCache,hidePdfWarning,msg,pagePixels,jpegQuality,setTimeout:timer=global.setTimeout}=deps;
-      function sameWorkspaceSnapshot(before,after){
-        if(!Array.isArray(before)||!Array.isArray(after)||before.length!==after.length)return false;
-        for(let i=0;i<before.length;i++){
-          const a=before[i],b=after[i];
-          if(a!==b||a.title!==b.title||!Array.isArray(a.items)||!Array.isArray(b.items)||a.items.length!==b.items.length)return false;
+      function workspaceSnapshot(groups){
+        return (groups||[]).map(group=>({
+          ref:group,title:group.title,
+          items:(group.items||[]).map(item=>({ref:item,caption:item.caption,rotate:item.rotate,key:item.key,file:item.file}))
+        }));
+      }
+      function sameWorkspaceSnapshot(snapshot,groups){
+        if(!Array.isArray(snapshot)||!Array.isArray(groups)||snapshot.length!==groups.length)return false;
+        for(let i=0;i<snapshot.length;i++){
+          const a=snapshot[i],b=groups[i];
+          if(a.ref!==b||a.title!==b.title||!Array.isArray(b.items)||a.items.length!==b.items.length)return false;
           for(let j=0;j<a.items.length;j++){
             const x=a.items[j],y=b.items[j];
-            if(x!==y||x.caption!==y.caption||x.rotate!==y.rotate||x.key!==y.key||x.file!==y.file)return false;
+            if(x.ref!==y||x.caption!==y.caption||x.rotate!==y.rotate||x.key!==y.key||x.file!==y.file)return false;
           }
         }
         return true;
@@ -21,8 +27,9 @@
         const groups=getAllGroups();
         if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}
         const previewRevision=state.workspaceRevision;
+        const previewSnapshot=workspaceSnapshot(groups);
         const {pages,defs}=await buildPreview(groups,state.per);
-        if(state.workspaceOpenPending||state.workspaceRevision!==previewRevision||!sameWorkspaceSnapshot(groups,getAllGroups())){
+        if(state.workspaceOpenPending||state.workspaceRevision!==previewRevision||!sameWorkspaceSnapshot(previewSnapshot,getAllGroups())){
           msg('Hồ sơ đã thay đổi trong lúc tạo Preview. Kết quả cũ đã bị bỏ; hãy tạo Preview lại.',true);
           return;
         }
