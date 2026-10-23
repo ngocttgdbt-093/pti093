@@ -18,9 +18,6 @@
       async function makePreview(){
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi tạo Preview.',true);return}
         setSelectedGdvCache(selectedGdv());
-        $('backEdit').style.display='none';
-        $('newCase').style.display='none';
-        hidePdfWarning();
         const groups=getAllGroups();
         if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}
         const previewRevision=state.workspaceRevision;
@@ -31,6 +28,9 @@
         }
         state.pages=pages;
         state.pageDefs=defs;
+        $('backEdit').style.display='none';
+        $('newCase').style.display='none';
+        hidePdfWarning();
         $('preview').innerHTML='';
         pages.forEach((canvas,i)=>{
           const div=doc.createElement('div');div.className='pageprev';
