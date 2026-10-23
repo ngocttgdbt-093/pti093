@@ -8,7 +8,6 @@
         if(state.workspaceOpenPending&&ownsWorkspaceLock)throw new Error('Đang mở hoặc lưu hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi lưu tại máy.');
         const workspaceRevisionAtStart=Number(state.workspaceRevision)||0;
         const workspaceChanged=()=>(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart;
-        if(ownsWorkspaceLock)state.workspaceOpenPending=true;
         // LƯU LOCAL THUẦN TÚY: ID riêng LOCAL-..., không tạo record hoặc đồng bộ metadata lên Drive.
         const progress=(pct,label,detail='')=>{
           renderLocalSaveFeedback(state.localDraftId||'',pct,label,detail,false);
@@ -30,6 +29,7 @@
         // Chỉ tách bản local khỏi Drive sau khi giao dịch ghi local thành công.
         // Nếu IndexedDB lỗi, giữ nguyên liên kết Drive và ID đang làm việc để người dùng thử lại.
         let db;
+        if(ownsWorkspaceLock)state.workspaceOpenPending=true;
         try{
           db=await openLocalDraftDB();
           // IndexedDB open yields control: reject a stale snapshot if another case opened meanwhile.
