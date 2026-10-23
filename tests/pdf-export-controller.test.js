@@ -57,9 +57,11 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(events.finalized,0,'failed high-quality export must retain the auto-draft for recovery');
   }
   {
-    const {api,events}=setup({failExport:'abort'});
-    await api.exportHighQualitySplit('case',{disabled:false},{textContent:''});
+    const {api,elements,events}=setup({failExport:'abort'});
+    const progress={textContent:''};
+    await api.exportHighQualitySplit('case',{disabled:false},progress);
     assert.equal(events.finalized,0,'cancelling iOS share must not clear AUTO-DRAFT');
+    assert.notEqual(elements.pdfHighProgressPct.textContent,'100%','cancelled share must not falsely show 100% completion');
     assert.equal(events.alerts.length,0,'user cancellation should not be reported as an export error');
     assert.match(events.messages.at(-1).text,/Đã hủy chia sẻ PDF/);
   }
