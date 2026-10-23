@@ -30,6 +30,14 @@ assert.equal(api.resamplePdfCanvases([canvas], 150)[0], canvas);
   assert.equal(parts[0].filename, 'sample Phan 1.pdf');
   assert.equal(parts[0].blob.type, 'application/pdf');
 
+  // Regression: the byte splitter must treat an oversized multi-page candidate as a split signal.
+  const splitLimit=built.bytes.length+10;
+  const splitApi=global.PTI093PdfBuilder.install({state,PDF_SAFE_LIMIT:splitLimit});
+  const splitParts=await splitApi.splitPdfBytes([canvas,canvas],'two-pages.pdf');
+  assert.equal(splitParts.length,2,'two pages whose combined PDF exceeds the cap should be split into separate parts');
+  assert.ok(splitParts.every(part=>part.blob.size<=splitLimit),'every split part must respect the hard size cap');
+  assert.deepEqual(splitParts.map(part=>part.filename),['two-pages Phan 1.pdf','two-pages Phan 2.pdf']);
+
   // Regression: standard adaptive export must never return a PDF above its configured cap.
   global.document = {
     createElement: () => ({
@@ -43,6 +51,11 @@ assert.equal(api.resamplePdfCanvases([canvas], 150)[0], canvas);
     () => strictApi.buildAdaptivePdf([canvas]),
     /Không xuất tệp vượt giới hạn/,
     'adaptive compression must fail clearly if every compression level remains oversized'
+  );
+  await assert.rejects(
+    () => strictApi.splitPdfBytes([canvas],'impossible.pdf'),
+    /Không xuất tệp vượt giới hạn/,
+    'splitter must fail clearly rather than emit an oversized single-page part'
   );
   console.log('PDF Builder Core tests passed: adaptive compression, splitting, and strict size cap.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
