@@ -1,5 +1,5 @@
 
-const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,workspaceOpenPending:false};
+const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,workspaceOpenPending:false,localCopyFromIncompleteDrive:false};
 const PDF_SAFE_LIMIT=9.5*1048576;
 const fileDelivery=window.PTI093FileDelivery.install({navigator,window,document,URL,File,location,setTimeout});
 const {exportPdfFile}=fileDelivery;
