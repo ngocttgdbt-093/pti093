@@ -88,3 +88,10 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 - Draft Recovery captures the workspace revision before waiting for IndexedDB and rejects stale AUTO-DRAFT snapshots before opening a write transaction if a local/Drive workspace transition completed while the database was opening. Regression: `tests/draft-recovery-race.test.js`.
 - Local Save now applies the same revision/pending guard after IndexedDB opens and before writing. It checks again after the write transaction before detaching Drive/local identifiers from the active workspace. If a transition occurs during the write, it warns that a local copy was written but preserves the newly active workspace and skips AUTO-DRAFT cleanup. Regression: `tests/local-save.test.js`.
 - Commit `0882b274` passed PR workflow run **#1471** (all 73 steps successful). Local Save race fix `ea5d793` passed PR workflow run **#1473** (all 73 steps successful). These are automated tests; manual PC/iPhone acceptance remains outstanding.
+
+
+## Local-save confirmation and workspace identity — 2026-10-23
+
+- `saveDraftWithoutPhotos()` now captures the workspace revision before showing the asynchronous confirmation and refuses to save if a local/Drive case switch completes while the confirmation is open. This prevents confirming one case and accidentally saving a different one; the stale confirmation also cannot clear the new case's AUTO-DRAFT.
+- If a workspace transition occurs during an already-started local IndexedDB write, the code preserves the active workspace's Drive/local identifiers, restores the visible case ID in the UI, reports that a local copy may have been written, and skips AUTO-DRAFT cleanup for the new workspace.
+- Regression coverage in `tests/local-save.test.js` covers both the pending-IndexedDB race and the asynchronous confirmation race. PR runs **#1476/#1477** passed on the confirmation-race head; runs **#1478/#1479** passed on the final code head `20184fb0`. These automated results do not replace manual acceptance on the user's PC/iPhone.
