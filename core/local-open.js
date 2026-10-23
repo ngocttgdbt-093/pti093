@@ -8,7 +8,7 @@
         const relative=String(file.webkitRelativePath||'').trim();
         return relative?base+'|'+relative:base;
       };
-      async function openLocalDraft(id){
+      async function openLocalDraftUnlocked(id){
         const source=deviceStorageLabel();
         setOpenLoad(source,0,0,'Đang đọc bản lưu ảnh từ '+source+'...');
         setDriveState('Đang tải ảnh từ '+source+'...');
@@ -86,6 +86,12 @@
         render();renderLayout();
         msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
+      }
+      async function openLocalDraft(id){
+        if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
+        state.workspaceOpenPending=true;
+        try{return await openLocalDraftUnlocked(id)}
+        finally{state.workspaceOpenPending=false}
       }
       return {openLocalDraft};
     }
