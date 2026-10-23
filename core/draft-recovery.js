@@ -24,11 +24,11 @@
       function clearAutoDraftTimer(){clearTimeout(autoDraftTimer)}
 /* Storage adapter supplied by core/local-draft-store.js */
       
-function scheduleAutoDraftSave(imagesDirty=true,internalReschedule=false){
+function scheduleAutoDraftSave(imagesDirty=true){
         if(autoDraftResetting)return;
         // Track content changes independently from open/close transitions so PDF export
         // can detect edits even when the existing Preview arrays keep the same identity.
-        if(!internalReschedule)state.workspaceMutationRevision=(Number(state.workspaceMutationRevision)||0)+1;
+        state.workspaceMutationRevision=(Number(state.workspaceMutationRevision)||0)+1;
         if(autoDraftRestoring){autoDraftUserChangedDuringRestore=true;return}
         if(imagesDirty){autoDraftImagesDirty=true;autoDraftImageRevision++}
         clearTimeout(autoDraftTimer);
@@ -86,7 +86,7 @@ function scheduleAutoDraftSave(imagesDirty=true,internalReschedule=false){
           }finally{db.close()}
         }finally{
           autoDraftSaving=false;
-          if(autoDraftAgain){autoDraftAgain=false;scheduleAutoDraftSave(false,true)}
+          if(autoDraftAgain){autoDraftAgain=false;saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e))}
         }
       }
       
