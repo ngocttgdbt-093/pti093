@@ -568,7 +568,7 @@
       }
       
       async function pti093UploadAll(){
-        const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||'';
+        const id=state.driveRecordId||readStoredDriveRecordId()||'';
         if(!id){
           setDriveState('Chưa có Record ID Drive.',false);
           msg('Chưa có Record ID Drive. Hãy bấm “Tạo hồ sơ Drive” trước.',true);
