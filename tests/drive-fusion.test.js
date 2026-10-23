@@ -165,11 +165,14 @@ console.log('Drive record ID storage resilience contract passed.');
   try{
     const opening=api.openRecordFromDrive('DRIVE-PARTIAL');
     await secondImageStarted;
+    assert.equal(state.driveOpenPending,true,'the pending-open lock must remain active until all image downloads settle');
     assert.equal(state.driveOpenIncomplete,true,'Drive writes must be guarded while the record is still downloading images');
+    await assert.rejects(()=>api.openRecordFromDrive('DRIVE-OTHER'),/Đang mở một hồ sơ Drive khác/,'a second Drive open must not race the first open');
     await assert.rejects(()=>api.saveProjectToDrive(false),/Hồ sơ Drive chưa tải đủ ảnh/,'writes must be blocked during an in-progress open');
     releaseSecondImage();
     await opening;
     assert.equal(state.current.items.length,1,'only the successfully downloaded image should enter the workspace');
+    assert.equal(state.driveOpenPending,false,'pending-open lock must clear after the downloads settle');
     assert.equal(state.driveOpenIncomplete,true,'a partially loaded Drive record must be marked unsafe to overwrite');
     assert.match(statusEvents.at(-1).text,/chỉ tải được 1\/2 ảnh/,'partial open must not report success');
     assert.equal(statusEvents.at(-1).ok,false,'partial open status must be an error/warning state');
@@ -184,6 +187,7 @@ console.log('Drive record ID storage resilience contract passed.');
 
     failSecondImage=false;
     await api.openRecordFromDrive('DRIVE-PARTIAL');
+    assert.equal(state.driveOpenPending,false,'complete reopen must clear pending-open lock');
     assert.equal(state.driveOpenIncomplete,false,'a subsequent complete reopen must clear the guard');
     assert.equal(state.current.items.length,2,'both images should be restored on the successful retry');
     assert.equal(finished.length,1,'only the fully loaded retry should complete the progress bar');
