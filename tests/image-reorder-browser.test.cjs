@@ -39,6 +39,16 @@ const {chromium}=require('playwright');
     assert.deepEqual(touchResult.saved,[true],'touch reorder should schedule image-dirty draft save');
     assert.equal(touchResult.layoutCount,1,'touch reorder should refresh preview layout');
     assert.equal(touchResult.renderCount,1,'touch drag completion should rerender thumbnails');
-    console.log('Chromium image reorder tests passed: desktop drag, touch long-press reorder, draft scheduling, and cleanup.');
+    const lockedResult=await page.evaluate(()=>{
+      const h=window.makeReorderHarness();h.state.workspaceOpenPending=true;
+      h.grid.insertBefore(h.grid.children[1],h.grid.children[0]);
+      const changed=h.api.syncOrderFromDOM();
+      return {changed,order:h.state.current.items.map(x=>x.label),saved:h.saved,layoutCount:h.layoutCount};
+    });
+    assert.equal(lockedResult.changed,false,'reorder must not commit while another workspace is opening');
+    assert.deepEqual(lockedResult.order,['A','B','C'],'pending open must preserve the current workspace order');
+    assert.deepEqual(lockedResult.saved,[],'blocked reorder must not schedule autosave');
+    assert.equal(lockedResult.layoutCount,0);
+    console.log('Chromium image reorder tests passed: desktop/touch reorder, autosave, cleanup, and workspace-open lock.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
