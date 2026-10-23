@@ -54,7 +54,7 @@ const { chromium } = require('playwright');
 
     await page.evaluate(()=>window.testHarness.seed());
     await page.evaluate(()=>localStorage.setItem('pti093_driveRecordId','DRIVE-OLD'));
-    const newTab=await browser.newPage();
+    const newTab=await page.context().newPage();
     await newTab.goto('http://127.0.0.1:4173/tests/draft-recovery-browser.html');
     const newSession=await newTab.evaluate(()=>sessionStorage.getItem('pti093_work_session_id'));
     assert.notEqual(newSession,session,'a separate tab must have a distinct work session');
