@@ -24,7 +24,7 @@ const db={
     return {
       objectStore(name){
         if(name==='drafts')return {
-          get(){const req={};queueMicrotask(()=>{req.result=oldMeta;req.onsuccess&&req.onsuccess()});return req},
+          get(id){const req={};queueMicrotask(()=>{req.result=id===oldMeta.id?oldMeta:undefined;req.onsuccess&&req.onsuccess()});return req},
           put(meta){saved.meta=meta;finishWrite()}
         };
         if(name==='draftImages')return {
