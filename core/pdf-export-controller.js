@@ -5,6 +5,10 @@
       const {state,$,splitHighQualityPdf,exportPdfFile,msg,alert,setTimeout,buildAdaptivePdf,pdfPackSize,pdfFileName,getPdfWarningSkin,finalizeCompletedSession} = deps;
       let pdfHighQualityRunning=false;
       async function finalizeAfterSuccessfulExport(){
+        if(state.driveOpenIncomplete){
+          msg('PDF đã xuất, nhưng hồ sơ Drive đang thiếu ảnh. Bản nháp được giữ lại; hãy mở lại hồ sơ để tải đủ ảnh trước khi hoàn tất.',true);
+          return;
+        }
         try{
           const cleaned=await finalizeCompletedSession();
           if(cleaned===false)throw new Error('Không dọn được nháp tự động.');
