@@ -1,6 +1,6 @@
 # GHÉP ẢNH 093 — Core / Fusion / Skin Module Map
 
-**Branch:** `refactor/core-modules-test-20261022`  
+**Branch:** `refactor/core-modules-review-20261023`  
 **Scope:** refactor/test branch only; this document does not authorize merge or deployment.
 
 ## Architecture boundary
@@ -64,11 +64,11 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 ## Validation status — updated 2026-10-23
 
-- Full GitHub Actions validation on code head `11cabf4b727ac52366b4e5ed21b507277892e21c`: run **#1088** passed. This module-map-only refresh is separately validated by the next CI run.
+- Latest full GitHub Actions runs on the clean review branch both passed: push run **#1090** and PR run **#1091** on head `73e4134d87ab44a24770c1f16797f4bb646a7372`. Subsequent documentation-only corrections are validated by CI after this commit.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - Static reference audit confirms `index.html` has zero inline JavaScript blocks; all 53 local `src`/`href` references resolve to repository files with no duplicate local references.
 - The DOCX/ZIP draft path removal contract passes. The automatic draft remains IndexedDB-based with the existing `pti093_local_drafts_v1`, `AUTO-DRAFT`, and `pti093_work_session_id` contracts.
 - Local-save success-path tests verify section order, captions, rotations, stored file objects, and Drive-state separation after transaction completion.
-- Direct comparison of `pti093UploadAll` on `main` with `fusion/drive.js` found the normalized executable function body matched; only a comment was corrected. The Drive Fusion contract test explicitly asserts concurrency 5 and awaited per-file processing.
-- GitHub's branch comparison reports hundreds of commits ahead of `main`; keep this PR draft-only and review/squash the branch history before any release.
-- Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets. The PR remains draft-only; no merge or production deployment is authorized.
+- Direct comparison of `pti093UploadAll` on `main` with `fusion/drive.js` found the normalized executable function body matched; the Drive Fusion contract test explicitly asserts concurrency 5 and awaited per-file processing.
+- The clean review branch is intended to be a small, reviewable diff against `main`; the long-history branch/PR #7 is retained only as audit history and must not be merged.
+- Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets. PR #8 remains draft-only; no merge or production deployment is authorized.
