@@ -162,6 +162,32 @@ const api = global.PTI093LocalOpenCore.install({
   assert.match(incompleteCalls.progress.at(-1)[3],/Hồ sơ đang mở được giữ nguyên/,
     'incomplete restore must show an actionable message and preserve the active case');
 
+  const failedListDb={
+    close(){closed++},
+    transaction(storeName){
+      if(storeName==='drafts')return {objectStore:()=>({get:()=>{const req={};queueMicrotask(()=>{req.result=meta;req.onsuccess&&req.onsuccess()});return req}})};
+      if(storeName==='draftImages')return {objectStore:()=>({index:()=>({getAll:()=>{const req={};queueMicrotask(()=>{req.error=new Error('draftImages index read failed');req.onerror&&req.onerror()});return req}})})};
+      throw new Error('Unexpected store: '+storeName);
+    }
+  };
+  const failedListCalls={progress:[],status:[],rendered:0};
+  const failedListApi=global.PTI093LocalOpenCore.install({
+    state:appState,$:element,msg:()=>{},openLocalDraftDB:async()=>failedListDb,
+    setDateInput:()=>{},render:()=>{failedListCalls.rendered++},renderLayout:()=>{failedListCalls.rendered++},
+    setDriveState:text=>failedListCalls.status.push(text),deviceStorageLabel:()=> 'PC',
+    setOpenLoad:(...args)=>failedListCalls.progress.push(args),finishOpenLoad:()=>{}
+  });
+  const stateBeforeImageListFailure=JSON.stringify(appState);
+  const closedBeforeImageListFailure=closed;
+  await assert.rejects(failedListApi.openLocalDraft('LOCAL-TEST-1'),/draftImages index read failed/,
+    'metadata success followed by image-list failure must abort the whole open operation');
+  assert.equal(JSON.stringify(appState),stateBeforeImageListFailure,
+    'failed image-list read must not partially replace the active workspace or record IDs');
+  assert.equal(failedListCalls.rendered,0,'failed image-list read must not render a partial case');
+  assert.match(failedListCalls.progress.at(-1)[3],/Không thể đọc bản lưu tại máy/,
+    'failed image-list read must replace the loading message with an actionable error');
+  assert.equal(closed,closedBeforeImageListFailure+1,'database connection must close after the failed parallel read');
+
   const originalSessionStorage=global.sessionStorage,originalLocalStorage=global.localStorage;
   global.sessionStorage={getItem(){throw new Error('sessionStorage blocked')},setItem(){throw new Error('sessionStorage blocked')},removeItem(){throw new Error('sessionStorage blocked')}};
   global.localStorage={getItem(){throw new Error('localStorage blocked')},setItem(){throw new Error('localStorage blocked')},removeItem(){throw new Error('localStorage blocked')}};
