@@ -29,7 +29,6 @@
           setTimeout(()=>URL.revokeObjectURL(url),3000);
         }catch(e){
           if(url)URL.revokeObjectURL(url);
-          if(e&&e.name==='AbortError')return;
           throw e;
         }
       }
