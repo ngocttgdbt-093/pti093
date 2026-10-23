@@ -14,6 +14,11 @@
       function incompleteDriveOpenMessage(){
         return 'Hồ sơ Drive chưa tải đủ ảnh. Không thể lưu đè hoặc tải ảnh lên cho đến khi mở lại hồ sơ và xác nhận đã tải đủ ảnh; có thể lưu một bản sao tại máy.';
       }
+      function driveWriteBlockedMessage(){
+        return state.driveOpenPending
+          ? 'Đang mở hồ sơ Drive. Hãy chờ tải xong trước khi lưu hoặc tải ảnh lên.'
+          : incompleteDriveOpenMessage();
+      }
       
       
       /* Core workspace snapshot is injected by the app. */
@@ -102,10 +107,26 @@
         return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
       }
       async function openRecordFromDrive(recordId){
+        if(state.driveOpenPending)throw new Error('Đang mở một hồ sơ Drive khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
+        state.driveOpenPending=true;
         setOpenLoad('Google Drive',0,0,'Đang mở hồ sơ và đọc danh sách ảnh từ Google Drive...');
         setDriveState('Đang tải hồ sơ từ Google Drive...');
-        const data=await fetch(PTI093_API+'?action=openRecord&recordId='+encodeURIComponent(recordId)+'&_='+Date.now(),{cache:'no-store'}).then(r=>r.json());
-        if(!data.success)throw new Error(data.error||'Không mở được hồ sơ');
+        let data;
+        try{
+          data=await fetch(PTI093_API+'?action=openRecord&recordId='+encodeURIComponent(recordId)+'&_='+Date.now(),{cache:'no-store'}).then(r=>r.json());
+        }catch(error){
+          state.driveOpenPending=false;
+          const detail='Không thể đọc hồ sơ từ Google Drive: '+(error&&error.message?error.message:String(error));
+          setOpenLoad('Google Drive',0,0,detail);setDriveState(detail,false);
+          throw error;
+        }
+        if(!data.success){
+          state.driveOpenPending=false;
+          const detail=data.error||'Không mở được hồ sơ';
+          setOpenLoad('Google Drive',0,0,detail);setDriveState(detail,false);
+          throw new Error(detail);
+        }
+        state.driveOpenPending=false;
         // Khoá thao tác ghi ngay khi biết đang mở hồ sơ mới; không đợi tải xong ảnh,
         // tránh người dùng lưu đè trong lúc danh sách ảnh vẫn đang được tải dở.
         state.driveOpenIncomplete=true;
@@ -316,7 +337,7 @@
       }
 
       async function saveProjectToDrive(showMsg=true){
-        if(state.driveOpenIncomplete)throw new Error(incompleteDriveOpenMessage());
+        if(state.driveOpenPending||state.driveOpenIncomplete)throw new Error(driveWriteBlockedMessage());
         const id=state.driveRecordId||readStoredDriveRecordId()||'';
         if(!id)throw new Error('Chưa có hồ sơ Drive.');
         const revision=String(Date.now())+'-'+Math.random().toString(36).slice(2,8),payload=JSON.stringify({action:'saveProject',recordId:id,revision,project:buildProjectData()});
@@ -572,8 +593,8 @@
       }
 
       async function createDriveRecord(){
-        if(state.driveOpenIncomplete){
-          const detail=incompleteDriveOpenMessage();
+        if(state.driveOpenPending||state.driveOpenIncomplete){
+          const detail=driveWriteBlockedMessage();
           setDriveState(detail,false);msg(detail,true);return;
         }
         if(state.driveRecordId){try{const result=await pti093UploadAll();if(result&&result.failures&&result.failures.length)throw new Error('Còn ảnh chưa được xác nhận tải lên Drive.');state.localDraftId='';await saveProjectToDrive();const cleanupOk=await finalizeAfterSuccessfulDriveSave();if(cleanupOk)setDriveState('Hồ sơ đã được cập nhật trên Drive.');return}catch(e){msg('Lỗi cập nhật hồ sơ: '+e.message,true);return}}
@@ -589,8 +610,8 @@
       }
       
       async function pti093UploadAll(){
-        if(state.driveOpenIncomplete){
-          const detail=incompleteDriveOpenMessage();
+        if(state.driveOpenPending||state.driveOpenIncomplete){
+          const detail=driveWriteBlockedMessage();
           setDriveState(detail,false);msg(detail,true);
           return {failures:[{index:0,name:'Hồ sơ Drive',error:detail}]};
         }
