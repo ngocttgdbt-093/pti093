@@ -81,3 +81,10 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 - The established Drive upload batching/progress implementation remains intact: concurrency 5 and per-file processing/progress are unchanged. `pti093UploadAll` now checks all three write guards before starting: the shared `workspaceOpenPending`, Drive `driveOpenPending`, and `driveOpenIncomplete` flags. This also blocks the Drive Save Changes button's direct uploader call while a local draft is opening. `tests/drive-fusion.test.js` has a regression assertion that the uploader refuses the shared-lock state without issuing a network request.
 - The clean review branch is intended to be a small, reviewable diff against `main`; the long-history branch/PR #7 is retained only as audit history and must not be merged.
 - Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets. PR #8 remains draft-only; no merge or production deployment is authorized.
+
+
+## Workspace-transition autosave hardening — 2026-10-23
+
+- Draft Recovery captures the workspace revision before waiting for IndexedDB and rejects stale AUTO-DRAFT snapshots before opening a write transaction if a local/Drive workspace transition completed while the database was opening. Regression: `tests/draft-recovery-race.test.js`.
+- Local Save now applies the same revision/pending guard after IndexedDB opens and before writing. It checks again after the write transaction before detaching Drive/local identifiers from the active workspace. If a transition occurs during the write, it warns that a local copy was written but preserves the newly active workspace and skips AUTO-DRAFT cleanup. Regression: `tests/local-save.test.js`.
+- Commit `0882b274` passed PR workflow run **#1471** (all 73 steps successful). Local Save race fix `ea5d793` passed PR workflow run **#1473** (all 73 steps successful). These are automated tests; manual PC/iPhone acceptance remains outstanding.
