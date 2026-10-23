@@ -180,3 +180,36 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   delete global.IDBKeyRange;
   console.log('Local Save success-path regression passed (section order, captions, rotations, image blobs, and Drive-state separation).');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+(async()=>{
+  // Regression gap found during audit: DB opening failure was covered, but a write
+  // transaction can fail after requests are queued. The Drive state must still survive.
+  const item={file:{name:'transaction-failure.jpg',type:'image/jpeg',lastModified:7,size:9},driveFileId:'DRIVE-FILE-KEEP',driveFileName:'transaction-failure.jpg',driveUploadKey:'upload-keep'};
+  const elements={};
+  const appState={groups:[],current:{title:'Thiệt hại',items:[item]},localDraftId:'LOCAL-PREVIOUS',driveRecordId:'DRIVE-CASE-KEEP',orientation:'portrait',per:6};
+  global.IDBKeyRange={only:value=>value};
+  const tx={objectStore(name){
+    if(name==='drafts')return {put(){}};
+    return {index:()=>({openCursor:()=>{const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}}),put(){}};
+  }};
+  const db={close(){},transaction(){return tx}};
+  const failureApi=global.PTILocalSaveCore.install({
+    state:appState,
+    $:id=>elements[id]||(elements[id]={value:'',textContent:'Hồ sơ: DRIVE-CASE-KEEP',disabled:false,style:{},dataset:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[{title:'Thiệt hại',items:[item]}],
+    openLocalDraftDB:async()=>db,
+    localDraftTransactionDone:async()=>{throw new Error('Synthetic write transaction aborted')},
+    getDateISO:()=> '2026-10-23',selectedGdv:()=> 'GĐV test',
+    setDriveState:noop,msg:noop,renderLocalSaveFeedback:noop,
+    showLocalSaveConfirm:async()=>false,clearAutoDraft:async()=>{}
+  });
+  await assert.rejects(failureApi.saveLocalDraft(),/Synthetic write transaction aborted/);
+  assert.equal(appState.driveRecordId,'DRIVE-CASE-KEEP','aborted IndexedDB writes must preserve the active Drive record ID');
+  assert.equal(appState.localDraftId,'LOCAL-PREVIOUS','aborted IndexedDB writes must preserve the previous local record ID');
+  assert.equal(item.driveFileId,'DRIVE-FILE-KEEP','aborted IndexedDB writes must preserve image Drive references');
+  assert.equal(item.driveUploadKey,'upload-keep','aborted IndexedDB writes must preserve upload tracking');
+  assert.match(elements.driveId.textContent,/DRIVE-CASE-KEEP/,'UI should keep the valid Drive ID after an aborted local save');
+  delete global.IDBKeyRange;
+  console.log('Local Save transaction-abort regression passed (Drive/local identifiers and image references remain intact).');
+})().catch(error=>{console.error(error);process.exitCode=1});
