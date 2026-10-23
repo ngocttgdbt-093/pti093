@@ -7,8 +7,15 @@
     const groups=(state.groups||[]).map(g=>({title:g.title,items:(g.items||[]).slice()}));
     if(state.current&&state.current.items&&state.current.items.length){
       const g={title:state.current.title,items:state.current.items.slice()};
-      const last=groups[groups.length-1];
-      if(last&&last.title===g.title)last.items.push(...g.items);else groups.push(g);
+      // Editing removes the selected group from state.groups until commit. A
+      // project snapshot must restore it at its original position, not append
+      // or merge it into a later group with the same title.
+      if(Number.isInteger(state.editing)&&state.editing>=0){
+        groups.splice(Math.min(state.editing,groups.length),0,g);
+      }else{
+        const last=groups[groups.length-1];
+        if(last&&last.title===g.title)last.items.push(...g.items);else groups.push(g);
+      }
     }
     return groups.filter(g=>g.items&&g.items.length);
   }

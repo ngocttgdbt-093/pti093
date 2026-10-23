@@ -18,6 +18,22 @@ assert.deepEqual(snapshot[0].items.map(x => x.id), [1]);
 assert.deepEqual(snapshot[1].items.map(x => x.id), [3, 4]);
 assert.equal(state.groups[0].items.length, 1, 'Snapshot must not mutate working group arrays');
 assert.equal(state.current.items.length, 1, 'Snapshot must not mutate current items');
+
+const editingSnapshot = {
+  groups: [
+    { title: 'B', items: [{ id: 2 }] },
+    { title: 'A', items: [{ id: 3 }] }
+  ],
+  current: { title: 'A', items: [{ id: 1 }] },
+  editing: 0
+};
+const editingSnapshotResult = core.snapshotGroupsForProject(editingSnapshot);
+assert.deepEqual(editingSnapshotResult.map(g => g.title), ['A', 'B', 'A'],
+  'editing a group must preserve its original index even if another group at the end has the same title');
+assert.deepEqual(editingSnapshotResult.map(g => g.items.map(item => item.id)), [[1], [2], [3]]);
+assert.deepEqual(editingSnapshot.groups.map(g => g.title), ['B', 'A'],
+  'editing snapshot must not mutate source group ordering');
+
 assert.deepEqual(core.snapshotGroupsForProject({ groups: [], current: { title: 'Empty', items: [] } }), []);
 const emptyCommit = { groups: [], current: { title: 'Empty', items: [] }, editing: -1 };
 assert.equal(core.commitCurrent(emptyCommit), null, 'empty current group should not commit');
