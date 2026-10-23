@@ -29,5 +29,13 @@ assert.equal(api.resamplePdfCanvases([canvas], 150)[0], canvas);
   assert.equal(parts.length, 1);
   assert.equal(parts[0].filename, 'sample Phan 1.pdf');
   assert.equal(parts[0].blob.type, 'application/pdf');
-  console.log('PDF Builder Core tests passed (13 checks).');
+
+  // Regression: standard adaptive export must never return a PDF above its configured cap.
+  const strictApi = global.PTI093PdfBuilder.install({ state, PDF_SAFE_LIMIT: 1 });
+  await assert.rejects(
+    () => strictApi.buildAdaptivePdf([canvas]),
+    /Không xuất tệp vượt giới hạn/,
+    'adaptive compression must fail clearly if every compression level remains oversized'
+  );
+  console.log('PDF Builder Core tests passed: adaptive compression, splitting, and strict size cap.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
