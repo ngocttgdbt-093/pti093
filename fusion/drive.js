@@ -106,6 +106,9 @@
         setDriveState('Đang tải hồ sơ từ Google Drive...');
         const data=await fetch(PTI093_API+'?action=openRecord&recordId='+encodeURIComponent(recordId)+'&_='+Date.now(),{cache:'no-store'}).then(r=>r.json());
         if(!data.success)throw new Error(data.error||'Không mở được hồ sơ');
+        // Khoá thao tác ghi ngay khi biết đang mở hồ sơ mới; không đợi tải xong ảnh,
+        // tránh người dùng lưu đè trong lúc danh sách ảnh vẫn đang được tải dở.
+        state.driveOpenIncomplete=true;
         const p=data.project||{},rec=data.record||{};
         state.driveRecordId=rec.recordId||p.recordId||recordId;state.localDraftId='';
         // Storage chỉ là tiện ích khôi phục ID; không để chính sách chặn storage làm hỏng việc mở hồ sơ Drive.
