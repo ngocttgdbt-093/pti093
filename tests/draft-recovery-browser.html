@@ -12,7 +12,7 @@
   <script src="../core/draft-recovery.js"></script>
   <script>
   (function(){
-    const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',orientation:'portrait',per:6,addSeq:0};
+    const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,orientation:'portrait',per:6,addSeq:0};
     const $=id=>document.getElementById(id);
     const store=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
     const api=window.PTI093DraftRecovery.install({
@@ -47,6 +47,18 @@
           frontBytes:Array.from(new Uint8Array(await itemA.file.arrayBuffer())),
           rearBytes:Array.from(new Uint8Array(await itemB.file.arrayBuffer()))
         };
+      },
+      seedIncompleteDriveDraft:async()=>{
+        $('bks').value='30A-PARTIAL';$('hoso').value='HS-PARTIAL';$('garage').value='Garage partial';$('date').value='2026-10-23';$('title').value='Partial Drive record';
+        state.driveRecordId='DRIVE-INCOMPLETE';state.localDraftId='';state.driveOpenIncomplete=true;
+        state.current={title:'Partial Drive record',items:[{file:new File([new Uint8Array([1,2,3])],'partial.jpg',{type:'image/jpeg',lastModified:4321}),key:'partial.jpg|3|4321',caption:'Partial',rotate:0,addSeq:1}]};
+        state.groups=[];state.addSeq=1;
+        await api.saveAutoDraft();
+      },
+      restoreIncompleteDriveDraft:async()=>{
+        state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;
+        await api.restoreAutoDraft();
+        return {driveRecordId:state.driveRecordId,driveOpenIncomplete:state.driveOpenIncomplete,caseNumber:$('hoso').value};
       },
       restoreNewSession:async()=>{
         await api.restoreAutoDraft();
