@@ -9,6 +9,7 @@
         return relative?base+'|'+relative:base;
       };
       async function addFiles(files){
+        if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi thêm ảnh.',true);return;}
         const candidates=[];
         const seenKeys=new Set();
         (state.current.items||[]).forEach(item=>{
