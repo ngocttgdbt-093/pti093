@@ -22,6 +22,10 @@
           if(msg)msg('Chưa thể bắt đầu hồ sơ mới vì bản nháp cũ chưa được dọn. Hãy thử lại để tránh khôi phục nhầm hồ sơ cũ.');
           return false;
         }
+        // A new case must not inherit the previous Drive record ID; otherwise Fusion may
+        // interpret the next "create" action as an update to the previous record.
+        try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+        try{localStorage.removeItem('pti093_driveRecordId')}catch(e){}
         location.reload();
         return true;
       }
