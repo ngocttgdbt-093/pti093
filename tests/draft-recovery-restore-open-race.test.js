@@ -27,10 +27,14 @@ require('../core/draft-recovery.js');
   const storedImage={draftId:meta.id,sectionIndex:0,itemIndex:0,file:{bytes:'old'},fileName:'old.jpg',type:'image/jpeg',lastModified:1};
   const db={
     close(){},
-    transaction(storeName){
-      if(storeName==='drafts')return {objectStore:()=>({get:id=>{const req={};queueMicrotask(()=>{req.result=id===meta.id?meta:undefined;req.onsuccess&&req.onsuccess()});return req}})};
-      if(storeName==='draftImages')return {objectStore:()=>({index:()=>({getAll:()=>{const req={};queueMicrotask(()=>{req.result=[storedImage];req.onsuccess&&req.onsuccess()});return req}})})};
-      throw new Error('Unexpected store '+storeName);
+    transaction(storeNames){
+      const hasStore=name=>Array.isArray(storeNames)?storeNames.includes(name):storeNames===name;
+      if(hasStore('drafts')||hasStore('draftImages'))return {objectStore:name=>{
+        if(name==='drafts')return {get:id=>{const req={};queueMicrotask(()=>{req.result=id===meta.id?meta:undefined;req.onsuccess&&req.onsuccess()});return req}};
+        if(name==='draftImages')return {index:()=>({getAll:range=>{const req={};queueMicrotask(()=>{req.result=range===meta.id?[storedImage]:[];req.onsuccess&&req.onsuccess()});return req}})};
+        throw new Error('Unexpected object store '+name);
+      }};
+      throw new Error('Unexpected store '+storeNames);
     }
   };
   const values={
