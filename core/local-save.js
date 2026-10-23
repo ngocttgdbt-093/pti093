@@ -4,6 +4,7 @@
     install: function(deps){
       const {state, $, snapshotGroupsForProject, openLocalDraftDB, localDraftTransactionDone, getDateISO, selectedGdv, setDriveState, msg, renderLocalSaveFeedback, showLocalSaveConfirm, clearAutoDraft} = deps;
       async function saveLocalDraft(){
+        if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi lưu tại máy.');
         // LƯU LOCAL THUẦN TÚY: ID riêng LOCAL-..., không tạo record hoặc đồng bộ metadata lên Drive.
         const progress=(pct,label,detail='')=>{
           renderLocalSaveFeedback(state.localDraftId||'',pct,label,detail,false);
