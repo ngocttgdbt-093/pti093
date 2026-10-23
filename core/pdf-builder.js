@@ -49,7 +49,7 @@
           const result=makePdfAt(canvases,t.dpi,t.quality);last=result;
           if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT)return {...result,compressed:t.dpi!==pagePixels().dpi};
         }
-        throw new Error('PDF vẫn vượt giới hạn dung lượng sau khi nén tối đa. Không xuất tệp vượt giới hạn; hãy dùng chế độ PDF chất lượng cao để tự chia thành nhiều phần.');
+        const error=new Error('PDF vẫn vượt giới hạn dung lượng sau khi nén tối đa. Không xuất tệp vượt giới hạn; hãy dùng chế độ PDF chất lượng cao để tự chia thành nhiều phần.');error.code='PDF_SIZE_LIMIT';throw error;
       }
 
       function splitPdfBytes(canvases,filenameBase){
@@ -65,7 +65,7 @@
               }catch(error){
                 // buildAdaptivePdf throws specifically when the candidate cannot meet the cap.
                 // Treat that candidate as too large, but never swallow decoding/encoding failures.
-                if(!error||!String(error.message||error).includes('vượt giới hạn dung lượng sau khi nén tối đa'))throw error;
+                if(!error||error.code!=='PDF_SIZE_LIMIT')throw error;
                 high=mid-1;
               }
             }
