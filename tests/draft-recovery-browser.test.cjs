@@ -26,6 +26,21 @@ const { chromium } = require('playwright');
     const counts=await page.evaluate(()=>window.testHarness.cleanup());
     assert.deepEqual(counts,{drafts:0,images:0});
 
+    await page.evaluate(()=>{
+      window.testHarness.state.driveRecordId='DRIVE-STALE';
+      window.testHarness.state.localDraftId='LOCAL-STALE';
+      sessionStorage.setItem('pti093_driveRecordId','DRIVE-STALE');
+      localStorage.setItem('pti093_driveRecordId','DRIVE-STALE');
+    });
+    await page.evaluate(()=>window.testHarness.api.restoreAutoDraft());
+    assert.deepEqual(await page.evaluate(()=>({
+      driveRecordId:window.testHarness.state.driveRecordId,
+      localDraftId:window.testHarness.state.localDraftId,
+      sessionId:sessionStorage.getItem('pti093_driveRecordId'),
+      localId:localStorage.getItem('pti093_driveRecordId')
+    })),{driveRecordId:'',localDraftId:'',sessionId:null,localId:null},
+      'missing AUTO-DRAFT must not leave a stale Drive ID that could redirect the next save');
+
     await page.evaluate(()=>window.testHarness.seedOrphanImages());
     assert.deepEqual(await page.evaluate(()=>window.testHarness.countDraftRows()),{drafts:0,images:1});
     await page.evaluate(()=>window.testHarness.api.restoreAutoDraft());
