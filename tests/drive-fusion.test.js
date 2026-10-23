@@ -242,6 +242,8 @@ console.log('Drive record ID storage resilience contract passed.');
       renderLayout:()=>{if(failFinalLayout){failFinalLayout=false;throw new Error('synthetic final layout failure')}},
       msg:(text,show)=>messages.push({text,show})
     });
+    const rollbackAutosaveEvents=[];
+    rollbackApi.scheduleAutoDraftSave = dirty => rollbackAutosaveEvents.push(dirty);
     const revisionBeforeRollback=Number(state.workspaceRevision)||0;
     await assert.rejects(()=>rollbackApi.openRecordFromDrive('DRIVE-PARTIAL'),/synthetic final layout failure/);
     assert.equal(state.groups,priorGroups,'failed post-mutation Drive Open must restore prior group collection');
@@ -255,7 +257,7 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.workspaceOpenPending,false,'rollback must release shared workspace lock');
     assert.equal(state.driveOpenPending,false,'rollback must release Drive lock');
     assert.equal(state.driveOpenIncomplete,false,'rollback must restore the prior Drive write guard');
-    assert.equal(autosaveEvents.at(-1),true,'the failed open must not schedule a new autosave for partial state');
+    assert.equal(rollbackAutosaveEvents.length,0,'the failed open must not schedule a new autosave for partial state');
     console.log('Drive Open transactional rollback regression passed.');
 
     // Regression: Local Open shares workspaceOpenPending but does not set the Drive-specific
