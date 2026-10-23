@@ -126,7 +126,8 @@
           setOpenLoad('Google Drive',0,0,detail);setDriveState(detail,false);
           throw new Error(detail);
         }
-        state.driveOpenPending=false;
+        // Giữ driveOpenPending=true suốt quá trình tải ảnh để chặn mở chồng nhiều hồ sơ.
+        // driveOpenIncomplete tiếp tục bảo vệ trường hợp tải xong nhưng thiếu ảnh.
         // Khoá thao tác ghi ngay khi biết đang mở hồ sơ mới; không đợi tải xong ảnh,
         // tránh người dùng lưu đè trong lúc danh sách ảnh vẫn đang được tải dở.
         state.driveOpenIncomplete=true;
@@ -220,6 +221,7 @@
         $('driveId').textContent='Hồ sơ: '+state.driveRecordId;
         $('driveId').classList.remove('hidden');
         const incomplete=expectedImages>0&&total<expectedImages;
+        state.driveOpenPending=false;
         state.driveOpenIncomplete=incomplete;
         if(incomplete){
           const missing=expectedImages-total;
