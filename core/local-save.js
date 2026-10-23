@@ -7,7 +7,8 @@
         const ownsWorkspaceLock=options.workspaceLockHeld!==true;
         if(state.workspaceOpenPending&&ownsWorkspaceLock)throw new Error('Đang mở hồ sơ khác hoặc đang lưu hồ sơ tại máy. Hãy chờ thao tác đó hoàn tất trước khi lưu tại máy.');
         const workspaceRevisionAtStart=Number(state.workspaceRevision)||0;
-        const workspaceChanged=()=>(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart;
+        const workspaceMutationRevisionAtStart=Number(state.workspaceMutationRevision)||0;
+        const workspaceChanged=()=>(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart||(Number(state.workspaceMutationRevision)||0)!==workspaceMutationRevisionAtStart;
         // LƯU LOCAL THUẦN TÚY: ID riêng LOCAL-..., không tạo record hoặc đồng bộ metadata lên Drive.
         const progress=(pct,label,detail='')=>{
           renderLocalSaveFeedback(state.localDraftId||'',pct,label,detail,false);
@@ -125,10 +126,11 @@
           setDriveState(detail,false);msg(detail,true);return;
         }
         const workspaceRevisionAtStart=Number(state.workspaceRevision)||0;
+        const workspaceMutationRevisionAtStart=Number(state.workspaceMutationRevision)||0;
         const n=snapshotGroupsForProject().reduce((sum,g)=>sum+g.items.length,0);
         const ok=await showLocalSaveConfirm(n);
         if(!ok)return;
-        if(state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart){
+        if(state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart||(Number(state.workspaceMutationRevision)||0)!==workspaceMutationRevisionAtStart){
           const detail='Hồ sơ đã thay đổi trong lúc xác nhận lưu. Chưa lưu hồ sơ nào; hãy bấm Lưu tại máy lại trên hồ sơ đang mở.';
           setDriveState(detail,false);msg(detail,true);return;
         }

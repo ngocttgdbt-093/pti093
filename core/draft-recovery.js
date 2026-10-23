@@ -260,8 +260,24 @@ function scheduleAutoDraftSave(imagesDirty=true,internalReschedule=false){
       function bindLifecycle(){
         ['bks','hoso','gdv','date','garage'].forEach(id=>{
           const el=$(id);if(!el)return;
-          el.addEventListener('input',()=>scheduleAutoDraftSave(false));
-          el.addEventListener('change',()=>scheduleAutoDraftSave(false));
+          let stable={value:el.value,custom:el.dataset?el.dataset.custom:undefined};
+          const remember=()=>{stable={value:el.value,custom:el.dataset?el.dataset.custom:undefined};};
+          const restore=()=>{
+            el.value=stable.value;
+            if(el.dataset){
+              if(stable.custom===undefined)delete el.dataset.custom;
+              else el.dataset.custom=stable.custom;
+            }
+          };
+          el.addEventListener('focus',remember);
+          el.addEventListener('beforeinput',event=>{if(state.workspaceOpenPending){event.preventDefault();return;}remember();});
+          const onEdit=()=>{
+            if(state.workspaceOpenPending){restore();return;}
+            remember();
+            scheduleAutoDraftSave(false);
+          };
+          el.addEventListener('input',onEdit);
+          el.addEventListener('change',onEdit);
         });
         window.addEventListener('pagehide',()=>{
           clearAutoDraftTimer();
