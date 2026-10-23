@@ -18,6 +18,8 @@
         PTI093_SESSION_ID=(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));
         try{global.sessionStorage.setItem(PTI093_SESSION_KEY,PTI093_SESSION_ID)}catch(e){}
       }
+      // IndexedDB is shared across tabs: isolate new sessions while retaining legacy-key recovery.
+      let activeAutoDraftId=PTI093_AUTO_DRAFT_ID+'-'+PTI093_SESSION_ID;
       let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false,autoDraftUserChangedDuringRestore=false,autoDraftImageRevision=0,autoDraftResetting=false;
       function clearAutoDraftTimer(){clearTimeout(autoDraftTimer)}
 /* Storage adapter supplied by core/local-draft-store.js */
@@ -48,7 +50,8 @@ function scheduleAutoDraftSave(imagesDirty=true){
             rotate:((it.rotate||0)%360+360)%360,addSeq:it.addSeq||ii+1,
             driveFileId:it.driveFileId||'',driveFileName:it.driveFileName||'',driveUploadKey:it.driveUploadKey||''
           }))}));
-          const meta={id:PTI093_AUTO_DRAFT_ID,auto:true,sessionId:PTI093_SESSION_ID,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
+          const draftId=activeAutoDraftId;
+          const meta={id:draftId,auto:true,sessionId:PTI093_SESSION_ID,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
             gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',driveOpenIncomplete:!!state.driveOpenIncomplete,localCopyFromIncompleteDrive:!!state.localCopyFromIncompleteDrive,
             localDraftId:state.localDraftId||'',settings:{orientation:state.orientation,imagesPerPage:state.per},
             currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
@@ -61,14 +64,14 @@ function scheduleAutoDraftSave(imagesDirty=true){
             tx.objectStore('drafts').put(meta);
             if(imagesNeedSaving){
               const idx=tx.objectStore('draftImages').index('draftId');
-              const cursorReq=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
+              const cursorReq=idx.openCursor(IDBKeyRange.only(draftId));
               cursorReq.onsuccess=()=>{
                 const cursor=cursorReq.result;
                 if(cursor){cursor.delete();cursor.continue();return}
                 sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
                   const original=groups[si]&&groups[si].items[ii];
                   if(original&&original.file)tx.objectStore('draftImages').put({
-                    id:PTI093_AUTO_DRAFT_ID+'|'+si+'|'+ii,draftId:PTI093_AUTO_DRAFT_ID,
+                    id:draftId+'|'+si+'|'+ii,draftId,
                     sectionIndex:si,itemIndex:ii,file:original.file,fileName:item.fileName,
                     type:item.type,lastModified:item.lastModified
                   });
@@ -113,8 +116,8 @@ function scheduleAutoDraftSave(imagesDirty=true){
           const db=await openLocalDraftDB();
           try{
             const tx=db.transaction(['drafts','draftImages'],'readwrite');
-            tx.objectStore('drafts').delete(PTI093_AUTO_DRAFT_ID);
-            const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));
+            tx.objectStore('drafts').delete(activeAutoDraftId);
+            const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(activeAutoDraftId));
             req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
             await localDraftTransactionDone(tx);
           }finally{db.close()}
@@ -130,38 +133,53 @@ function scheduleAutoDraftSave(imagesDirty=true){
         autoDraftUserChangedDuringRestore=false;
         try{
           const db=await openLocalDraftDB();
-          let meta,images=[];
+          let meta,images=[],foreignDraftFound=false;
           try{
-            [meta,images]=await Promise.all([
-              new Promise((resolve,reject)=>{const q=db.transaction('drafts','readonly').objectStore('drafts').get(PTI093_AUTO_DRAFT_ID);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)}),
-              new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),q=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error)})
-            ]);
+            const readMeta=id=>new Promise((resolve,reject)=>{const q=db.transaction('drafts','readonly').objectStore('drafts').get(id);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});
+            meta=await readMeta(activeAutoDraftId);
+            if(!meta&&activeAutoDraftId!==PTI093_AUTO_DRAFT_ID){
+              const legacyMeta=await readMeta(PTI093_AUTO_DRAFT_ID);
+              if(legacyMeta){
+                if(legacyMeta.sessionId===PTI093_SESSION_ID){activeAutoDraftId=PTI093_AUTO_DRAFT_ID;meta=legacyMeta;}
+                else{foreignDraftFound=true;}
+              }
+            }
+            if(meta){
+              const draftId=activeAutoDraftId;
+              images=await new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),q=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(draftId));q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error)});
+            }
           }finally{db.close()}
           // Người dùng có thể thao tác trong lúc IndexedDB đang đọc. Không cho bản nháp cũ
           // ghi đè các thay đổi mới phát sinh trong tab; phần finally sẽ lưu trạng thái hiện tại.
           if(autoDraftUserChangedDuringRestore)return;
+          if(foreignDraftFound){
+            // Never delete another tab's legacy draft or its image blobs.
+            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
+            try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+            $('bks').value='';$('hoso').value='';setDateInput('');$('garage').value='';
+            state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;state.pages=[];state.pageDefs=[];
+            $('title').value=state.current.title;render();renderLayout();
+            setDriveState('Đã phát hiện nháp thuộc phiên khác; nháp cũ được giữ nguyên. Phiên này sẽ lưu riêng.');
+            return;
+          }
           if(!meta){
-            // Dọn ảnh mồ côi nếu metadata của AUTO-DRAFT đã mất hoặc bị xóa riêng lẻ.
+            // Clean only this session's orphaned image blobs.
             await clearAutoDraft();
             if(autoDraftUserChangedDuringRestore)return;
             // No active draft means this tab must not fall back to a stale Drive ID on the next save.
             state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
-            try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             return;
           }
-          // Chỉ khôi phục nháp trong đúng phiên/tab. Nháp của phiên trước bị dọn, không hiển thị lại.
+          // Defensive guard: never delete a draft whose recorded owner differs from this tab.
           if(!meta.sessionId||meta.sessionId!==PTI093_SESSION_ID){
-            await clearAutoDraft();
-            // Cleanup is async too; if the user started working while it ran, do not blank that work.
-            if(autoDraftUserChangedDuringRestore)return;
             state.groups=[];state.current={title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
             state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;state.pages=[];state.pageDefs=[];
             try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
-            try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             $('bks').value='';$('hoso').value='';setDateInput('');$('garage').value='';
             $('title').value=state.current.title;render();renderLayout();
-            setDriveState('Phiên mới — chưa có ảnh hoặc thông tin hồ sơ cũ.');
+            setDriveState('Nháp thuộc phiên khác được giữ nguyên; phiên hiện tại sẽ dùng vùng lưu riêng.');
+            activeAutoDraftId=PTI093_AUTO_DRAFT_ID+'-'+PTI093_SESSION_ID;
             return;
           }
           const imageMap=new Map(images.map(x=>[x.sectionIndex+':'+x.itemIndex,x]));
@@ -209,7 +227,6 @@ function scheduleAutoDraftSave(imagesDirty=true){
           state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
           if(state.driveRecordId){
             try{global.sessionStorage.setItem('pti093_driveRecordId',state.driveRecordId)}catch(e){}
-            try{global.localStorage.setItem('pti093_driveRecordId',state.driveRecordId)}catch(e){}
           }
           $('title').value=state.current.title||meta.currentTitle||'Bản ảnh chi tiết thiệt hại';
           if(state.driveRecordId){$('driveId').textContent='Hồ sơ: '+state.driveRecordId;$('driveId').classList.remove('hidden')}
