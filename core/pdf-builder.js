@@ -39,14 +39,17 @@
           {dpi:120,quality:.72},
           {dpi:100,quality:.65},
           {dpi:85,quality:.58},
-          {dpi:72,quality:.52}
+          {dpi:72,quality:.52},
+          {dpi:60,quality:.46},
+          {dpi:50,quality:.40},
+          {dpi:40,quality:.34}
         ];
         let last=null;
         for(const t of tries){
           const result=makePdfAt(canvases,t.dpi,t.quality);last=result;
           if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT)return {...result,compressed:t.dpi!==pagePixels().dpi};
         }
-        return {...last,compressed:true};
+        throw new Error('PDF vẫn vượt giới hạn dung lượng sau khi nén tối đa. Không xuất tệp vượt giới hạn; hãy dùng chế độ PDF chất lượng cao để tự chia thành nhiều phần.');
       }
 
       function splitPdfBytes(canvases,filenameBase){
