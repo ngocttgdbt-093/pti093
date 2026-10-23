@@ -83,7 +83,7 @@
       async function exportStandardPdf(button){
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xuất PDF.',true);return}
         if(!state.pages||!state.pages.length)return;
-        const exportPages=state.pages,exportPageDefs=state.pageDefs,exportWorkspaceRevision=Number(state.workspaceRevision)||0;
+        const exportPages=state.pages,exportPageDefs=state.pageDefs,exportWorkspaceRevision=Number(state.workspaceRevision)||0,exportWorkspaceMutationRevision=Number(state.workspaceMutationRevision)||0;
         const btn=button||$('pdf');btn.disabled=true;
         try{
           const baseName=pdfFileName();
