@@ -1,5 +1,6 @@
 const assert=require('node:assert/strict');
 global.window=global;
+require('../core/draft-recovery.js');
 const previousDocument=global.document;
 const previousSetTimeout=global.setTimeout;
 const previousWarn=console.warn;
