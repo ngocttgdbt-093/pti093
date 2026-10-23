@@ -248,10 +248,10 @@
       
       async function openRecordFromDrive(recordId){
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
-        state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
         state.workspaceOpenPending=true;
         try{
           const result=await openRecordFromDriveUnlocked(recordId);
+          state.workspaceRevision=(Number(state.workspaceRevision)||0)+1;
           state.driveOpenPending=false;state.workspaceOpenPending=false;
           scheduleAutoDraftSave(true);
           return result;
