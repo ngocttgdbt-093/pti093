@@ -14,6 +14,7 @@ require('../core/image-ingest.js');
   const files=[
     {name:'old.jpg',size:5,lastModified:1,type:'image/jpeg'},
     {name:'new-photo.jpg',size:10,lastModified:2,type:'image/jpeg'},
+    {name:'new-photo.jpg',size:10,lastModified:2,type:'image/jpeg'}, // repeated within one selection batch
     {name:'scan.heic',size:20,lastModified:3,type:''},
     {name:'notes.txt',size:30,lastModified:4,type:'text/plain'}
   ];
