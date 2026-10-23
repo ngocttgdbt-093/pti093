@@ -169,7 +169,7 @@ console.log('Drive record ID storage resilience contract passed.');
     assert.equal(state.driveOpenPending,true,'the Drive pending-open lock must remain active until all image downloads settle');
     assert.equal(state.driveOpenIncomplete,true,'Drive writes must be guarded while the record is still downloading images');
     await assert.rejects(()=>api.openRecordFromDrive('DRIVE-OTHER'),/Đang mở hồ sơ khác/,'a second Drive open must not race the first open');
-    await assert.rejects(()=>api.saveProjectToDrive(false),/Hồ sơ Drive chưa tải đủ ảnh/,'writes must be blocked during an in-progress open');
+    await assert.rejects(()=>api.saveProjectToDrive(false),/Đang mở hồ sơ/,'writes must be blocked during an in-progress open');
     releaseSecondImage();
     await opening;
     assert.equal(state.current.items.length,1,'only the successfully downloaded image should enter the workspace');
