@@ -16,17 +16,17 @@
 |---|---|
 | `core/gdv-search.js` | Vietnamese-aware GĐV/search normalization, initials, query variants, partial-name matching |
 | `core/workspace.js` | Workspace group access and non-mutating project snapshots |
-| `core/group-workflow.js` | Group save/next, finish/preview, edit/cancel/confirm coordination |
+| `core/group-workflow.js` | Group save/next, finish/preview, edit/cancel/confirm coordination; blocks group changes during workspace open |
 | `core/local-draft-store.js` | IndexedDB open/transaction/list primitives |
 | `core/draft-recovery.js` | Autosave scheduling, save/restore/cleanup, session lifecycle binding; persists Drive incomplete/provenance warnings but never persists in-flight open locks, and shows the relevant warning after reload |
 | `core/session-actions.js` | New-case transition and selected-GĐV persistence |
 | `core/local-save.js` | Save a local case and its image blobs to IndexedDB; blocks stale snapshots while a workspace is opening, never uploads the case to Drive, and preserves provenance warnings for partial-origin local copies |
 | `core/local-open.js` | Open an existing local case and restore fields/images; serializes workspace opens, refreshes AUTO-DRAFT after open, and releases the shared open lock on success/failure |
 | `core/device-context.js` | Device label used by local-open and Drive Fusion |
-| `core/image-ingest.js` | File filtering, duplicate handling, default captions, append sequence |
-| `core/image-editing.js` | Insert/replace, caption, rotate, delete, clear and autosave semantics |
-| `core/image-reorder.js` | Image-order operations and render/save callbacks |
-| `core/case-editor.js` | Case title and filename-caption controls |
+| `core/image-ingest.js` | File filtering, duplicate handling, default captions, append sequence; blocks intake while another workspace is opening |
+| `core/image-editing.js` | Insert/replace, caption, rotate, delete, clear and autosave semantics; blocks mutations during workspace open |
+| `core/image-reorder.js` | Image-order operations and render/save callbacks; refuses order commits during workspace open |
+| `core/case-editor.js` | Case title and filename-caption controls; blocks edits during workspace open |
 | `core/date-utils.js` | dd/mm/yyyy mask, normalization, ISO conversion and validation |
 | `core/file-naming.js` | Image basename, legacy-compatible/path-aware file keys, GĐV code and PDF filename rules |
 | `core/file-delivery.js` | Browser download and iOS share/popup fallback; propagates user-cancelled share so export cannot be finalized falsely |
@@ -65,7 +65,7 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 ## Validation status — updated 2026-10-23
 
-- Latest code/test head verified before this documentation refresh: `60cdc1ab3729b5458be29d4314161a4032c31408`; push run **#1381** and PR run **#1382** both passed. These runs include the shared workspace-open lock, local/Drive open autosave, visible incomplete-Drive warning after Chromium/IndexedDB reload, PDF share-cancellation retention/progress tests, protection against clearing AUTO-DRAFT after partial Drive PDF export, and local-copy provenance persistence across save/open/reload. This documentation-only refresh triggers fresh CI runs.
+- Latest code/test head verified before this documentation refresh: `6e5755a424fb71653892d25bdcf622765051b04f`; push run **#1417** and PR run **#1418** both passed. These runs include the shared workspace-open lock across local/Drive opens and mutation workflows, no transient AUTO-DRAFT writes during open, local/Drive open autosave, visible incomplete-Drive and partial-origin local-copy warnings after Chromium/IndexedDB reload, PDF share-cancellation retention/progress tests, and protection against clearing AUTO-DRAFT after partial Drive PDF export. This documentation-only refresh triggers fresh CI runs.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
