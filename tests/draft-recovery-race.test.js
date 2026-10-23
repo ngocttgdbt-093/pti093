@@ -71,5 +71,65 @@ oldMeta.sessionId=session.get('pti093_work_session_id');
   assert.equal(saved.meta.caseNumber,'HS-NEW-EDITED','the post-recovery save must persist the latest case fields');
   assert.ok(saved.images.some(image=>image.fileName==='later.jpg'),'the post-recovery save must include the image added during recovery');
   assert.ok(saved.closed>=2,'both recovery and post-recovery save connections should close');
-  console.log('Draft Recovery race regression passed: user edits during IndexedDB recovery are preserved and saved.');
+  // Also cover the no-AUTO-DRAFT path where cleanup itself is asynchronous.
+  const noDraftState={groups:[],current:{title:'Blank workspace',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'DRIVE-OLD',localDraftId:'LOCAL-OLD',orientation:'portrait',per:6,addSeq:0};
+  const noDraftValues={gdv:{value:'GĐV mới',dataset:{custom:''},options:[{value:'GĐV mới'}]},hoso:{value:'HS-OLD'},bks:{value:'OLD'},garage:{value:'Old'},date:{value:'2026-10-23'},title:{value:'Blank workspace'}};
+  const noDraft$=id=>noDraftValues[id]||(noDraftValues[id]={value:'',textContent:'',dataset:{},options:[],classList:{add(){},remove(){},toggle(){}}});
+  let releaseCleanup,signalCleanupStarted,saveMetaResolve;
+  const cleanupStarted=new Promise(resolve=>{signalCleanupStarted=resolve});
+  const savedAfterCleanupPromise=new Promise(resolve=>{saveMetaResolve=resolve});
+  const savedAfterCleanup={meta:null,images:[]};
+  const noDraftDb={
+    close(){},
+    transaction(storeNames){
+      return {objectStore(name){
+        if(name==='drafts')return {
+          get(){const req={};queueMicrotask(()=>{req.result=undefined;req.onsuccess&&req.onsuccess()});return req},
+          delete(){},
+          put(meta){savedAfterCleanup.meta=meta;saveMetaResolve(meta)}
+        };
+        if(name==='draftImages')return {
+          index(){return {
+            getAll(){const req={};queueMicrotask(()=>{req.result=[];req.onsuccess&&req.onsuccess()});return req},
+            openCursor(){const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess()});return req}
+          }},
+          put(image){savedAfterCleanup.images.push(image)}
+        };
+        throw new Error('Unexpected store '+name);
+      }};
+    }
+  };
+  let transactionDoneCount=0;
+  const noDraftApi=global.PTI093DraftRecovery.install({
+    state:noDraftState,$:noDraft$,getDateISO:()=>'2026-10-23',setDateInput:value=>{noDraftValues.date.value=value||''},
+    render:()=>{throw new Error('No-draft cleanup must not erase or rerender fresh user work')},
+    renderLayout:()=>{throw new Error('No-draft cleanup must not erase or rerender fresh user work')},
+    setDriveState:()=>{},msg:()=>{},openLocalDraftDB:async()=>noDraftDb,
+    localDraftTransactionDone:async()=>{
+      transactionDoneCount++;
+      if(transactionDoneCount===1){
+        signalCleanupStarted();
+        await new Promise(resolve=>{releaseCleanup=resolve});
+      }
+    }
+  });
+  const noDraftRestore=noDraftApi.restoreAutoDraft();
+  await cleanupStarted;
+  noDraftValues.hoso.value='HS-NEW';
+  noDraftValues.bks.value='NEW-PLATE';
+  noDraftState.driveRecordId='DRIVE-NEW';
+  noDraftState.localDraftId='LOCAL-NEW';
+  noDraftState.current={title:'New user work',items:[{file:new File(['fresh'],'fresh.jpg',{type:'image/jpeg',lastModified:4}),key:'fresh',caption:'Fresh photo',rotate:0,addSeq:11}]};
+  noDraftValues.title.value='New user work';
+  noDraftApi.scheduleAutoDraftSave(true);
+  releaseCleanup();
+  await noDraftRestore;
+  const savedAfterCleanupMeta=await savedAfterCleanupPromise;
+  assert.equal(noDraftState.driveRecordId,'DRIVE-NEW','late no-draft cleanup must not clear a newly selected Drive ID');
+  assert.equal(noDraftState.localDraftId,'LOCAL-NEW','late no-draft cleanup must not clear the active local draft ID');
+  assert.equal(noDraftState.current.title,'New user work','late cleanup must preserve the new workspace');
+  assert.equal(savedAfterCleanupMeta.caseNumber,'HS-NEW','new form fields should be saved after cleanup completes');
+  assert.equal(savedAfterCleanupMeta.driveRecordId,'DRIVE-NEW','the post-cleanup autosave should persist the new Drive ID');
+  assert.equal(savedAfterCleanupMeta.localDraftId,'LOCAL-NEW','the post-cleanup autosave should persist the new local draft ID');
+  console.log('Draft Recovery race regressions passed: edits during recovery and no-draft cleanup are preserved and saved.');
 })().catch(error=>{console.error(error);process.exitCode=1});
