@@ -65,7 +65,7 @@
           try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
           try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
         }
-        state.localDraftId=id;
+        state.localDraftId=id;state.driveOpenIncomplete=false;
         $('bks').value=meta.bks||'';
         $('hoso').value=meta.caseNumber||'';
         setDateInput(meta.date||'');
