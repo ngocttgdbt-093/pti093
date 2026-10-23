@@ -20,7 +20,7 @@
 | `core/local-draft-store.js` | IndexedDB open/transaction/list primitives |
 | `core/draft-recovery.js` | Autosave scheduling, save/restore/cleanup, session lifecycle binding |
 | `core/session-actions.js` | New-case transition and selected-GĐV persistence |
-| `core/local-save.js` | Save a local case/draft without photos; owns the local-save button binding |
+| `core/local-save.js` | Save a local case and its image blobs to IndexedDB; owns the local-save button binding and never uploads the case to Drive |
 | `core/local-open.js` | Open an existing local case and restore fields/images |
 | `core/device-context.js` | Device label used by local-open and Drive Fusion |
 | `core/image-ingest.js` | File filtering, duplicate handling, default captions, append sequence |
@@ -29,7 +29,7 @@
 | `core/case-editor.js` | Case title and filename-caption controls |
 | `core/date-utils.js` | dd/mm/yyyy mask, normalization, ISO conversion and validation |
 | `core/file-naming.js` | Image basename, legacy-compatible/path-aware file keys, GĐV code and PDF filename rules |
-| `core/file-delivery.js` | Browser download and iOS share/popup fallback |
+| `core/file-delivery.js` | Browser download and iOS share/popup fallback; propagates user-cancelled share so export cannot be finalized falsely |
 | `core/pdf-builder.js` | Page sizing, JPEG quality, byte generation, adaptive compression and splitting |
 | `core/image-canvas.js` | Canvas loading/drawing, rotation/containment, page render |
 | `core/preview-builder.js` | Ordered preview pages and page definitions |
@@ -41,7 +41,7 @@
 
 | Module | Responsibility |
 |---|---|
-| `fusion/drive.js` | 093-only Drive record search/open/create/save/upload, SHA-256 upload keys, pending/uploaded state and progress |
+| `fusion/drive.js` | 093-only Drive record search/open/create/save/upload, SHA-256 upload keys, pending/uploaded state and progress; partial opens keep a write guard until a complete reopen or explicit local copy |
 | `fusion/gdv-093.js` | 093-specific GĐV list, custom-name prompt/cache, selected-GĐV persistence |
 | `fusion/drive-recovery-guard.js` | Drive upload-entry guard and legacy stray-text cleanup |
 
@@ -59,12 +59,13 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 3. The user manually tested the existing 093 F5/reload recovery 10/10 times successfully on 2026-10-22. Treat this as the known-good behavioral baseline.
 4. DOCX/Word temporary draft storage and its ZIP/XML helper modules are retired. Do not reintroduce them as a draft mechanism.
 5. Local Save Core must not call Drive case-upload functions. Drive Fusion remains 093-specific and retains concurrency 5 and per-file upload-state tracking.
-6. After PDF, Drive, or local save has succeeded, a subsequent AUTO-DRAFT cleanup failure must be reported as a separate cleanup warning, never as a false export/save failure. `finalizeCompletedSession()` returns an explicit boolean result; PDF Export and Drive Fusion must check `false` even though the finalizer catches its own IndexedDB exception.
-6. Do not change `main`, deploy production, or modify the separate PTI repository during this refactor without a separate explicit release decision.
+6. After PDF, Drive, or local save has succeeded, a subsequent AUTO-DRAFT cleanup failure must be reported as a separate cleanup warning, never as a false export/save failure. `finalizeCompletedSession()` returns an explicit boolean result; PDF Export and Drive Fusion must check `false` even though the finalizer catches its own IndexedDB exception. A user-cancelled iOS share is not a successful export and must retain AUTO-DRAFT.
+6a. A Drive record opened with missing images must be visibly marked incomplete and protected from overwrite/upload until a full reopen succeeds; persist this guard across AUTO-DRAFT reload.
+7. Do not change `main`, deploy production, or modify the separate PTI repository during this refactor without a separate explicit release decision.
 
 ## Validation status — updated 2026-10-23
 
-- Latest full GitHub Actions runs verified before this documentation refresh both passed: push run **#1245** and PR run **#1246** on head `fc69942455af1b0630214493d7ff1c07667c3935`. The current review branch also includes the follow-up file-key integration and recovery-race regression; this documentation refresh triggers fresh CI runs.
+- Latest full GitHub Actions runs verified before this documentation refresh both passed: push run **#1283** and PR run **#1284** on head `e5eef0deee9269fc70a9e4a29de3e6ba15abed20`. These runs include Drive partial-open write protection, its AUTO-DRAFT/Chromium round-trip test, and PDF share-cancellation retention tests; this documentation refresh triggers fresh CI runs.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
