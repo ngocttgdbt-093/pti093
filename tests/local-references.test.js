@@ -9,7 +9,7 @@ assert.equal(new Set(refs).size,refs.length,'index.html should not duplicate loc
 const inlineScripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   .filter(([,attrs,source])=>!/\bsrc\s*=/i.test(attrs)&&source.trim());
 assert.equal(inlineScripts.length,0,'Application JavaScript should remain in external modules');
-const scripts=[...html.matchAll(/<script\\b[^>]*src="([^"]+)"/gi)].map(m=>m[1]);
+const scripts=[...html.matchAll(/<script\b[^>]*src="([^"]+)"/gi)].map(m=>m[1]);
 const position=src=>scripts.indexOf(src);
 assert.ok(position('./core/local-draft-store.js')>=0,'IndexedDB store adapter must be loaded');
 assert.ok(position('./core/draft-recovery.js')>position('./core/local-draft-store.js'),
