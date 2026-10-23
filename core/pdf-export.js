@@ -3,10 +3,10 @@
   global.PTI093PdfExportCore = {
     install: function(deps){
       const {state,PDF_SAFE_LIMIT,drawPage,makePdfAt,pagePixels,jpegQuality,pdfPackSize}=deps;
-      async function renderPageRangeWithLabel(start,end,label,totalParts){
+      async function renderPageRangeWithLabel(start,end,label,totalParts,pageDefs=state.pageDefs){
         const out=[];
         for(let i=start;i<end;i++){
-          const d=state.pageDefs[i];
+          const d=pageDefs[i];
           out.push(await drawPage(d.group,d.pageItems,d.pageNo,d.groupPageNo,d.groupPages,d.groupStartIndex,label));
         }
         return out;
@@ -24,8 +24,10 @@
         }
         throw new Error('Một trang PDF vẫn vượt giới hạn an toàn sau khi giảm DPI/chất lượng. Không xuất tệp vượt giới hạn.');
       }
-      async function splitHighQualityPdf(filenameBase,onProgress=()=>{}){
-        const pages=state.pages||[],safe=PDF_SAFE_LIMIT;
+      async function splitHighQualityPdf(filenameBase,onProgress=()=>{},snapshot=null){
+        const pages=(snapshot&&snapshot.pages)||state.pages||[];
+        const pageDefs=(snapshot&&snapshot.pageDefs)||state.pageDefs||[];
+        const safe=PDF_SAFE_LIMIT;
         if(!pages.length)return [];
         const ranges=[];let start=0;
         while(start<pages.length){
@@ -44,7 +46,7 @@
           const [s,e]=ranges[pi],label=`${pi+1}/${ranges.length}`;
           onProgress(35+Math.round(pi/Math.max(1,ranges.length)*45),'Đang dựng PDF phần '+(pi+1)+'/'+ranges.length+'…');
           await new Promise(resolve=>setTimeout(resolve,0));
-          const canvases=await renderPageRangeWithLabel(s,e,label,ranges.length);
+          const canvases=await renderPageRangeWithLabel(s,e,label,ranges.length,pageDefs);
           let result=makePdfAt(canvases,pagePixels().dpi,jpegQuality());
           if(pdfPackSize(result.bytes)>safe&&e-s>1){const ne=e-1;ranges[pi]=[s,ne];ranges.splice(pi+1,0,[ne,e]);pi--;continue}
           if(pdfPackSize(result.bytes)>safe)result=await buildPartWithinLimit(canvases);
@@ -56,7 +58,7 @@
           for(let pi=0;pi<ranges.length;pi++){
             onProgress(35+Math.round(pi/Math.max(1,total)*45),'Đang hoàn thiện nhãn tệp '+(pi+1)+'/'+total+'…');
             const [s,e]=ranges[pi],label=`${pi+1}/${total}`;
-            const canvases=await renderPageRangeWithLabel(s,e,label,total);
+            const canvases=await renderPageRangeWithLabel(s,e,label,total,pageDefs);
             const result=await buildPartWithinLimit(canvases);
             parts.push({blob:new Blob([result.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+(pi+1)+'.pdf',dpi:result.dpi,quality:result.quality});
             await new Promise(resolve=>setTimeout(resolve,0));
