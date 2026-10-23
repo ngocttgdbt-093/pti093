@@ -15,8 +15,8 @@
         return 'Hồ sơ Drive chưa tải đủ ảnh. Không thể lưu đè hoặc tải ảnh lên cho đến khi mở lại hồ sơ và xác nhận đã tải đủ ảnh; có thể lưu một bản sao tại máy.';
       }
       function driveWriteBlockedMessage(){
-        return state.driveOpenPending
-          ? 'Đang mở hồ sơ Drive. Hãy chờ tải xong trước khi lưu hoặc tải ảnh lên.'
+        return state.workspaceOpenPending||state.driveOpenPending
+          ? 'Đang mở hồ sơ. Hãy chờ tải xong trước khi lưu hoặc tải ảnh lên.'
           : incompleteDriveOpenMessage();
       }
       
@@ -106,7 +106,7 @@
         const digest=await crypto.subtle.digest('SHA-256',buf);
         return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
       }
-      async function openRecordFromDrive(recordId){
+      async function openRecordFromDriveUnlocked(recordId){
         if(state.driveOpenPending)throw new Error('Đang mở một hồ sơ Drive khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
         state.driveOpenPending=true;
         setOpenLoad('Google Drive',0,0,'Đang mở hồ sơ và đọc danh sách ảnh từ Google Drive...');
@@ -245,6 +245,12 @@
       
       
       
+      async function openRecordFromDrive(recordId){
+        if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
+        state.workspaceOpenPending=true;
+        try{return await openRecordFromDriveUnlocked(recordId)}
+        finally{state.workspaceOpenPending=false}
+      }
       function recordMatchesQuery(row,query){
         const fields=[row.caseNumber,row.maHoSo,row.bks,row.gdv,row.adjuster,row.status];
         return fields.some(v=>normalizeRecordSearch(v).includes(normalizeRecordSearch(query)))||gdvSearchMatches(query,row.gdv||row.adjuster)
@@ -339,7 +345,7 @@
       }
 
       async function saveProjectToDrive(showMsg=true){
-        if(state.driveOpenPending||state.driveOpenIncomplete)throw new Error(driveWriteBlockedMessage());
+        if(state.workspaceOpenPending||state.driveOpenPending||state.driveOpenIncomplete)throw new Error(driveWriteBlockedMessage());
         const id=state.driveRecordId||readStoredDriveRecordId()||'';
         if(!id)throw new Error('Chưa có hồ sơ Drive.');
         const revision=String(Date.now())+'-'+Math.random().toString(36).slice(2,8),payload=JSON.stringify({action:'saveProject',recordId:id,revision,project:buildProjectData()});
@@ -595,7 +601,7 @@
       }
 
       async function createDriveRecord(){
-        if(state.driveOpenPending||state.driveOpenIncomplete){
+        if(state.workspaceOpenPending||state.driveOpenPending||state.driveOpenIncomplete){
           const detail=driveWriteBlockedMessage();
           setDriveState(detail,false);msg(detail,true);return;
         }
