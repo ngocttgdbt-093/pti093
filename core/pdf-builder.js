@@ -59,13 +59,20 @@
             let low=start+1,high=canvases.length,best=null;
             while(low<=high){
               const mid=Math.floor((low+high)/2);
-              const trial=await buildAdaptivePdf(canvases.slice(start,mid));
-              if(pdfPackSize(trial.bytes)<=PDF_SAFE_LIMIT){best={end:mid,...trial};low=mid+1}
-              else high=mid-1;
+              try{
+                const trial=await buildAdaptivePdf(canvases.slice(start,mid));
+                best={end:mid,...trial};low=mid+1;
+              }catch(error){
+                // buildAdaptivePdf throws specifically when the candidate cannot meet the cap.
+                // Treat that candidate as too large, but never swallow decoding/encoding failures.
+                if(!error||!String(error.message||error).includes('vượt giới hạn dung lượng sau khi nén tối đa'))throw error;
+                high=mid-1;
+              }
             }
             if(!best){
-              const fallbackDpi=[60,50,40];let one=null;
-              for(const dpi of fallbackDpi){const q=dpi===60?.46:dpi===50?.40:.34;const r=makePdfAt(canvases.slice(start,start+1),dpi,q);one=r;if(pdfPackSize(r.bytes)<=PDF_SAFE_LIMIT)break}
+              // A single page cannot be split further. buildAdaptivePdf either returns a compliant
+              // result or throws; never emit an oversized fallback PDF.
+              const one=await buildAdaptivePdf(canvases.slice(start,start+1));
               best={end:start+1,...one};
             }
             parts.push({blob:new Blob([best.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' Phan '+partNo+'.pdf',dpi:best.dpi,quality:best.quality});
