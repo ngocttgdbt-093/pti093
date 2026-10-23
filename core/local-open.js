@@ -91,7 +91,7 @@
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
         state.workspaceOpenPending=true;
         try{return await openLocalDraftUnlocked(id)}
-        finally{state.workspaceOpenPending=false}
+        finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }
       return {openLocalDraft};
     }
