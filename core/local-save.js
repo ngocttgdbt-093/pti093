@@ -86,6 +86,16 @@
           return id;
         }catch(e){
           if(e&&e.code==='LOCAL_SAVE_WORKSPACE_CHANGED_AFTER_WRITE'){
+            // Restore the visible identity too: the stale save attempt may have shown its old ID.
+            const idBox=$('driveId');
+            if(idBox){
+              if(state.driveRecordId){idBox.textContent='Hồ sơ: '+state.driveRecordId;idBox.classList.remove('hidden')}
+              else if(state.localDraftId){idBox.textContent='💻 ID hồ sơ local: '+state.localDraftId;idBox.classList.remove('hidden')}
+              else{idBox.classList.add('hidden')}
+            }
+            if($('driveProgressText'))$('driveProgressText').textContent='Hồ sơ đã thay đổi trong lúc lưu';
+            if($('driveProgressPct'))$('driveProgressPct').textContent='!';
+            if($('driveProgressMeta'))$('driveProgressMeta').textContent=e.message;
             setDriveState(e.message,false);msg('⚠️ '+e.message,true);
             throw e;
           }
