@@ -13,19 +13,21 @@
         PTI093_SESSION_ID=(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));
         try{global.sessionStorage.setItem(PTI093_SESSION_KEY,PTI093_SESSION_ID)}catch(e){}
       }
-      let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false,autoDraftImageRevision=0,autoDraftResetting=false;
+      let autoDraftTimer=null,autoDraftSaving=false,autoDraftAgain=false,autoDraftImagesDirty=true,autoDraftRestoring=false,autoDraftUserChangedDuringRestore=false,autoDraftImageRevision=0,autoDraftResetting=false;
       function clearAutoDraftTimer(){clearTimeout(autoDraftTimer)}
 /* Storage adapter supplied by core/local-draft-store.js */
       
 function scheduleAutoDraftSave(imagesDirty=true){
-        if(autoDraftRestoring||autoDraftResetting)return;
+        if(autoDraftRestoring){autoDraftUserChangedDuringRestore=true;return}
+        if(autoDraftResetting)return;
         if(imagesDirty){autoDraftImagesDirty=true;autoDraftImageRevision++}
         clearTimeout(autoDraftTimer);
         autoDraftTimer=setTimeout(()=>saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e)),300);
       }
       
       async function saveAutoDraft(){
-        if(autoDraftRestoring||autoDraftResetting)return;
+        if(autoDraftRestoring){autoDraftUserChangedDuringRestore=true;return}
+        if(autoDraftResetting)return;
         if(autoDraftSaving){autoDraftAgain=true;return}
         autoDraftSaving=true;
         const imagesNeedSaving=autoDraftImagesDirty,imageRevision=autoDraftImageRevision;
@@ -115,6 +117,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
       
       async function restoreAutoDraft(){
         autoDraftRestoring=true;
+        autoDraftUserChangedDuringRestore=false;
         try{
           const db=await openLocalDraftDB();
           let meta,images=[];
@@ -124,6 +127,9 @@ function scheduleAutoDraftSave(imagesDirty=true){
               new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),q=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(PTI093_AUTO_DRAFT_ID));q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error)})
             ]);
           }finally{db.close()}
+          // Người dùng có thể thao tác trong lúc IndexedDB đang đọc. Không cho bản nháp cũ
+          // ghi đè các thay đổi mới phát sinh trong tab; phần finally sẽ lưu trạng thái hiện tại.
+          if(autoDraftUserChangedDuringRestore)return;
           if(!meta){
             // Dọn ảnh mồ côi nếu metadata của AUTO-DRAFT đã mất hoặc bị xóa riêng lẻ.
             await clearAutoDraft();
@@ -193,7 +199,13 @@ function scheduleAutoDraftSave(imagesDirty=true){
           if(groups.length||meta.bks||meta.caseNumber)setDriveState('Đã khôi phục bản nháp tự động · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
           msg(missing?'Đã khôi phục bản nháp nhưng thiếu '+missing+' ảnh trong bộ nhớ trình duyệt.':'Đã khôi phục công việc đang làm. Anh có thể tiếp tục ngay.',true);
         }catch(e){console.warn('Không thể khôi phục bản nháp tự động:',e);msg('Chưa đọc được bản nháp tự động từ bộ nhớ trình duyệt.',true)}
-        finally{autoDraftRestoring=false}
+        finally{
+          autoDraftRestoring=false;
+          if(autoDraftUserChangedDuringRestore){
+            autoDraftUserChangedDuringRestore=false;
+            saveAutoDraft().catch(e=>console.warn('Không tự lưu được thay đổi phát sinh trong lúc khôi phục nháp:',e));
+          }
+        }
       }
       function bindLifecycle(){
         ['bks','hoso','gdv','date','garage'].forEach(id=>{
