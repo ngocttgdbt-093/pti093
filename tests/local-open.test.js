@@ -91,6 +91,7 @@ const api = global.PTI093LocalOpenCore.install({
   assert.equal(appState.localCopyFromIncompleteDrive,true,'local open must restore incomplete-Drive provenance');
   assert.match(calls.status.at(-1),/được tạo từ hồ sơ Drive chưa tải đủ ảnh/,'local open must visibly warn about a partial-origin copy');
   assert.equal(appState.workspaceOpenPending,false,'successful local open must release the shared workspace lock');
+  assert.equal(appState.workspaceRevision,1,'successful local open must invalidate any preview rendered from the previous workspace');
   assert.equal(appState.groups.length, 1);
   assert.equal(appState.groups[0].title, 'Ảnh hiện trường');
   assert.equal(appState.groups[0].items[0].caption, 'Toàn cảnh');
