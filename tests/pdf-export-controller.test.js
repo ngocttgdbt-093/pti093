@@ -2,18 +2,19 @@ const assert=require('node:assert/strict');
 global.window=global;
 require('../core/pdf-export-controller.js');
 assert.ok(global.PTI093PdfExportController);
-function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false,failFinalize=false,workspaceOpenPending=false,driveOpenIncomplete=false}={}){
+function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{filename:'part-2.pdf',blob:{size:2048}}],failExport=false,pdfResult={bytes:new Uint8Array([1,2,3]),compressed:false,dpi:150,quality:0.8},failBuild=false,failFinalize=false,workspaceOpenPending=false,driveOpenIncomplete=false,onBuild=null,onSplit=null,onExport=null}={}){
   const elements={};
   for(const id of ['pdfHighQualityCheck','pdfHighProgressWrap','pdfHighProgressLabel','pdfHighProgressPct','pdfHighProgressBar']){
     elements[id]={disabled:false,textContent:'',style:{display:'',width:''}};
   }
   const events={messages:[],exports:[],alerts:[],warnings:[],finalized:0};
+  const state={pages,workspaceOpenPending,driveOpenIncomplete,pageDefs:[{pageNo:1}]};
   const api=global.PTI093PdfExportController.install({
-    state:{pages,workspaceOpenPending,driveOpenIncomplete},
+    state,
     $:id=>elements[id]||(elements[id]={style:{},textContent:''}),
-    splitHighQualityPdf:async(name,update)=>{events.splitName=name;events.update=update;return parts;},
-    exportPdfFile:async(blob,name)=>{if(failExport)throw failExport==='abort'?Object.assign(new Error('user cancelled'),{name:'AbortError'}):new Error('download failed');events.exports.push({blob,name});},
-    buildAdaptivePdf:async pages=>{events.pagesPassed=pages;if(failBuild)throw new Error('build failed');return pdfResult;},
+    splitHighQualityPdf:async(name,update,snapshot)=>{events.splitName=name;events.update=update;events.splitSnapshot=snapshot;if(onSplit)await onSplit(state,snapshot);return parts;},
+    exportPdfFile:async(blob,name)=>{if(failExport)throw failExport==='abort'?Object.assign(new Error('user cancelled'),{name:'AbortError'}):new Error('download failed');events.exports.push({blob,name});if(onExport)await onExport(state,{blob,name});},
+    buildAdaptivePdf:async pages=>{events.pagesPassed=pages;if(failBuild)throw new Error('build failed');if(onBuild)await onBuild(state,pages);return pdfResult;},
     pdfPackSize:bytes=>bytes.length,
     pdfFileName:()=> 'case.pdf',
     getPdfWarningSkin:()=>({hidePdfWarning:()=>events.warnings.push('hide'),showPdfWarning:(...args)=>events.warnings.push(['show',...args])}),
@@ -22,7 +23,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     alert:text=>events.alerts.push(text),
     setTimeout:fn=>{fn();return 1;}
   });
-  return {api,elements,events};
+  return {api,elements,events,state};
 }
 (async()=>{
   {
@@ -144,5 +145,27 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(events.exports[0].name,'case.pdf');
     assert.equal(events.finalized,1);
   }
-  console.log('PDF Export Controller tests passed (standard/high-quality export, warnings, error recovery, empty preview guard, and control binding).');
+  {
+    const high=setup({onSplit:async state=>{state.pages=[{id:'new workspace page'}];}});
+    await high.api.exportHighQualitySplit('case',{disabled:false},{textContent:''});
+    assert.deepEqual(high.events.splitSnapshot.pages,[{}],'high-quality export must pass the captured pages to the splitter');
+    assert.equal(high.events.exports.length,0,'high-quality export must abort before saving stale parts when workspace changes during split');
+    assert.equal(high.events.finalized,0,'stale high-quality export must not clear the current AUTO-DRAFT');
+    assert.match(high.events.messages.at(-1).text,/Không xóa bản nháp hiện tại/);
+  }
+  {
+    const standard=setup({onBuild:async state=>{state.pages=[{id:'new workspace page'}];}});
+    await standard.api.exportStandardPdf({disabled:false});
+    assert.equal(standard.events.exports.length,0,'standard export must not save a PDF built from a stale workspace');
+    assert.equal(standard.events.finalized,0,'standard export must not finalize a changed workspace');
+    assert.match(standard.events.messages.at(-1).text,/Bản nháp hiện tại được giữ nguyên/);
+  }
+  {
+    const standard=setup({pdfResult:{bytes:new Uint8Array(20),compressed:true,dpi:96,quality:0.6},onExport:async state=>{state.pages=[{id:'new workspace page'}];}});
+    await standard.api.exportStandardPdf({disabled:false});
+    assert.equal(standard.events.exports.length,1,'already-saved PDF cannot be recalled if workspace changes during share');
+    assert.equal(standard.events.finalized,0,'workspace change during share must retain the current AUTO-DRAFT');
+    assert.match(standard.events.messages.at(-1).text,/Bản nháp hiện tại được giữ nguyên/);
+  }
+  console.log('PDF Export Controller tests passed (snapshot-safe standard/high-quality export, warnings, error recovery, and control binding).');
 })().catch(error=>{console.error(error);process.exitCode=1});
