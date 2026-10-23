@@ -3,14 +3,32 @@
   global.PTI093ClassicPreviewSkin = {
     install: function(deps){
       const {state,$,document:doc,window:win,buildPreview,getAllGroups,selectedGdv,setSelectedGdvCache,hidePdfWarning,msg,pagePixels,jpegQuality,setTimeout:timer=global.setTimeout}=deps;
+      function sameWorkspaceSnapshot(before,after){
+        if(!Array.isArray(before)||!Array.isArray(after)||before.length!==after.length)return false;
+        for(let i=0;i<before.length;i++){
+          const a=before[i],b=after[i];
+          if(a!==b||a.title!==b.title||!Array.isArray(a.items)||!Array.isArray(b.items)||a.items.length!==b.items.length)return false;
+          for(let j=0;j<a.items.length;j++){
+            const x=a.items[j],y=b.items[j];
+            if(x!==y||x.caption!==y.caption||x.rotate!==y.rotate||x.key!==y.key||x.file!==y.file)return false;
+          }
+        }
+        return true;
+      }
       async function makePreview(){
+        if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi tạo Preview.',true);return}
         setSelectedGdvCache(selectedGdv());
         $('backEdit').style.display='none';
         $('newCase').style.display='none';
         hidePdfWarning();
         const groups=getAllGroups();
         if(!groups.length){msg('Chưa có ảnh để Preview.',true);return}
+        const previewRevision=state.workspaceRevision;
         const {pages,defs}=await buildPreview(groups,state.per);
+        if(state.workspaceOpenPending||state.workspaceRevision!==previewRevision||!sameWorkspaceSnapshot(groups,getAllGroups())){
+          msg('Hồ sơ đã thay đổi trong lúc tạo Preview. Kết quả cũ đã bị bỏ; hãy tạo Preview lại.',true);
+          return;
+        }
         state.pages=pages;
         state.pageDefs=defs;
         $('preview').innerHTML='';
