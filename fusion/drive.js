@@ -249,7 +249,7 @@
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
         state.workspaceOpenPending=true;
         try{return await openRecordFromDriveUnlocked(recordId)}
-        finally{state.workspaceOpenPending=false}
+        finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }
       function recordMatchesQuery(row,query){
         const fields=[row.caseNumber,row.maHoSo,row.bks,row.gdv,row.adjuster,row.status];
