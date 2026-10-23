@@ -5,7 +5,7 @@
       const {state, $, pagePixels, makeCanvas, formatDateDMY, getDateISO, getLogoSrc, getSelectedGdvCache} = deps;
       function layoutDims(){const n=state.per;let cols,rows;if(n===1){cols=1;rows=1}else if(n===2){cols=2;rows=1}else if(n===3){cols=3;rows=1}else if(n===4){cols=2;rows=2}else if(n===6){cols=state.orientation==='portrait'?2:3;rows=state.orientation==='portrait'?3:2}else{cols=state.orientation==='portrait'?2:4;rows=state.orientation==='portrait'?4:2}return {cols,rows}}
 
-      function loadImage(f){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=URL.createObjectURL(f)})}
+      function loadImage(f){return new Promise((r,j)=>{const im=new Image(),url=URL.createObjectURL(f);let settled=false;const cleanup=()=>{if(settled)return;settled=true;try{URL.revokeObjectURL(url)}catch(e){}};im.onload=()=>{cleanup();r(im)};im.onerror=error=>{cleanup();j(error||new Error('Không đọc được ảnh để dựng PDF.'))};im.src=url})}
 
       function loadLogo(){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=getLogoSrc()})}
 
