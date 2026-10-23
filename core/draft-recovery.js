@@ -133,6 +133,10 @@ function scheduleAutoDraftSave(imagesDirty=true){
           if(!meta){
             // Dọn ảnh mồ côi nếu metadata của AUTO-DRAFT đã mất hoặc bị xóa riêng lẻ.
             await clearAutoDraft();
+            // No active draft means this tab must not fall back to a stale Drive ID on the next save.
+            state.driveRecordId='';state.localDraftId='';
+            try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+            try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
             return;
           }
           // Chỉ khôi phục nháp trong đúng phiên/tab. Nháp của phiên trước bị dọn, không hiển thị lại.
