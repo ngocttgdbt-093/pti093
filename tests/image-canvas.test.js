@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict');
 global.window = global;
 global.queueMicrotask = queueMicrotask || (fn => Promise.resolve().then(fn));
-global.URL = { createObjectURL: () => 'blob:test-image' };
+const revokedUrls=[];
+global.URL = { createObjectURL: () => 'blob:test-image', revokeObjectURL: url => revokedUrls.push(url) };
 global.Image = class FakeImage {
   constructor() { this.width = 100; this.height = 80; }
   set src(value) { this._src = value; queueMicrotask(() => this.onload && this.onload()); }
@@ -36,6 +37,7 @@ const api = global.PTI093ImageCanvasCore.install({
   state.orientation = 'portrait';
   assert.deepEqual(api.wrap(ctx, 'alpha beta gamma', 50, 10), ['alpha', 'beta', 'gamma']);
   assert.equal((await api.loadImage({ name: 'x.jpg' })).width, 100);
+  assert.deepEqual(revokedUrls,['blob:test-image'],'temporary image URLs should be revoked after decoding');
   assert.equal((await api.loadLogo()).height, 80);
   await api.drawPage({ title: 'Ảnh thiệt hại' }, [{ file: { name: 'x.jpg' }, caption: 'Mặt trước', rotate: 90 }], 1, 1, 1, 0, '');
   assert.deepEqual(calls.canvasSize, [1240, 1754]);
@@ -43,5 +45,6 @@ const api = global.PTI093ImageCanvasCore.install({
   assert.ok(calls.fillText.includes('Mặt trước'));
   assert.ok(calls.fillText.includes('GĐV: Nguyễn Minh Ngọc'));
   assert.ok(calls.rotate.some(value => Math.abs(value - Math.PI / 2) < 0.0001));
+  assert.equal(revokedUrls.length,2,'PDF rendering should revoke each decoded image URL instead of leaking it');
   console.log('Image Canvas Core tests passed (10 checks).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
