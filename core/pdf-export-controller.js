@@ -42,8 +42,12 @@
           update(100,'Hoàn tất gửi '+parts.length+' tệp PDF. Kiểm tra thư mục Tải xuống hoặc hộp thoại Chia sẻ.');
           await finalizeAfterSuccessfulExport();
         }catch(e){
-          const message='Xuất PDF chất lượng cao bị gián đoạn: '+(e&&e.message?e.message:String(e))+'. Hãy kiểm tra các tệp đã lưu trước khi thử lại.';
-          update(100,message);alert(message);
+          if(e&&e.name==='AbortError'){
+            update(100,'Đã hủy chia sẻ PDF. Bản nháp vẫn được giữ để anh có thể xuất lại; kiểm tra các tệp đã lưu trước khi thử lại.');
+          }else{
+            const message='Xuất PDF chất lượng cao bị gián đoạn: '+(e&&e.message?e.message:String(e))+'. Hãy kiểm tra các tệp đã lưu trước khi thử lại.';
+            update(100,message);alert(message);
+          }
         }finally{
           pdfHighQualityRunning=false;if(button)button.disabled=false;if(checkbox)checkbox.disabled=false;
         }
@@ -73,8 +77,12 @@
             await finalizeAfterSuccessfulExport();
           }
         }catch(e){
-          msg('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)),false);
-          alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
+          if(e&&e.name==='AbortError'){
+            msg('Đã hủy chia sẻ PDF. Bản nháp vẫn được giữ để anh có thể xuất lại.',true);
+          }else{
+            msg('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)),false);
+            alert('Không thể xuất PDF: '+(e&&e.message?e.message:String(e)));
+          }
         }finally{btn.disabled=false}
       }
       function bindControls(){
