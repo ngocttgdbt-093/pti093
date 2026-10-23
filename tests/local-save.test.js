@@ -265,3 +265,31 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
   assert.equal(state.current.title,'New workspace','stale local save must not alter the new workspace');
   console.log('Local Save async workspace-transition race regression passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+(async()=>{
+  let confirmResolve,openCount=0,cleanupCount=0;
+  const confirmPending=new Promise(resolve=>{confirmResolve=resolve});
+  const state={groups:[],current:{title:'Old case',items:[]},localDraftId:'',driveRecordId:'DRIVE-OLD',workspaceRevision:2};
+  const elements={},messages=[];
+  const api=global.PTILocalSaveCore.install({
+    state,$:id=>elements[id]||(elements[id]={value:'',textContent:'',disabled:false,style:{},dataset:{},classList:{add(){},remove(){}}}),
+    snapshotGroupsForProject:()=>[{title:state.current.title,items:state.current.items}],
+    openLocalDraftDB:async()=>{openCount++;throw new Error('must not save a different case')},
+    localDraftTransactionDone:async()=>{},getDateISO:()=>'',selectedGdv:()=>'',setDriveState:noop,msg:text=>messages.push(text),
+    renderLocalSaveFeedback:noop,showLocalSaveConfirm:async()=>confirmPending,clearAutoDraft:async()=>{cleanupCount++}
+  });
+  const saving=api.saveDraftWithoutPhotos();
+  state.workspaceOpenPending=true;
+  state.workspaceRevision++;
+  state.driveRecordId='DRIVE-NEW';
+  state.current={title:'New case',items:[]};
+  state.workspaceOpenPending=false;
+  confirmResolve(true);
+  await saving;
+  assert.equal(openCount,0,'confirmation for an old case must not trigger a save of the newly opened case');
+  assert.equal(cleanupCount,0,'stale confirmation must not clear the new case AUTO-DRAFT');
+  assert.equal(state.driveRecordId,'DRIVE-NEW','new Drive case identity must remain intact');
+  assert.ok(messages.some(text=>/Hồ sơ đã thay đổi trong lúc xác nhận lưu/.test(text)),'user should receive a clear stale-confirmation warning');
+  console.log('Local Save confirmation-transition race regression passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});

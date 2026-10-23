@@ -106,9 +106,18 @@
       }
 
       async function saveDraftWithoutPhotos(){
+        if(state.workspaceOpenPending){
+          const detail='Đang mở hồ sơ khác. Hãy chờ tải xong trước khi xác nhận lưu tại máy.';
+          setDriveState(detail,false);msg(detail,true);return;
+        }
+        const workspaceRevisionAtStart=Number(state.workspaceRevision)||0;
         const n=snapshotGroupsForProject().reduce((sum,g)=>sum+g.items.length,0);
         const ok=await showLocalSaveConfirm(n);
         if(!ok)return;
+        if(state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart){
+          const detail='Hồ sơ đã thay đổi trong lúc xác nhận lưu. Chưa lưu hồ sơ nào; hãy bấm Lưu tại máy lại trên hồ sơ đang mở.';
+          setDriveState(detail,false);msg(detail,true);return;
+        }
         const b=$('driveSaveDraft');b.disabled=true;
         const box=$('driveProgress');if(box)box.classList.remove('hidden');
         if($('driveProgressText'))$('driveProgressText').textContent='Đang bắt đầu lưu tại máy…';
