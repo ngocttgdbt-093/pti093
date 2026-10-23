@@ -125,7 +125,7 @@ console.log('Drive record ID storage resilience contract passed.');
     classList:{add(){},remove(){},toggle(){}},appendChild(){},setAttribute(){},addEventListener(){},getBoundingClientRect(){return {top:0}}});
   const statusEvents=[],messages=[],progress=[],finished=[];
   const state={groups:[],current:{title:'',items:[]},driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,orientation:'portrait',per:6,addSeq:0};
-  let failSecondImage=true,fetchCalls=0;
+  let failSecondImage=true,fetchCalls=0,releaseSecondImage=null,signalSecondImageStarted;\n  const secondImageStarted=new Promise(resolve=>{signalSecondImageStarted=resolve});
   global.document={querySelectorAll:()=>[]};
   global.scrollY=0;global.scrollTo=()=>{};
   global.File=class TestFile{
@@ -144,7 +144,10 @@ console.log('Drive record ID storage resilience contract passed.');
     })};
     if(String(url).includes('action=getImage')&&String(url).includes('fileId=F1'))return {json:async()=>({success:true,base64:Buffer.from('image-one').toString('base64'),mimeType:'image/jpeg',fileName:'one.jpg'})};
     if(String(url).includes('action=getImage')&&String(url).includes('fileId=F2')){
-      if(failSecondImage)return {json:async()=>({success:false,error:'image unavailable'})};
+      if(failSecondImage)return new Promise(resolve=>{
+        releaseSecondImage=()=>resolve({json:async()=>({success:false,error:'image unavailable'})});
+        signalSecondImageStarted();
+      });
       return {json:async()=>({success:true,base64:Buffer.from('image-two').toString('base64'),mimeType:'image/jpeg',fileName:'two.jpg'})};
     }
     throw new Error('Unexpected fetch in partial-open test: '+url);
@@ -159,7 +162,12 @@ console.log('Drive record ID storage resilience contract passed.');
     render:()=>{},renderLayout:()=>{},msg:(text,show)=>messages.push({text,show})
   });
   try{
-    await api.openRecordFromDrive('DRIVE-PARTIAL');
+    const opening=api.openRecordFromDrive('DRIVE-PARTIAL');
+    await secondImageStarted;
+    assert.equal(state.driveOpenIncomplete,true,'Drive writes must be guarded while the record is still downloading images');
+    await assert.rejects(()=>api.saveProjectToDrive(false),/Hồ sơ Drive chưa tải đủ ảnh/,'writes must be blocked during an in-progress open');
+    releaseSecondImage();
+    await opening;
     assert.equal(state.current.items.length,1,'only the successfully downloaded image should enter the workspace');
     assert.equal(state.driveOpenIncomplete,true,'a partially loaded Drive record must be marked unsafe to overwrite');
     assert.match(statusEvents.at(-1).text,/chỉ tải được 1\/2 ảnh/,'partial open must not report success');
