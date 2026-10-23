@@ -89,9 +89,6 @@
           setDriveState('✓ Đã tải hoàn tất ảnh từ '+source+' · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
         }
         render();renderLayout();
-        // Replace any older AUTO-DRAFT with the case just opened; otherwise an immediate
-        // F5 could restore a different case from the same browser session.
-        if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
         if(state.localCopyFromIncompleteDrive)msg('⚠️ Bản lưu tại máy này được tạo từ hồ sơ Drive chưa tải đủ ảnh. Hãy kiểm tra số ảnh trước khi tạo hồ sơ Drive mới.',true);
         else msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
@@ -99,8 +96,12 @@
       async function openLocalDraft(id){
         if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi mở hồ sơ tiếp theo.');
         state.workspaceOpenPending=true;
-        try{return await openLocalDraftUnlocked(id)}
-        finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
+        try{
+          const result=await openLocalDraftUnlocked(id);
+          state.driveOpenPending=false;state.workspaceOpenPending=false;
+          if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
+          return result;
+        }finally{state.driveOpenPending=false;state.workspaceOpenPending=false}
       }
       return {openLocalDraft};
     }
