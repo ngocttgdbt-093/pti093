@@ -97,6 +97,21 @@ const {chromium}=require('playwright');
     assert.equal(modernGallery.renderer,'function','gallery renderer should remain available to Preview Skin');
     assert.deepEqual(modernErrors,[],'Modern skin should mount without uncaught JavaScript errors');
     await modernPage.close();
-    console.log('Full app Chromium smoke test passed: module loading, initial six-image layout, and date mask.');
+
+    const blockedStoragePage=await browser.newPage();
+    const blockedStorageErrors=[];
+    blockedStoragePage.on('pageerror',e=>blockedStorageErrors.push(e.message));
+    await blockedStoragePage.addInitScript(()=>{
+      Object.defineProperty(window,'localStorage',{configurable:true,get(){throw new DOMException('storage blocked','SecurityError')}});
+      Object.defineProperty(window,'sessionStorage',{configurable:true,get(){throw new DOMException('storage blocked','SecurityError')}});
+    });
+    await blockedStoragePage.goto('http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded'});
+    await blockedStoragePage.waitForSelector('#layoutPreview .layoutcell',{timeout:5000});
+    assert.equal(await blockedStoragePage.locator('#counts .opt').count(),6,
+      'app should finish startup even if browser storage properties throw on access');
+    assert.deepEqual(blockedStorageErrors,[],
+      'blocked browser storage must not cause uncaught errors during full app startup');
+    await blockedStoragePage.close();
+    console.log('Full app Chromium smoke test passed: module loading, six-image layout, date mask, and blocked-storage startup.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
