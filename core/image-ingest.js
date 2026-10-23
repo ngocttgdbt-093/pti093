@@ -5,11 +5,13 @@
       const {state,exts,fileBaseName,scheduleAutoDraftSave,render,msg}=deps;
       async function addFiles(files){
         const candidates=[];
+        const seenKeys=new Set((state.current.items||[]).map(item=>item.key).filter(Boolean));
         for(const file of files){
           if(!file.type.startsWith('image/')&&!exts.test(file.name))continue;
           const key=file.name+'|'+file.size+'|'+file.lastModified;
           // Deduplicate both against the current section and within this same file-selection batch.
-          if(!state.current.items.some(item=>item.key===key)&&!candidates.some(item=>item.key===key)){
+          if(!seenKeys.has(key)){
+            seenKeys.add(key);
             candidates.push({file,key,caption:state.filenameCaption?fileBaseName(file.name):'',addSeq:++state.addSeq,rotate:0});
           }
         }
