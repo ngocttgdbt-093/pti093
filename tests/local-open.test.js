@@ -67,7 +67,7 @@ function element(id) {
 }
 global.document = { querySelectorAll: () => [] };
 const calls = { progress: [], status: [], finished: 0, rendered: 0, layout: 0, messages: [] };
-const appState = { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', addSeq: 0 };
+const appState = { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', driveOpenIncomplete: true, addSeq: 0 };
 const api = global.PTI093LocalOpenCore.install({
   state: appState,
   $: element,
@@ -85,6 +85,7 @@ const api = global.PTI093LocalOpenCore.install({
   await api.openLocalDraft('LOCAL-TEST-1');
   assert.equal(appState.localDraftId, 'LOCAL-TEST-1');
   assert.equal(appState.driveRecordId, '');
+  assert.equal(appState.driveOpenIncomplete, false, 'successful local open must clear the incomplete Drive guard');
   assert.equal(appState.groups.length, 1);
   assert.equal(appState.groups[0].title, 'Ảnh hiện trường');
   assert.equal(appState.groups[0].items[0].caption, 'Toàn cảnh');
