@@ -33,7 +33,7 @@
         if(state.current.items.some((item,i)=>i!==index&&item.key===key)){
           msg('Ảnh này đã có trong mục hiện tại.',true);return;
         }
-        state.current.items[index]={...old,file,key,caption:state.filenameCaption?fileBaseName(file.name):old.caption};
+        state.current.items[index]={...old,file,key,caption:state.filenameCaption?fileBaseName(file.name):old.caption,driveFileId:'',driveFileName:'',driveUploadKey:''};
         render();scheduleAutoDraftSave(true);
         msg('Đã thay ảnh số '+(index+1)+'; vị trí và phần thuyết minh được giữ nguyên.',true);
       }
