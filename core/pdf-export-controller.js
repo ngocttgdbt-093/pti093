@@ -15,6 +15,7 @@
       }
       function mib(n){return n/1048576}
       async function exportHighQualitySplit(filenameBase,button,progress){
+        if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xuất PDF.',true);return}
         if(pdfHighQualityRunning)return;
         if(!state.pages||!state.pages.length){msg('Không có trang PDF để xuất.',true);return}
         pdfHighQualityRunning=true;if(button)button.disabled=true;
@@ -54,6 +55,7 @@
         }
       }
       async function exportStandardPdf(button){
+        if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi xuất PDF.',true);return}
         if(!state.pages||!state.pages.length)return;
         const btn=button||$('pdf');btn.disabled=true;
         try{
