@@ -131,6 +131,34 @@ oldMeta.sessionId=session.get('pti093_work_session_id');
   assert.equal(savedAfterCleanupMeta.caseNumber,'HS-NEW','new form fields should be saved after cleanup completes');
   assert.equal(savedAfterCleanupMeta.driveRecordId,'DRIVE-NEW','the post-cleanup autosave should persist the new Drive ID');
   assert.equal(savedAfterCleanupMeta.localDraftId,'LOCAL-NEW','the post-cleanup autosave should persist the new local draft ID');
+  // Regression: autosave captures an old workspace, then yields while IndexedDB opens.
+  // A workspace can change and release its lock before the DB promise resumes; revision
+  // validation must still prevent the stale snapshot from being written.
+  let releaseAutosaveDb, signalAutosaveDb;
+  const autosaveDbOpening=new Promise(resolve=>{signalAutosaveDb=resolve});
+  const autosaveDbGate=new Promise(resolve=>{releaseAutosaveDb=resolve});
+  let staleWriteCount=0;
+  const raceDb={close(){},transaction(){staleWriteCount++;throw new Error('stale autosave must not start a transaction')}};
+  const raceState={groups:[],current:{title:'Old before open',items:[]},workspaceRevision:4,workspaceOpenPending:false,orientation:'portrait',per:6,driveRecordId:'',localDraftId:''};
+  const raceValues={gdv:{value:'',dataset:{}},hoso:{value:'HS-OLD'},bks:{value:'OLD'},garage:{value:''},date:{value:'2026-10-23'},title:{value:'Old before open'}};
+  const race$=id=>raceValues[id]||(raceValues[id]={value:'',dataset:{},options:[],classList:{add(){},remove(){},toggle(){}},textContent:''});
+  const raceApi=global.PTI093DraftRecovery.install({
+    state:raceState,$:race$,getDateISO:()=>'2026-10-23',setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:()=>{},msg:()=>{},
+    openLocalDraftDB:async()=>{signalAutosaveDb();await autosaveDbGate;return raceDb},
+    localDraftTransactionDone:async()=>{}
+  });
+  const staleSave=raceApi.saveAutoDraft();
+  await autosaveDbOpening;
+  raceState.workspaceOpenPending=true;
+  raceState.workspaceRevision++;
+  raceState.current={title:'New workspace',items:[]};
+  raceValues.hoso.value='HS-NEW';
+  raceValues.title.value='New workspace';
+  raceState.workspaceOpenPending=false;
+  releaseAutosaveDb();
+  await staleSave;
+  assert.equal(staleWriteCount,0,'autosave must recheck workspace revision after IndexedDB open and skip stale snapshot writes');
+
   console.log('Draft Recovery race regressions passed: edits during recovery and no-draft cleanup are preserved and saved.');
 })().catch(error=>{console.error(error);process.exitCode=1});
 

@@ -32,6 +32,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
       
       async function saveAutoDraft(){
         if(state.workspaceOpenPending)return;
+        const workspaceRevisionAtStart=Number(state.workspaceRevision)||0;
         if(autoDraftRestoring){autoDraftUserChangedDuringRestore=true;return}
         if(autoDraftResetting)return;
         if(autoDraftSaving){autoDraftAgain=true;return}
@@ -53,6 +54,9 @@ function scheduleAutoDraftSave(imagesDirty=true){
             currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
           const db=await openLocalDraftDB();
           try{
+            // IndexedDB open yields control. Another workspace may open and finish while
+            // this autosave waits, so reject snapshots captured from an older revision.
+            if(state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart)return;
             const tx=db.transaction(imagesNeedSaving?['drafts','draftImages']:['drafts'],'readwrite');
             tx.objectStore('drafts').put(meta);
             if(imagesNeedSaving){
