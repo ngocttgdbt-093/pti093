@@ -39,6 +39,17 @@ const { chromium } = require('playwright');
     const incompleteCounts=await page.evaluate(()=>window.testHarness.cleanup());
     assert.deepEqual(incompleteCounts,{drafts:0,images:0});
 
+    await page.evaluate(()=>window.testHarness.seedLocalCopyFromIncompleteDrive());
+    await page.reload();
+    const localPartial=await page.evaluate(()=>window.testHarness.restoreLocalCopyFromIncompleteDrive());
+    assert.equal(localPartial.localDraftId,'LOCAL-PARTIAL');
+    assert.equal(localPartial.localCopyFromIncompleteDrive,true,
+      'AUTO-DRAFT reload must preserve incomplete-Drive provenance for a local copy');
+    assert.match(localPartial.status,/được tạo từ hồ sơ Drive chưa tải đủ ảnh/,
+      'AUTO-DRAFT reload must visibly warn that this local copy may be partial');
+    const localPartialCounts=await page.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(localPartialCounts,{drafts:0,images:0});
+
     await page.evaluate(()=>{
       window.testHarness.state.driveRecordId='DRIVE-STALE';
       window.testHarness.state.localDraftId='LOCAL-STALE';
