@@ -4,6 +4,13 @@
     install: function(deps){
       const {getAllGroups,$,selectedGdv}=deps;
       function fileBaseName(name){return String(name||'').replace(/\.[^.]+$/, '');}
+      function fileKey(file){
+        if(!file)return '';
+        const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
+        const relative=String(file.webkitRelativePath||'').trim();
+        // Preserve legacy keys for ordinary file inputs; include relative path for folder inputs.
+        return relative?base+'|'+relative:base;
+      }
       function gdvShortName(name){
         if(!name)return '';
         const map={'Nguyễn Minh Ngọc':'NMN','Đặng Xuân Linh':'DXL','Đặng Xuân Diệu':'DXD','Đặng Văn Hiên':'DVH','Phạm Duy Thái':'PDT','Nguyễn Tuấn Hưng':'NTH'};
@@ -18,7 +25,7 @@
         }
         return `${prefix}${bks ? ' ' + bks : ''}${gdvCode ? ' ' + gdvCode : ''}.pdf`;
       }
-      return {fileBaseName,gdvShortName,pdfFileName};
+      return {fileBaseName,fileKey,gdvShortName,pdfFileName};
     }
   };
 })(typeof window!=='undefined'?window:globalThis);
