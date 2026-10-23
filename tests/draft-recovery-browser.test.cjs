@@ -62,8 +62,8 @@ const { chromium } = require('playwright');
       localDraftId:window.testHarness.state.localDraftId,
       sessionId:sessionStorage.getItem('pti093_driveRecordId'),
       localId:localStorage.getItem('pti093_driveRecordId')
-    })),{driveRecordId:'',localDraftId:'',sessionId:null,localId:null},
-      'missing AUTO-DRAFT must not leave a stale Drive ID that could redirect the next save');
+    })),{driveRecordId:'',localDraftId:'',sessionId:null,localId:'DRIVE-STALE'},
+      'a tab clears its own session pointer without deleting the shared localStorage pointer used by another tab');
 
     await page.evaluate(()=>window.testHarness.seedOrphanImages());
     assert.deepEqual(await page.evaluate(()=>window.testHarness.countDraftRows()),{drafts:0,images:1});
@@ -90,10 +90,10 @@ const { chromium } = require('playwright');
     assert.equal(fresh.groups,0);
     assert.equal(fresh.currentItems,0);
     assert.equal(fresh.driveRecordId,'');
-    assert.equal(await newTab.evaluate(()=>localStorage.getItem('pti093_driveRecordId')),null,
-      'a fresh session must clear the persisted Drive ID belonging to the stale session draft');
+    assert.equal(await newTab.evaluate(()=>localStorage.getItem('pti093_driveRecordId')),'DRIVE-OLD',
+      'a fresh session must not erase another tab’s shared localStorage pointer');
     const freshCounts=await newTab.evaluate(()=>window.testHarness.cleanup());
-    assert.deepEqual(freshCounts,{drafts:0,images:0},'a new session should discard the previous tab auto-draft');
+    assert.deepEqual(freshCounts,{drafts:1,images:2},'a new session must clean only its own draft and preserve the previous tab auto-draft');
 
     console.log('Chromium IndexedDB draft recovery and new-session cleanup passed.');
   }finally{await browser.close();}

@@ -87,7 +87,7 @@
           await new Promise((resolve,reject)=>{
             const tx=db.transaction('draftImages','readwrite');
             tx.objectStore('draftImages').put({
-              id:'AUTO-DRAFT|orphan|0',draftId:'AUTO-DRAFT',sectionIndex:0,itemIndex:0,
+               id:'AUTO-DRAFT-'+sessionStorage.getItem('pti093_work_session_id')+'|orphan|0',draftId:'AUTO-DRAFT-'+sessionStorage.getItem('pti093_work_session_id'),sectionIndex:0,itemIndex:0,
               file:new File([new Uint8Array([9,8,7])],'orphan.jpg',{type:'image/jpeg'}),
               fileName:'orphan.jpg',type:'image/jpeg',lastModified:123
             });
@@ -118,7 +118,8 @@
         }
         await api.saveAutoDraft();
         const drafts=await store.getLocalDrafts();
-        return {rejected,autosaveRecovered:drafts.some(d=>d.id==='AUTO-DRAFT')};
+        const ownId='AUTO-DRAFT-'+sessionStorage.getItem('pti093_work_session_id');
+        return {rejected,autosaveRecovered:drafts.some(d=>d.id===ownId||d.id==='AUTO-DRAFT')};
       },
       cleanup:async()=>{
         await api.clearAutoDraft();
