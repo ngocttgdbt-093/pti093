@@ -5,7 +5,8 @@ const session=new Map();
 global.sessionStorage={getItem:key=>session.get(key)||null,setItem:(key,value)=>session.set(key,String(value)),removeItem:key=>session.delete(key)};
 global.localStorage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
 global.File=class FakeFile{constructor(parts,name,options={}){this.name=name;this.type=options.type||'image/jpeg';this.lastModified=options.lastModified||0;this.size=10}};
-global.document={querySelectorAll(){throw new Error('A stale restore must exit before applying UI state')}};
+let allowApply=false;
+global.document={querySelectorAll(){if(!allowApply)throw new Error('A stale restore must exit before applying UI state');return []}};
 require('../core/draft-recovery.js');
 
 (async()=>{
@@ -70,5 +71,16 @@ require('../core/draft-recovery.js');
     assert.equal(renderCalls,0,'stale restore must exit before rendering old workspace state');
     assert.equal(clearCalls,0,'stale restore must not clear draft data');
     console.log('AUTO-DRAFT restore/open race regression passed.');
+
+    // With no competing open, successful restore must invalidate stale exports and Preview.
+    allowApply=true;
+    const revisionBeforeSuccessfulRestore=state.workspaceRevision;
+    const mutationBeforeSuccessfulRestore=state.workspaceMutationRevision;
+    await api.restoreAutoDraft();
+    assert.equal(state.workspaceRevision,revisionBeforeSuccessfulRestore+1,'restoring a draft must invalidate asynchronous work captured before the restore');
+    assert.equal(state.workspaceMutationRevision,mutationBeforeSuccessfulRestore+1,'restoring a draft must advance content revision');
+    assert.deepEqual(state.pages,[],'a restored workspace must not retain a stale Preview');
+    assert.deepEqual(state.pageDefs,[],'a restored workspace must not retain stale PDF page definitions');
+    console.log('AUTO-DRAFT restore invalidates stale PDF/Preview regression passed.');
   }finally{global.setTimeout=originalSetTimeout}
 })().catch(error=>{console.error(error);process.exitCode=1});

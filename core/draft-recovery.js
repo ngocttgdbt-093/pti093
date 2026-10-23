@@ -164,6 +164,11 @@ function scheduleAutoDraftSave(imagesDirty=true){
           if(autoDraftUserChangedDuringRestore||state.workspaceOpenPending||
             (Number(state.workspaceRevision)||0)!==workspaceRevisionAtRestoreStart||
             (Number(state.workspaceMutationRevision)||0)!==workspaceMutationRevisionAtRestoreStart)return;
+          // A successful restore is itself a workspace transition. Invalidate any PDF/export
+          // snapshot started before the restored data is applied, and discard stale Preview.
+          state.workspaceRevision=workspaceRevisionAtRestoreStart+1;
+          state.workspaceMutationRevision=workspaceMutationRevisionAtRestoreStart+1;
+          state.pages=[];state.pageDefs=[];
           if(foreignDraftFound){
             // Never delete another tab's legacy draft or its image blobs.
             state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
@@ -175,12 +180,15 @@ function scheduleAutoDraftSave(imagesDirty=true){
             return;
           }
           if(!meta){
-            // Clean only this session's orphaned image blobs.
-            await clearAutoDraft();
-            if(autoDraftUserChangedDuringRestore)return;
-            // No active draft means this tab must not fall back to a stale Drive ID on the next save.
-            state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
-            try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+            // Cleanup awaits IndexedDB. Hold the workspace lock so a newly opened case cannot
+            // race this orphan cleanup or have its first autosave suppressed by autoDraftResetting.
+            state.workspaceOpenPending=true;
+            try{
+              await clearAutoDraft();
+              // No active draft means this tab must not fall back to a stale Drive ID on the next save.
+              state.driveRecordId='';state.localDraftId='';state.driveOpenIncomplete=false;state.localCopyFromIncompleteDrive=false;
+              try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
+            }finally{state.workspaceOpenPending=false}
             return;
           }
           // Defensive guard: never delete a draft whose recorded owner differs from this tab.
