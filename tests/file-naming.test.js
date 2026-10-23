@@ -10,6 +10,10 @@ const api=global.PTI093FileNaming.install({
 assert.equal(api.fileBaseName('anh-hien-truong.jpg'),'anh-hien-truong');
 assert.equal(api.fileBaseName('khong-duoi'),'khong-duoi');
 assert.equal(api.fileBaseName(''),'');
+assert.equal(api.fileKey({name:'same.jpg',size:12,lastModified:34}),'same.jpg|12|34',
+  'ordinary file inputs must keep the legacy key format');
+assert.equal(api.fileKey({name:'same.jpg',size:12,lastModified:34,webkitRelativePath:'folderA/same.jpg'}),
+  'same.jpg|12|34|folderA/same.jpg','folder inputs must include the relative path in the key');
 assert.equal(api.gdvShortName('Nguyễn Minh Ngọc'),'NMN');
 assert.equal(api.gdvShortName('Đặng Xuân Linh'),'DXL');
 assert.equal(api.gdvShortName('Trần Thị B'),'TTB');
