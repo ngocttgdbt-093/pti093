@@ -67,6 +67,11 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 - Latest full GitHub Actions runs on the clean review branch both passed: push run **#1090** and PR run **#1091** on head `73e4134d87ab44a24770c1f16797f4bb646a7372`. Subsequent documentation-only corrections are validated by CI after this commit.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
+
+## Dependency load-order regression — 2026-10-23
+
+- Expanded `tests/local-references.test.js` to assert that the local IndexedDB adapter loads before Draft Recovery; all Core/Fusion/Classic Skin dependencies load before `core/app-core.js`; late UI patches load after App Core initialization; and retired DOCX/ZIP modules remain absent from the script path.
+- This is a structural regression guard: it does not claim a runtime speed improvement. The user explicitly clarified that the historical 093 Drive uploader is operating acceptably and that a 26-second upload target is not a current acceptance requirement. Preserve its proven behavior and focus optimization work on correctness, failure recovery, modular boundaries, and tests.
 - Static reference audit confirms `index.html` has zero inline JavaScript blocks; all 53 local `src`/`href` references resolve to repository files with no duplicate local references.
 - The DOCX/ZIP draft path removal contract passes. The automatic draft remains IndexedDB-based with the existing `pti093_local_drafts_v1`, `AUTO-DRAFT`, and `pti093_work_session_id` contracts.
 - Local-save success-path tests verify section order, captions, rotations, stored file objects, and Drive-state separation after transaction completion.
