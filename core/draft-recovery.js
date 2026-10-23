@@ -147,18 +147,35 @@ function scheduleAutoDraftSave(imagesDirty=true){
           const db=await openLocalDraftDB();
           let meta,images=[],foreignDraftFound=false;
           try{
-            const readMeta=id=>new Promise((resolve,reject)=>{const q=db.transaction('drafts','readonly').objectStore('drafts').get(id);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});
-            meta=await readMeta(activeAutoDraftId);
-            if(!meta&&activeAutoDraftId!==PTI093_AUTO_DRAFT_ID){
-              const legacyMeta=await readMeta(PTI093_AUTO_DRAFT_ID);
-              if(legacyMeta){
-                if(legacyMeta.sessionId===PTI093_SESSION_ID){activeAutoDraftId=PTI093_AUTO_DRAFT_ID;meta=legacyMeta;}
-                else{foreignDraftFound=true;}
-              }
-            }
-            if(meta){
-              const draftId=activeAutoDraftId;
-              images=await new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),q=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(draftId));q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>reject(q.error)});
+            // Read metadata and image blobs from one readonly transaction. Separate transactions
+            // can observe different commits if another tab saves/replaces this draft between reads.
+            // Request both possible metadata IDs and both image sets up front so legacy fallback
+            // remains atomic with the blob snapshot.
+            const snapshot=await new Promise((resolve,reject)=>{
+              const tx=db.transaction(['drafts','draftImages'],'readonly');
+              const drafts=tx.objectStore('drafts'),imageIndex=tx.objectStore('draftImages').index('draftId');
+              const activeId=activeAutoDraftId,legacyId=PTI093_AUTO_DRAFT_ID;
+              const activeMetaReq=drafts.get(activeId);
+              const legacyMetaReq=activeId===legacyId?null:drafts.get(legacyId);
+              const activeImagesReq=imageIndex.getAll(IDBKeyRange.only(activeId));
+              const legacyImagesReq=activeId===legacyId?null:imageIndex.getAll(IDBKeyRange.only(legacyId));
+              const requests=[activeMetaReq,activeImagesReq,...(legacyMetaReq?[legacyMetaReq]:[]),...(legacyImagesReq?[legacyImagesReq]:[])];
+              let pending=requests.length,failed=false;
+              const finish=()=>{if(!failed&&--pending===0)resolve({
+                activeMeta:activeMetaReq.result,
+                legacyMeta:legacyMetaReq&&legacyMetaReq.result,
+                activeImages:activeImagesReq.result||[],
+                legacyImages:legacyImagesReq&&legacyImagesReq.result||[]
+              })};
+              requests.forEach(req=>{req.onsuccess=finish;req.onerror=()=>{if(!failed){failed=true;reject(req.error||new Error('Không đọc được dữ liệu nháp tự động.'))}}});
+              tx.onabort=()=>{if(!failed){failed=true;reject(tx.error||new Error('Giao dịch đọc nháp tự động bị hủy.'))}};
+            });
+            meta=snapshot.activeMeta;
+            if(meta)images=snapshot.activeImages;
+            else if(snapshot.legacyMeta){
+              if(snapshot.legacyMeta.sessionId===PTI093_SESSION_ID){
+                activeAutoDraftId=PTI093_AUTO_DRAFT_ID;meta=snapshot.legacyMeta;images=snapshot.legacyImages;
+              }else foreignDraftFound=true;
             }
           }finally{db.close()}
           // Người dùng có thể thao tác trong lúc IndexedDB đang đọc. Không cho bản nháp cũ
