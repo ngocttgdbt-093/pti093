@@ -2,8 +2,9 @@
   'use strict';
   global.PTI093SessionActions = {
     install: function(deps){
-      const {$,clearAutoDraft,localStorage,location,console,msg}=deps;
+      const {state,$,clearAutoDraft,localStorage,location,console,msg}=deps;
       async function startNewCase(){
+        if(state&&state.workspaceOpenPending){if(msg)msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi bắt đầu hồ sơ mới.',true);return false;}
         let storedCustomGdv='';
         if($('gdv').value==='Nhập tên khác'&&!$('gdv').dataset.custom){
           try{storedCustomGdv=localStorage.getItem('pti093_gdv_custom')||''}catch(e){}
