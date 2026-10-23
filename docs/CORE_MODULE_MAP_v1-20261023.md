@@ -83,6 +83,10 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 - Still separate from CI: manual acceptance on the user's actual PC/iPhone and real case photo sets. PR #8 remains draft-only; no merge or production deployment is authorized.
 
 
+## Drive image payload validation — 2026-10-23
+
+- Drive open now rejects empty base64/image byte payloads instead of counting them as successfully loaded photos. Such responses keep `driveOpenIncomplete` active, so the partial workspace cannot overwrite the remote record. Regression coverage simulates a `success: true` response with empty `base64`, verifies the image is omitted, confirms the incomplete status/write guard, and checks that a subsequent full reopen clears the guard.
+
 ## Workspace-transition autosave hardening — 2026-10-23
 
 - Draft Recovery captures the workspace revision before waiting for IndexedDB and rejects stale AUTO-DRAFT snapshots before opening a write transaction if a local/Drive workspace transition completed while the database was opening. Regression: `tests/draft-recovery-race.test.js`.

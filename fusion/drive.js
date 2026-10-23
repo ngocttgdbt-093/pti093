@@ -179,7 +179,10 @@
           try{
             const ir=await fetch(PTI093_API+'?action=getImage&fileId='+encodeURIComponent(fileId)+'&_='+Date.now(),{cache:'no-store'}).then(x=>x.json());
             if(!ir.success)throw new Error(ir.error||'Không tải được ảnh');
-            const bytes=Uint8Array.from(atob(ir.base64||''),ch=>ch.charCodeAt(0));
+            const encoded=String(ir.base64||'').trim();
+            if(!encoded)throw new Error('Dữ liệu ảnh tải về bị trống');
+            const bytes=Uint8Array.from(atob(encoded),ch=>ch.charCodeAt(0));
+            if(!bytes.length)throw new Error('Dữ liệu ảnh tải về không có byte');
             const blob=new Blob([bytes],{type:ir.mimeType||'image/jpeg'});
             const file=new File([blob],ir.fileName||it.fileName||'image.jpg',{type:ir.mimeType||'image/jpeg'});
             fallbackIndex++;
