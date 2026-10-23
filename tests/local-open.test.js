@@ -108,11 +108,11 @@ const api = global.PTI093LocalOpenCore.install({
   assert.ok(calls.progress.length >= 2);
   assert.equal(closed, 1);
 
-  const failureCalls={progress:[]};
+  const failureCalls={progress:[],status:[]};
   const failureApi=global.PTI093LocalOpenCore.install({
     state:appState,$:element,msg:()=>{},
     openLocalDraftDB:async()=>{throw new Error('IndexedDB unavailable')},
-    setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:()=>{},
+    setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:text=>failureCalls.status.push(text),
     deviceStorageLabel:()=> 'PC',
     setOpenLoad:(...args)=>failureCalls.progress.push(args),
     finishOpenLoad:()=>{}
@@ -120,6 +120,8 @@ const api = global.PTI093LocalOpenCore.install({
   await assert.rejects(failureApi.openLocalDraft('LOCAL-FAIL'),/IndexedDB unavailable/);
   assert.match(failureCalls.progress.at(-1)[3],/Không thể đọc bản lưu tại máy/,
     'failed local-open must replace the stuck loading message with an actionable error');
+  assert.match(failureCalls.status.at(-1),/Không thể đọc bản lưu tại máy/,
+    'failed local-open must also clear the stale Drive loading status');
 
   const missingDb={
     close(){},
@@ -129,15 +131,17 @@ const api = global.PTI093LocalOpenCore.install({
       throw new Error('Unexpected store: '+storeName);
     }
   };
-  const missingCalls={progress:[]};
+  const missingCalls={progress:[],status:[]};
   const missingApi=global.PTI093LocalOpenCore.install({
     state:appState,$:element,msg:()=>{},openLocalDraftDB:async()=>missingDb,
-    setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:()=>{},
+    setDateInput:()=>{},render:()=>{},renderLayout:()=>{},setDriveState:text=>missingCalls.status.push(text),
     deviceStorageLabel:()=> 'PC',setOpenLoad:(...args)=>missingCalls.progress.push(args),finishOpenLoad:()=>{}
   });
   await assert.rejects(missingApi.openLocalDraft('LOCAL-MISSING'),/Không tìm thấy bản nháp tại máy/);
   assert.match(missingCalls.progress.at(-1)[3],/Không tìm thấy bản lưu tại máy/,
     'missing metadata must not leave the local-open progress stuck');
+  assert.match(missingCalls.status.at(-1),/Không tìm thấy bản lưu tại máy/,
+    'missing metadata must also clear the stale Drive loading status');
 
   const incompleteDb={
     close(){},
