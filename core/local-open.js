@@ -65,7 +65,7 @@
           try{global.sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
           try{global.localStorage.removeItem('pti093_driveRecordId')}catch(e){}
         }
-        state.localDraftId=id;state.driveOpenIncomplete=false;state.driveOpenPending=false;
+        state.localDraftId=id;state.driveOpenIncomplete=false;state.driveOpenPending=false;state.localCopyFromIncompleteDrive=!!meta.sourceDriveIncomplete;
         $('bks').value=meta.bks||'';
         $('hoso').value=meta.caseNumber||'';
         setDateInput(meta.date||'');
@@ -82,12 +82,18 @@
         $('title').value=state.current.title;
         $('driveId').textContent='💻 Bản lưu tại máy: '+id;$('driveId').classList.remove('hidden');
         finishOpenLoad(source,groups.reduce((n,g)=>n+g.items.length,0));
-        setDriveState('✓ Đã tải hoàn tất ảnh từ '+source+' · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
+        if(state.localCopyFromIncompleteDrive){
+          const detail='⚠️ Bản lưu tại máy này được tạo từ hồ sơ Drive chưa tải đủ ảnh. Hãy kiểm tra số ảnh trước khi tạo hồ sơ Drive mới.';
+          setDriveState(detail,false);
+        }else{
+          setDriveState('✓ Đã tải hoàn tất ảnh từ '+source+' · '+groups.reduce((n,g)=>n+g.items.length,0)+' ảnh.');
+        }
         render();renderLayout();
         // Replace any older AUTO-DRAFT with the case just opened; otherwise an immediate
         // F5 could restore a different case from the same browser session.
         if(scheduleAutoDraftSave)scheduleAutoDraftSave(true);
-        msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
+        if(state.localCopyFromIncompleteDrive)msg('⚠️ Bản lưu tại máy này được tạo từ hồ sơ Drive chưa tải đủ ảnh. Hãy kiểm tra số ảnh trước khi tạo hồ sơ Drive mới.',true);
+        else msg(missing?'Đã mở nháp nhưng thiếu dữ liệu của '+missing+' ảnh trong kho trình duyệt.':'✓ Đã tải hoàn tất ảnh từ '+source+'. Có thể chỉnh sửa, lưu lại hoặc tạo hồ sơ Drive.',true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'});
       }
       async function openLocalDraft(id){
