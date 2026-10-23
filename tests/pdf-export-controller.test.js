@@ -7,7 +7,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
   for(const id of ['pdfHighQualityCheck','pdfHighProgressWrap','pdfHighProgressLabel','pdfHighProgressPct','pdfHighProgressBar']){
     elements[id]={disabled:false,textContent:'',style:{display:'',width:''}};
   }
-  const events={messages:[],exports:[],alerts:[],warnings:[],finalized:0};
+  const events={messages:[],exports:[],alerts:[],warnings:[],finalized:0,finalizeLockStates:[]};
   const state={pages,workspaceOpenPending,driveOpenIncomplete,pageDefs:[{pageNo:1}]};
   const api=global.PTI093PdfExportController.install({
     state,
@@ -18,7 +18,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     pdfPackSize:bytes=>bytes.length,
     pdfFileName:()=> 'case.pdf',
     getPdfWarningSkin:()=>({hidePdfWarning:()=>events.warnings.push('hide'),showPdfWarning:(...args)=>events.warnings.push(['show',...args])}),
-    finalizeCompletedSession:async()=>{events.finalized++;if(failFinalize)return false;return true;},
+    finalizeCompletedSession:async()=>{events.finalized++;events.finalizeLockStates.push(state.workspaceOpenPending);if(failFinalize)return false;return true;},
     msg:(text,ok)=>events.messages.push({text,ok}),
     alert:text=>events.alerts.push(text),
     setTimeout:fn=>{fn();return 1;}
@@ -39,6 +39,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.match(progress.textContent,/Hoàn tất gửi 2 tệp PDF/);
     assert.equal(events.alerts.length,0);
     assert.equal(events.finalized,1,'successful high-quality export should clear the completed auto-draft');
+    assert.deepEqual(events.finalizeLockStates,[true],'post-export AUTO-DRAFT cleanup must reserve the workspace against concurrent opens');
   }
   {
     const {api,events}=setup({failFinalize:true});
@@ -108,6 +109,7 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(events.exports[0].blob.type,'application/pdf');
     assert.deepEqual(events.warnings,['hide']);
     assert.equal(events.finalized,1);
+    assert.equal(events.finalizeLockStates[0],true,'standard PDF cleanup must run under the workspace lock');
     assert.equal(elements.backEdit.style.display,'inline-block');
     assert.equal(elements.newCase.style.display,'inline-block');
     assert.match(events.messages.at(-1).text,/không cần nén ảnh/);
@@ -167,5 +169,5 @@ function setup({pages=[{}],parts=[{filename:'part-1.pdf',blob:{size:1024}},{file
     assert.equal(standard.events.finalized,0,'workspace change during share must retain the current AUTO-DRAFT');
     assert.match(standard.events.messages.at(-1).text,/Bản nháp hiện tại được giữ nguyên/);
   }
-  console.log('PDF Export Controller tests passed (snapshot-safe standard/high-quality export, warnings, error recovery, and control binding).');
+  console.log('PDF Export Controller tests passed (snapshot-safe exports, serialized AUTO-DRAFT cleanup, warnings, and recovery).');
 })().catch(error=>{console.error(error);process.exitCode=1});
