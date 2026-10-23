@@ -3,10 +3,12 @@
   global.PTILocalSaveCore = {
     install: function(deps){
       const {state, $, snapshotGroupsForProject, openLocalDraftDB, localDraftTransactionDone, getDateISO, selectedGdv, setDriveState, msg, renderLocalSaveFeedback, showLocalSaveConfirm, clearAutoDraft} = deps;
-      async function saveLocalDraft(){
-        if(state.workspaceOpenPending)throw new Error('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi lưu tại máy.');
+      async function saveLocalDraft(options={}){
+        const ownsWorkspaceLock=options.workspaceLockHeld!==true;
+        if(state.workspaceOpenPending&&ownsWorkspaceLock)throw new Error('Đang mở hoặc lưu hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi lưu tại máy.');
         const workspaceRevisionAtStart=Number(state.workspaceRevision)||0;
-        const workspaceChanged=()=>state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart;
+        const workspaceChanged=()=>(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart;
+        if(ownsWorkspaceLock)state.workspaceOpenPending=true;
         // LƯU LOCAL THUẦN TÚY: ID riêng LOCAL-..., không tạo record hoặc đồng bộ metadata lên Drive.
         const progress=(pct,label,detail='')=>{
           renderLocalSaveFeedback(state.localDraftId||'',pct,label,detail,false);
@@ -111,7 +113,10 @@
           if($('driveProgressMeta'))$('driveProgressMeta').textContent=e.message||String(e);
           renderLocalSaveFeedback(state.localDraftId||'',null,'Lưu tại máy thất bại',e.message||String(e),true);
           throw e;
-        }finally{if(db)db.close()}
+        }finally{
+          if(db)db.close();
+          if(ownsWorkspaceLock)state.workspaceOpenPending=false;
+        }
       }
 
       async function saveDraftWithoutPhotos(){
@@ -134,8 +139,11 @@
         if($('driveProgressBar'))$('driveProgressBar').style.width='0%';
         if($('driveProgressMeta'))$('driveProgressMeta').textContent='Vui lòng chờ, không đóng tab trong lúc lưu.';
         setDriveState('Đang lưu nháp tại máy…');msg('Đang lưu hồ sơ tại máy… vui lòng chờ.',true);
+        // Hold the shared workspace lock through AUTO-DRAFT cleanup. Otherwise a new case
+        // could open after the local write but before cleanup and have its recovery draft deleted.
+        state.workspaceOpenPending=true;
         try{
-          await saveLocalDraft();
+          await saveLocalDraft({workspaceLockHeld:true});
           let storedCustomGdv='';
           try{storedCustomGdv=localStorage.getItem('pti093_gdv_custom')||''}catch(e){}
           const gdv=$('gdv').value==='Nhập tên khác'?($('gdv').dataset.custom||storedCustomGdv):($('gdv').value||'');
@@ -155,7 +163,7 @@
           }
           setDriveState('Chưa lưu được nháp tại máy: '+e.message,false);
           msg('❌ Lưu tại máy thất bại: '+e.message,true);
-        }finally{b.disabled=false}
+        }finally{state.workspaceOpenPending=false;b.disabled=false}
       }
       function bindControls(){
         const button=$('driveSaveDraft');

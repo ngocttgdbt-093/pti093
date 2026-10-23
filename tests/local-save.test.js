@@ -93,6 +93,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
     clearAutoDraft:async()=>{cleared++}
   });
   await safeApi.saveDraftWithoutPhotos();
+  assert.equal(localState.workspaceOpenPending,false,'local-save workflow must release the workspace lock after AUTO-DRAFT cleanup');
   assert.match(localState.localDraftId,/^LOCAL-/,'local save should complete despite blocked localStorage');
   assert.equal(cleared,1,'successful local save should still clean the autosave draft');
   assert.equal(elements.driveSaveDraft.disabled,false,'save control should be re-enabled');
@@ -118,7 +119,7 @@ console.log('Shared Core local-save tests passed (API and Drive-isolation contra
     snapshotGroupsForProject:()=>[],openLocalDraftDB:async()=>db,localDraftTransactionDone:async()=>{},
     getDateISO:()=> '2026-10-23',selectedGdv:()=> 'NONAME',
     setDriveState:(text)=>driveStates.push(text),msg:(text)=>messages.push(text),renderLocalSaveFeedback:noop,
-    showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{throw new Error('cleanup failed')}
+    showLocalSaveConfirm:async()=>true,clearAutoDraft:async()=>{assert.equal(localState.workspaceOpenPending,true,'AUTO-DRAFT cleanup must remain serialized against workspace opens');throw new Error('cleanup failed')}
   });
   await api.saveDraftWithoutPhotos();
   assert.match(localState.localDraftId,/^LOCAL-/,'the saved local record ID must remain after autosave cleanup fails');
