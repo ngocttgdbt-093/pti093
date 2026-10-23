@@ -202,7 +202,7 @@ console.log('Drive record ID storage resilience contract passed.');
     await api.openRecordFromDrive('DRIVE-PARTIAL');
     assert.equal(state.current.items.length,1,'an empty image payload must not enter the workspace as a valid photo');
     assert.equal(state.driveOpenIncomplete,true,'an empty image payload must keep the Drive overwrite guard active');
-    assert.match(statusEvents.at(-1).text,/chỉ tải được 1\\/2 ảnh/,'empty image payload must be reported as a partial load');
+    assert.match(statusEvents.at(-1).text,/chỉ tải được 1\/2 ảnh/,'empty image payload must be reported as a partial load');
     await assert.rejects(()=>api.saveProjectToDrive(false),/Hồ sơ Drive chưa tải đủ ảnh/,'empty image payload must not permit overwriting the remote record');
     emptySecondImage=false;
     await api.openRecordFromDrive('DRIVE-PARTIAL');
