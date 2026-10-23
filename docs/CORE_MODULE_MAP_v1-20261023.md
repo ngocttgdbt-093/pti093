@@ -33,8 +33,8 @@
 | `core/pdf-builder.js` | Page sizing, JPEG quality, byte generation, adaptive compression and splitting |
 | `core/image-canvas.js` | Canvas loading/drawing, rotation/containment, page render |
 | `core/preview-builder.js` | Ordered preview pages and page definitions |
-| `core/pdf-export.js` | High-quality split PDF preparation |
-| `core/pdf-export-controller.js` | Standard/high-quality export orchestration; blocks export during workspace open, preserves draft on cancelled iOS share, and retains AUTO-DRAFT after exporting a partial Drive workspace |
+| `core/pdf-export.js` | High-quality split PDF preparation; can render from an immutable page/page-definition snapshot instead of mutable live workspace state |
+| `core/pdf-export-controller.js` | Standard/high-quality export orchestration; rejects stale exports if pages/page definitions change, serializes post-export AUTO-DRAFT cleanup against opens, preserves draft on cancelled iOS share, and retains AUTO-DRAFT after exporting a partial Drive workspace |
 | `core/app-core.js` | Composition root only |
 
 ## Fusion modules
@@ -67,7 +67,7 @@ All of these live under `skin/`; the stylesheet layers live under `css/`.
 
 - Preview race regression: `classic-preview` snapshots group/item identity plus title, caption, rotation, key and file reference before asynchronous canvas generation; if an open starts or the snapshot changes, stale pages are discarded without overwriting PDF pages or hiding editor controls. Chromium-independent unit tests cover pending-open and changed-caption races.
 - New-case transition now reserves `workspaceOpenPending` while AUTO-DRAFT is deleted, preventing concurrent local/Drive opens from racing cleanup and then being discarded by reload; cleanup failure releases the lock and leaves the existing Drive identity intact.
-- The preview-only source/test head `dfd6e08639953423869180db2ca8907dcbfb76b6` passed push run **#1431** and PR run **#1432**. The subsequent new-case locking and test changes are being validated by CI on the latest head; this documentation refresh triggers fresh CI runs as well.
+- Preview race tests passed on source/test head `dfd6e08639953423869180db2ca8907dcbfb76b6` (push **#1431**, PR **#1432**). The new-case lock and PDF stable-snapshot/post-export cleanup lock passed PR validation **#1452** on head `b22d4bf29e8c1454e28b932cfcd4e6cddeb6a41f`; push CI **#1451** had all 73 steps completed without failed steps and was finalizing when last checked. This documentation update triggers a fresh validation run.
 - The workflow includes real Chromium IndexedDB draft recovery, orphaned-image cleanup, new-session cleanup, image reordering, full-app smoke/date-mask checks, Classic UI regression tests, and Core/Fusion unit/contract tests.
 - IndexedDB failure-boundary coverage now includes unsupported IndexedDB, a throwing `window.indexedDB` getter (`SecurityError`), synchronous `indexedDB.open()` exceptions, asynchronous open-request errors, and the Draft Recovery guarantee that a blocked database is not reported as successfully restored. PR CI run #1115 passed on test head `9b4e3809ef122b7763e0a5f768d004674e3f32be`; the documentation update itself triggers another CI run.
 
