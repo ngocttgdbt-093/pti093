@@ -22,6 +22,19 @@
         progress(3,'Đang chuẩn bị lưu tại máy…','Đang đọc thông tin hồ sơ');
         const copiedFromIncompleteDrive=!!(state.driveOpenIncomplete||state.localCopyFromIncompleteDrive);
         const groups=snapshotGroupsForProject();
+        // Manual local saves must preserve the current group marker as well as image data.
+        // When editing a group whose last image was removed, the shared project snapshot
+        // intentionally omits empty groups; reinsert this in-progress group for recovery.
+        if(state.current&&Number.isInteger(state.editing)&&state.editing>=0){
+          const index=Math.min(state.editing,groups.length);
+          if(!groups[index]||groups[index].title!==state.current.title||groups[index].items!==state.current.items){
+            if(!state.current.items.length)groups.splice(index,0,{title:state.current.title,items:[],isCurrent:true});
+          }
+          if(groups[index])groups[index].isCurrent=true;
+        }else if(groups.length){
+          groups[groups.length-1].isCurrent=true;
+        }
+        const currentSectionIndex=groups.findIndex(group=>group.isCurrent);
         const existingLocalId=String(state.localDraftId||'').startsWith('LOCAL-')?state.localDraftId:'';
         const id=existingLocalId||('LOCAL-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,7).toUpperCase());
         const total=groups.reduce((n,g)=>n+g.items.length,0);
@@ -50,7 +63,9 @@
           const meta={id,storageType:'local',sourceDriveIncomplete:copiedFromIncompleteDrive,caseNumber:($('hoso').value||'').trim(),
             bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),date:getDateISO(),gdv:selectedGdv(),
             status:'Bản lưu tại máy',settings:{paperSize:'A4',orientation:state.orientation,imagesPerPage:state.per},
-            sections,updatedAt:new Date().toISOString()};
+            sections:sections.map((section,index)=>({...section,isCurrent:!!groups[index].isCurrent})),
+          editing:currentSectionIndex>=0&&Number.isInteger(state.editing)&&state.editing>=0?currentSectionIndex:-1,
+          updatedAt:new Date().toISOString()};
           progress(25,'Đang ghi thông tin hồ sơ…','Chỉ lưu trong trình duyệt trên thiết bị này');
           const tx=db.transaction(['drafts','draftImages'],'readwrite');
           const drafts=tx.objectStore('drafts'),images=tx.objectStore('draftImages');

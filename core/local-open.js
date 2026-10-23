@@ -48,7 +48,7 @@
             setOpenLoad(source,loadedCount,expectedImages,'Đang tải ảnh '+loadedCount+'/'+expectedImages+' từ '+source+'...');
             items.push({file:f,key:it.key||fileKey(f),caption:it.caption||'',rotate:it.rotate||0,addSeq:it.addSeq||(++nextAddSeq),driveFileId:'',driveFileName:'',driveUploadKey:''});
           });
-          if(items.length)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items});
+          if(items.length||g.isCurrent)groups.push({title:g.title||'Bản ảnh chi tiết thiệt hại',items,isCurrent:!!g.isCurrent});
         });
         if(missing>0){
           const detail='Không thể mở đầy đủ bản lưu: thiếu dữ liệu của '+missing+'/'+expectedImages+' ảnh. Hồ sơ đang mở được giữ nguyên.';
@@ -78,7 +78,13 @@
         if(settings.orientation)state.orientation=settings.orientation;
         if(settings.imagesPerPage){state.per=Number(settings.imagesPerPage);document.querySelectorAll('#counts .opt').forEach(x=>x.classList.toggle('on',Number(x.textContent)===state.per))}
         document.querySelectorAll('#orient .opt').forEach(x=>x.classList.toggle('on',x.dataset.o===state.orientation));
-        state.groups=groups.slice(0,-1);state.current=groups[groups.length-1]||{title:'Bản ảnh chi tiết thiệt hại',items:[]};state.editing=-1;
+        // New local drafts carry an explicit current-group marker; older drafts did not,
+        // so retain their historical convention that the final section is editable.
+        const markedCurrent=groups.find(group=>group.isCurrent);
+        const currentGroup=markedCurrent||groups[groups.length-1]||{title:'Bản ảnh chi tiết thiệt hại',items:[]};
+        state.groups=groups.filter(group=>group!==currentGroup);
+        state.current=currentGroup;
+        state.editing=markedCurrent&&Number.isInteger(meta.editing)&&meta.editing>=0?meta.editing:-1;
         state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
         $('title').value=state.current.title;
         $('driveId').textContent='💻 Bản lưu tại máy: '+id;$('driveId').classList.remove('hidden');
