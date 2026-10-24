@@ -1294,6 +1294,36 @@ async function waitForUploadStatus(recordId,uploadKey){
 
 
 async function sendDrivePayload(payload,recordId,uploadKey){
+  // Đường chính: POST JSON nguyên bản (text/plain) để tránh form-urlencoded
+  // làm phình/truncate base64 của ảnh. Backend doPost hỗ trợ e.postData.contents.
+  // no-cors không đọc response, vì vậy chỉ công nhận khi uploadStatus xác nhận đúng hash.
+  let rawPostError=null;
+  try{
+    await fetch(PTI093_API,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=UTF-8'},
+      body:payload,
+      cache:'no-store',
+      keepalive:false
+    });
+    return await waitForUploadStatus(recordId,uploadKey);
+  }catch(e){
+    rawPostError=e;
+  }
+
+  // Dự phòng: iframe/form bridge cũ; server khử trùng theo SHA-256 nên
+  // nếu POST đầu đã lưu nhưng trạng thái đến chậm, không tạo bản sao ảnh.
+  try{
+    return await sendDrivePayloadViaBridge(payload,recordId,uploadKey);
+  }catch(bridgeError){
+    throw new Error(
+      'POST JSON không được xác nhận: '+(rawPostError&&rawPostError.message?rawPostError.message:String(rawPostError))+
+      '; iframe bridge cũng thất bại: '+(bridgeError&&bridgeError.message?bridgeError.message:String(bridgeError))
+    );
+  }
+}
+async function sendDrivePayloadViaBridge(payload,recordId,uploadKey){
   // V17: ưu tiên postMessage; nếu lớp ContentService của Apps Script làm mất phản hồi,
   // kiểm tra trạng thái upload qua JSONP mà không gửi POST ảnh lần thứ hai.
   // Không khóa cứng event.source hoặc data.source vì Apps Script có thể chuyển hướng
