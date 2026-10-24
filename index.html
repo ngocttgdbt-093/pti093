@@ -1218,12 +1218,14 @@ async function prepareDriveItem(it,index,total){
   };
 }
 
-async function waitForUploadStatus(recordId,uploadKey){
+async function waitForUploadStatus(recordId,uploadKey,options={}){
   // V19: ưu tiên fetch JSON trực tiếp. Apps Script ContentService có thể
-  // chuyển hướng phản hồi; fetch đã được frontend sử dụng ổn định cho các API khác.
-  // JSONP chỉ giữ làm lớp dự phòng thứ hai.
-  const maxChecks=12;
-  const deadline=Date.now()+30000;
+  // chuyển hướng phản hồi; JSONP là lớp dự phòng khi fetch không đọc được.
+  // Cho phép caller đặt ngân sách chờ riêng để tránh một lượt gửi bị treo lâu
+  // trước khi chuyển sang đường dự phòng. Mặc định vẫn giữ 30 giây.
+  const maxWaitMs=Number.isFinite(options.maxWaitMs)?Math.max(1000,options.maxWaitMs):30000;
+  const maxChecks=Number.isFinite(options.maxChecks)?Math.max(1,Math.floor(options.maxChecks)):12;
+  const deadline=Date.now()+maxWaitMs;
   let lastError=null;
 
   for(let i=0;i<maxChecks&&Date.now()<deadline;i++){
@@ -1294,6 +1296,38 @@ async function waitForUploadStatus(recordId,uploadKey){
 
 
 async function sendDrivePayload(payload,recordId,uploadKey){
+  // Đường chính: POST JSON nguyên bản (text/plain) để tránh form-urlencoded
+  // làm phình/truncate base64 của ảnh. Backend doPost hỗ trợ e.postData.contents.
+  // no-cors không đọc response, vì vậy chỉ công nhận khi uploadStatus xác nhận đúng hash.
+  let rawPostError=null;
+  try{
+    await fetch(PTI093_API,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=UTF-8'},
+      body:payload,
+      cache:'no-store',
+      keepalive:false
+    });
+    // Ngân sách chờ ngắn ở đường POST chính: nếu trạng thái không xuất hiện,
+    // chuyển sang bridge thay vì để mỗi ảnh giữ worker đến hết 30 giây.
+    return await waitForUploadStatus(recordId,uploadKey,{maxWaitMs:10000,maxChecks:6});
+  }catch(e){
+    rawPostError=e;
+  }
+
+  // Dự phòng: iframe/form bridge cũ; server khử trùng theo SHA-256 nên
+  // nếu POST đầu đã lưu nhưng trạng thái đến chậm, không tạo bản sao ảnh.
+  try{
+    return await sendDrivePayloadViaBridge(payload,recordId,uploadKey);
+  }catch(bridgeError){
+    throw new Error(
+      'POST JSON không được xác nhận: '+(rawPostError&&rawPostError.message?rawPostError.message:String(rawPostError))+
+      '; iframe bridge cũng thất bại: '+(bridgeError&&bridgeError.message?bridgeError.message:String(bridgeError))
+    );
+  }
+}
+async function sendDrivePayloadViaBridge(payload,recordId,uploadKey){
   // V17: ưu tiên postMessage; nếu lớp ContentService của Apps Script làm mất phản hồi,
   // kiểm tra trạng thái upload qua JSONP mà không gửi POST ảnh lần thứ hai.
   // Không khóa cứng event.source hoặc data.source vì Apps Script có thể chuyển hướng
@@ -1355,7 +1389,25 @@ async function sendDrivePayload(payload,recordId,uploadKey){
         const status=await waitForUploadStatus(recordId,uploadKey);
         finish(resolve,status);
       }catch(statusError){
-        finish(reject,new Error('Không nhận được xác nhận trực tiếp; kiểm tra trạng thái dự phòng thất bại: '+(statusError&&statusError.message?statusError.message:String(statusError))));
+        // Fallback 2: Apps Script đôi khi không trả postMessage từ iframe sau redirect.
+        // Gửi đúng một lần qua fetch no-cors (cùng kiểu POST đang dùng cho saveProject),
+        // sau đó chỉ kiểm tra uploadStatus; không dựa vào response của no-cors.
+        try{
+          await fetch(PTI093_API,{
+            method:'POST',
+            mode:'no-cors',
+            headers:{'Content-Type':'text/plain;charset=UTF-8'},
+            body:payload,
+            cache:'no-store',
+            keepalive:false
+          });
+          const recovered=await waitForUploadStatus(recordId,uploadKey);
+          finish(resolve,recovered);
+        }catch(fetchFallbackError){
+          finish(reject,new Error(
+            'POST qua iframe không được xác nhận ('+(statusError&&statusError.message?statusError.message:String(statusError))+') và fallback fetch cũng không xác nhận được ('+(fetchFallbackError&&fetchFallbackError.message?fetchFallbackError.message:String(fetchFallbackError))+').'
+          ));
+        }
       }
     },timeoutMs);
 
