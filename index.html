@@ -1294,15 +1294,17 @@ async function waitForUploadStatus(recordId,uploadKey){
 
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  // Fix 2026-10-24b: không chờ fetch POST hoàn tất mới kiểm tra trạng thái.
-  // Với Apps Script cross-origin, fetch/no-cors có thể chờ redirect/phản hồi lâu;
-  // nếu await fetch trước thì UI bị treo ở batch 1-5 và không bắt đầu poll.
+  // Fix 2026-10-24c: giữ đúng hợp đồng backend cũ: e.parameter.payload.
+  // Gửi form-urlencoded thay vì raw JSON để Apps Script nhận payload trong e.parameter.
+  // POST không cần đọc response cross-origin; xác nhận qua uploadStatus.
   let postError=null;
+  const body=new URLSearchParams();
+  body.set('payload',payload);
   const postPromise=fetch(PTI093_API,{
     method:'POST',
     mode:'no-cors',
-    headers:{'Content-Type':'text/plain;charset=UTF-8'},
-    body:payload,
+    headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+    body:body.toString(),
     cache:'no-store',
     keepalive:false
   }).catch(e=>{
@@ -1311,14 +1313,12 @@ async function sendDrivePayload(payload,recordId,uploadKey){
   });
 
   try{
-    // Bắt đầu kiểm tra ngay trong khi POST đang diễn ra.
-    const result=await waitForUploadStatus(recordId,uploadKey);
-    return result;
+    return await waitForUploadStatus(recordId,uploadKey);
   }catch(statusError){
     const detail=statusError&&statusError.message?statusError.message:String(statusError);
     const postDetail=postError?(postError.message||String(postError)):'';
     throw new Error(
-      'Không xác nhận được ảnh trên máy chủ sau POST. '+
+      'Không xác nhận được ảnh sau POST dạng form. '+
       (postDetail?'Lỗi gửi POST: '+postDetail+'. ':'')+
       'Kiểm tra trạng thái: '+detail
     );
