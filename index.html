@@ -1294,25 +1294,26 @@ async function waitForUploadStatus(recordId,uploadKey){
 
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  // Fix 2026-10-24: gửi JSON POST trực tiếp theo cùng cơ chế đã dùng cho saveProjectToDrive.
-  // Content-Type text/plain là CORS-safelisted; no-cors tránh preflight.
-  // Backend doPost hỗ trợ e.postData.contents. Không gửi lại POST nếu poll trạng thái thất bại.
+  // Fix 2026-10-24b: không chờ fetch POST hoàn tất mới kiểm tra trạng thái.
+  // Với Apps Script cross-origin, fetch/no-cors có thể chờ redirect/phản hồi lâu;
+  // nếu await fetch trước thì UI bị treo ở batch 1-5 và không bắt đầu poll.
   let postError=null;
-  try{
-    await fetch(PTI093_API,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain;charset=UTF-8'},
-      body:payload,
-      cache:'no-store',
-      keepalive:false
-    });
-  }catch(e){
+  const postPromise=fetch(PTI093_API,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=UTF-8'},
+    body:payload,
+    cache:'no-store',
+    keepalive:false
+  }).catch(e=>{
     postError=e;
-  }
+    return null;
+  });
 
   try{
-    return await waitForUploadStatus(recordId,uploadKey);
+    // Bắt đầu kiểm tra ngay trong khi POST đang diễn ra.
+    const result=await waitForUploadStatus(recordId,uploadKey);
+    return result;
   }catch(statusError){
     const detail=statusError&&statusError.message?statusError.message:String(statusError);
     const postDetail=postError?(postError.message||String(postError)):'';
