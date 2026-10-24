@@ -1355,7 +1355,25 @@ async function sendDrivePayload(payload,recordId,uploadKey){
         const status=await waitForUploadStatus(recordId,uploadKey);
         finish(resolve,status);
       }catch(statusError){
-        finish(reject,new Error('Không nhận được xác nhận trực tiếp; kiểm tra trạng thái dự phòng thất bại: '+(statusError&&statusError.message?statusError.message:String(statusError))));
+        // Fallback 2: Apps Script đôi khi không trả postMessage từ iframe sau redirect.
+        // Gửi đúng một lần qua fetch no-cors (cùng kiểu POST đang dùng cho saveProject),
+        // sau đó chỉ kiểm tra uploadStatus; không dựa vào response của no-cors.
+        try{
+          await fetch(PTI093_API,{
+            method:'POST',
+            mode:'no-cors',
+            headers:{'Content-Type':'text/plain;charset=UTF-8'},
+            body:payload,
+            cache:'no-store',
+            keepalive:false
+          });
+          const recovered=await waitForUploadStatus(recordId,uploadKey);
+          finish(resolve,recovered);
+        }catch(fetchFallbackError){
+          finish(reject,new Error(
+            'POST qua iframe không được xác nhận ('+(statusError&&statusError.message?statusError.message:String(statusError))+') và fallback fetch cũng không xác nhận được ('+(fetchFallbackError&&fetchFallbackError.message?fetchFallbackError.message:String(fetchFallbackError))+').'
+          ));
+        }
       }
     },timeoutMs);
 
