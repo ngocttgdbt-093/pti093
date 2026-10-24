@@ -1287,7 +1287,7 @@ async function waitForUploadStatus(recordId,uploadKey){
   throw lastError||new Error('Không xác nhận được ảnh đã lưu.');
 }
 
-async async function sendDrivePayload(payload,recordId,uploadKey){
+async function sendDrivePayload(payload,recordId,uploadKey){
   // Dùng cùng kiểu POST JSON đã được saveProjectToDrive xác nhận hoạt động:
   // text/plain + no-cors. Không phụ thuộc iframe/postMessage của Google Apps Script.
   // Vì no-cors không đọc được response, chỉ coi là thành công khi uploadStatus xác nhận.
