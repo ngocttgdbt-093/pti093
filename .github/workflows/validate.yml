@@ -181,20 +181,24 @@ jobs:
             if curl -fsS http://127.0.0.1:4173/tests/draft-recovery-browser.html >/dev/null; then break; fi
             sleep 1
           done
-          node tests/draft-recovery-browser.test.cjs
-          node tests/image-reorder-browser.test.cjs
-          node tests/app-smoke-browser.test.cjs
-          node tests/classic-local-save-skin.test.cjs
-          node tests/classic-load-progress-skin.test.cjs
-          node tests/classic-image-viewer-skin.test.cjs
-          node tests/classic-status-skin.test.cjs
-          node tests/classic-layout-skin.test.cjs
-          node tests/classic-group-list-skin.test.cjs
-          node tests/classic-image-grid-skin.test.cjs
-          node tests/classic-pdf-warning-skin.test.cjs
-          node tests/classic-preview-skin.test.js
-          node tests/classic-file-intake-skin.test.cjs
-          node tests/gdv-093-fusion.test.cjs
+          for round in $(seq 1 20); do
+            echo "===== REAL CHROMIUM END-TO-END ROUND ${round}/20 ====="
+            node tests/draft-recovery-browser.test.cjs
+            node tests/image-reorder-browser.test.cjs
+            node tests/app-smoke-browser.test.cjs
+            node tests/classic-local-save-skin.test.cjs
+            node tests/classic-load-progress-skin.test.cjs
+            node tests/classic-image-viewer-skin.test.cjs
+            node tests/classic-status-skin.test.cjs
+            node tests/classic-layout-skin.test.cjs
+            node tests/classic-group-list-skin.test.cjs
+            node tests/classic-image-grid-skin.test.cjs
+            node tests/classic-pdf-warning-skin.test.cjs
+            node tests/classic-preview-skin.test.js
+            node tests/classic-file-intake-skin.test.cjs
+            node tests/gdv-093-fusion.test.cjs
+          done
+          echo "PASS: real Chromium end-to-end suite completed 20/20 rounds."
 
       - name: Check Image Ingest Core module
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
