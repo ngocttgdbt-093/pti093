@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+global.window = {};
+require('../core/gdv-search.js');
+const core = global.window.PTISharedCore;
+assert.equal(core.normalizeRecordSearch('Đặng Văn Hiên'), 'dangvanhien');
+assert.equal(core.gdvSearchMatches('Nguyen Minh Ngoc', 'Nguyễn Minh Ngọc'), true);
+assert.equal(core.gdvSearchMatches('NMN', 'Nguyễn Minh Ngọc'), true);
+assert.equal(core.gdvSearchMatches('ngoc', 'Nguyễn Minh Ngọc'), true);
+assert.equal(core.gdvSearchMatches('', 'Nguyễn Minh Ngọc'), false);
+assert.equal(core.gdvSearchMatches('xyz', 'Nguyễn Minh Ngọc'), false);
+const names = ['Phạm Duy Thái', 'Đặng Xuân Linh', 'Nguyễn Tuấn Hưng', 'Đặng Xuân Diệu', 'Đặng Văn Hiên', 'Nguyễn Minh Ngọc'];
+assert.deepEqual(core.searchQueryVariants('ngoc', names), ['ngoc', 'Nguyễn Minh Ngọc', 'nmn']);
+assert.deepEqual(core.searchQueryVariants('NMN', names), ['NMN', 'Nguyễn Minh Ngọc', 'Ngọc']);
+assert.equal(core.searchQueryVariants('not-found', names).length, 1);
+assert.ok(core.searchQueryVariants('a', names).length <= 5, 'query expansion should retain the five-result cap');
+console.log('Shared GĐV search tests passed (normalization, initials, query variants, and result cap).');

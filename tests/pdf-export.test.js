@@ -1,0 +1,68 @@
+const assert=require('node:assert/strict');
+global.window=global;
+require('../core/pdf-export.js');
+(async function(){
+  const state={pages:[],pageDefs:[]},drawCalls=[],progress=[];
+  const api=global.PTI093PdfExportCore.install({
+    state,PDF_SAFE_LIMIT:10,
+    drawPage:async(...args)=>{drawCalls.push(args);return {pageNo:args[2],label:args[6]};},
+    makePdfAt:items=>({bytes:new Uint8Array(items.length*6),dpi:150,quality:0.8}),
+    pagePixels:()=>({dpi:150}),jpegQuality:()=>0.8,
+    pdfPackSize:bytes=>bytes.length
+  });
+  assert.deepEqual(await api.splitHighQualityPdf('empty.pdf'),[],'empty preview should not produce PDF parts');
+  state.pages=[{id:1},{id:2},{id:3}];
+  state.pageDefs=[
+    {group:'G1',pageItems:['a'],pageNo:1,groupPageNo:1,groupPages:1,groupStartIndex:0},
+    {group:'G2',pageItems:['b'],pageNo:2,groupPageNo:1,groupPages:1,groupStartIndex:1},
+    {group:'G3',pageItems:['c'],pageNo:3,groupPageNo:1,groupPages:1,groupStartIndex:2}
+  ];
+  const parts=await api.splitHighQualityPdf('report.pdf',(pct,label)=>progress.push({pct,label}));
+  assert.equal(parts.length,3,'size limit should split three oversized aggregate pages into three files');
+  assert.deepEqual(parts.map(p=>p.filename),['report 1.pdf','report 2.pdf','report 3.pdf']);
+  assert.deepEqual(parts.map(p=>p.dpi),[150,150,150]);
+  assert.deepEqual(parts.map(p=>p.quality),[0.8,0.8,0.8]);
+  assert.deepEqual(drawCalls.map(c=>c[6]),['1/3','2/3','3/3'],'each PDF part should receive its correct part label');
+  assert.ok(progress.length>=6,'progress should report planning and rendering');
+  assert.ok(parts.every(p=>p.blob.type==='application/pdf'));
+
+  // Regression: a single page can exceed the cap; splitting by page count alone cannot fix it.
+  const singleState={pages:[{id:'oversized'}],pageDefs:[{group:'G',pageItems:['large'],pageNo:1,groupPageNo:1,groupPages:1,groupStartIndex:0}]};
+  const singleApi=global.PTI093PdfExportCore.install({
+    state:singleState,PDF_SAFE_LIMIT:10,
+    drawPage:async(...args)=>({pageNo:args[2]}),
+    makePdfAt:(items,dpi,quality)=>({bytes:new Uint8Array(dpi===150?20:8),dpi,quality}),
+    pagePixels:()=>({dpi:150}),jpegQuality:()=>0.8,pdfPackSize:bytes=>bytes.length
+  });
+  const singleParts=await singleApi.splitHighQualityPdf('single.pdf');
+  assert.equal(singleParts.length,1);
+  assert.ok(singleParts[0].blob.size<=10,'single-page PDF must be compressed under the size cap');
+  assert.equal(singleParts[0].dpi,120,'single-page overflow should retry at a lower DPI');
+
+  const impossibleApi=global.PTI093PdfExportCore.install({
+    state:singleState,PDF_SAFE_LIMIT:10,
+    drawPage:async()=>({}),
+    makePdfAt:(items,dpi,quality)=>({bytes:new Uint8Array(20),dpi,quality}),
+    pagePixels:()=>({dpi:150}),jpegQuality:()=>0.8,pdfPackSize:bytes=>bytes.length
+  });
+  await assert.rejects(()=>impossibleApi.splitHighQualityPdf('impossible.pdf'),/vượt giới hạn an toàn/,'must fail clearly rather than emit an oversized part');
+  const snapshotCalls=[];
+  const snapshotPages=[{id:'old-1'},{id:'old-2'}];
+  const snapshotDefs=[
+    {group:'OLD-G1',pageItems:['old-a'],pageNo:11,groupPageNo:1,groupPages:1,groupStartIndex:0},
+    {group:'OLD-G2',pageItems:['old-b'],pageNo:12,groupPageNo:1,groupPages:1,groupStartIndex:1}
+  ];
+  const liveState={pages:[{id:'new-1'}],pageDefs:[{group:'NEW-G',pageItems:['new'],pageNo:99,groupPageNo:1,groupPages:1,groupStartIndex:0}]};
+  const snapshotApi=global.PTI093PdfExportCore.install({
+    state:liveState,PDF_SAFE_LIMIT:100,
+    drawPage:async(...args)=>{snapshotCalls.push(args);return {pageNo:args[2]};},
+    makePdfAt:items=>({bytes:new Uint8Array(items.length),dpi:150,quality:.8}),
+    pagePixels:()=>({dpi:150}),jpegQuality:()=>.8,pdfPackSize:bytes=>bytes.length
+  });
+  const snapshotParts=await snapshotApi.splitHighQualityPdf('snapshot.pdf',()=>{},{pages:snapshotPages,pageDefs:snapshotDefs});
+  assert.equal(snapshotParts.length,1);
+  assert.deepEqual(snapshotCalls.map(args=>args[0]),['OLD-G1','OLD-G2'],
+    'split export must render using captured page definitions, not a concurrently opened workspace');
+  assert.deepEqual(snapshotCalls.map(args=>args[2]),[11,12]);
+  console.log('PDF Export Core tests passed: splitting, labels, progress, single-page compression, hard size cap, and stable snapshots.');
+})().catch(e=>{console.error(e);process.exit(1)});

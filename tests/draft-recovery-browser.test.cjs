@@ -1,0 +1,100 @@
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
+(async function(){
+  const browser=await chromium.launch({headless:true});
+  const context=await browser.newContext();
+  try{
+    const page=await context.newPage();
+    await page.goto('http://127.0.0.1:4173/tests/draft-recovery-browser.html');
+    const session=await page.evaluate(()=>window.testHarness.seed());
+    await page.reload();
+    const result=await page.evaluate(()=>window.testHarness.restore());
+    assert.equal(result.sessionId,session);
+    assert.equal(result.bks,'30A-12345');
+    assert.equal(result.hoso,'HS-TEST-01');
+    assert.equal(result.garage,'Garage thử');
+    assert.equal(result.date,'2026-10-23');
+    assert.equal(result.gdv,'GĐV kiểm thử');
+    assert.equal(result.orientation,'landscape');
+    assert.equal(result.per,4);
+    assert.equal(result.groups[0].items[0].caption,'Ảnh trước xe');
+    assert.equal(result.groups[0].items[0].rotate,90);
+    assert.equal(result.groups[0].items[0].addSeq,1);
+    assert.equal(result.current.items[0].caption,'Ảnh sau xe');
+    assert.equal(result.current.items[0].rotate,180);
+    assert.deepEqual(result.frontBytes,[255,216,255,217]);
+    assert.deepEqual(result.rearBytes,[1,2,3,4,5]);
+    const counts=await page.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(counts,{drafts:0,images:0});
+
+    await page.evaluate(()=>window.testHarness.seedIncompleteDriveDraft());
+    await page.reload();
+    const incompleteDraft=await page.evaluate(()=>window.testHarness.restoreIncompleteDriveDraft());
+    assert.equal(incompleteDraft.driveRecordId,'DRIVE-INCOMPLETE');
+    assert.equal(incompleteDraft.driveOpenIncomplete,true,
+      'AUTO-DRAFT reload must preserve the write guard for a partially loaded Drive record');
+    assert.equal(incompleteDraft.caseNumber,'HS-PARTIAL');
+    assert.match(incompleteDraft.status,/chưa tải đủ ảnh/,
+      'AUTO-DRAFT reload must visibly warn that the Drive record is incomplete');
+    const incompleteCounts=await page.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(incompleteCounts,{drafts:0,images:0});
+
+    await page.evaluate(()=>window.testHarness.seedLocalCopyFromIncompleteDrive());
+    await page.reload();
+    const localPartial=await page.evaluate(()=>window.testHarness.restoreLocalCopyFromIncompleteDrive());
+    assert.equal(localPartial.localDraftId,'LOCAL-PARTIAL');
+    assert.equal(localPartial.localCopyFromIncompleteDrive,true,
+      'AUTO-DRAFT reload must preserve incomplete-Drive provenance for a local copy');
+    assert.match(localPartial.status,/được tạo từ hồ sơ Drive chưa tải đủ ảnh/,
+      'AUTO-DRAFT reload must visibly warn that this local copy may be partial');
+    const localPartialCounts=await page.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(localPartialCounts,{drafts:0,images:0});
+
+    await page.evaluate(()=>{
+      window.testHarness.state.driveRecordId='DRIVE-STALE';
+      window.testHarness.state.localDraftId='LOCAL-STALE';
+      sessionStorage.setItem('pti093_driveRecordId','DRIVE-STALE');
+      localStorage.setItem('pti093_driveRecordId','DRIVE-STALE');
+    });
+    await page.evaluate(()=>window.testHarness.api.restoreAutoDraft());
+    assert.deepEqual(await page.evaluate(()=>({
+      driveRecordId:window.testHarness.state.driveRecordId,
+      localDraftId:window.testHarness.state.localDraftId,
+      sessionId:sessionStorage.getItem('pti093_driveRecordId'),
+      localId:localStorage.getItem('pti093_driveRecordId')
+    })),{driveRecordId:'',localDraftId:'',sessionId:null,localId:'DRIVE-STALE'},
+      'a tab clears its own session pointer without deleting the shared localStorage pointer used by another tab');
+
+    await page.evaluate(()=>window.testHarness.seedOrphanImages());
+    assert.deepEqual(await page.evaluate(()=>window.testHarness.countDraftRows()),{drafts:0,images:1});
+    await page.evaluate(()=>window.testHarness.api.restoreAutoDraft());
+    assert.deepEqual(await page.evaluate(()=>window.testHarness.countDraftRows()),{drafts:0,images:0},
+      'orphaned image rows should be cleaned when AUTO-DRAFT metadata is missing');
+
+    const failureRecovery=await page.evaluate(()=>window.testHarness.cleanupFailureRecovery());
+    assert.deepEqual(failureRecovery,{rejected:true,autosaveRecovered:true});
+    const recoveredCleanup=await page.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(recoveredCleanup,{drafts:0,images:0});
+
+    await page.evaluate(()=>window.testHarness.seed());
+    await page.evaluate(()=>localStorage.setItem('pti093_driveRecordId','DRIVE-OLD'));
+    const newTab=await context.newPage();
+    await newTab.goto('http://127.0.0.1:4173/tests/draft-recovery-browser.html');
+    const newSession=await newTab.evaluate(()=>sessionStorage.getItem('pti093_work_session_id'));
+    assert.notEqual(newSession,session,'a separate tab must have a distinct work session');
+    const fresh=await newTab.evaluate(()=>window.testHarness.restoreNewSession());
+    assert.equal(fresh.sessionId,newSession);
+    assert.equal(fresh.bks,'');
+    assert.equal(fresh.hoso,'');
+    assert.equal(fresh.garage,'');
+    assert.equal(fresh.groups,0);
+    assert.equal(fresh.currentItems,0);
+    assert.equal(fresh.driveRecordId,'');
+    assert.equal(await newTab.evaluate(()=>localStorage.getItem('pti093_driveRecordId')),'DRIVE-OLD',
+      'a fresh session must not erase another tab’s shared localStorage pointer');
+    const freshCounts=await newTab.evaluate(()=>window.testHarness.cleanup());
+    assert.deepEqual(freshCounts,{drafts:1,images:2},'a new session must clean only its own draft and preserve the previous tab auto-draft');
+
+    console.log('Chromium IndexedDB draft recovery and new-session cleanup passed.');
+  }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exit(1)});

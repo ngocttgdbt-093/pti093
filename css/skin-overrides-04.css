@@ -1,0 +1,5 @@
+
+@media(min-width:1000px){
+ body:not(.classic-ui) .wrap>.card:nth-of-type(1) .form .field:has(#garage){grid-column:1/-1}
+ body:not(.classic-ui) #garage{width:100%;min-width:0}
+}

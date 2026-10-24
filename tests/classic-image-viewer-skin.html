@@ -1,0 +1,8 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Classic Image Viewer Skin Test</title></head>
+<body>
+<script src="../skin/classic-image-viewer.js"></script>
+<script>
+window.imageViewerSkin=window.PTI093ClassicImageViewerSkin.install({document,URL});
+window.openTestImage=function(index,rotate){window.imageViewerSkin.openImageViewer({file:new File([new Uint8Array([1,2,3])],'test.jpg',{type:'image/jpeg'}),rotate},index)};
+</script>
+</body></html>
