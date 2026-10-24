@@ -1222,12 +1222,10 @@ async function waitForUploadStatus(recordId,uploadKey){
   // V19: ưu tiên fetch JSON trực tiếp. Apps Script ContentService có thể
   // chuyển hướng phản hồi; fetch đã được frontend sử dụng ổn định cho các API khác.
   // JSONP chỉ giữ làm lớp dự phòng thứ hai.
-  const maxChecks=12;
-  const deadline=Date.now()+30000;
+  const maxChecks=4;
   let lastError=null;
 
-  for(let i=0;i<maxChecks&&Date.now()<deadline;i++){
-    let useJsonp=false;
+  for(let i=0;i<maxChecks;i++){
     try{
       const controller=new AbortController();
       const timer=setTimeout(()=>controller.abort(),3500);
@@ -1244,16 +1242,13 @@ async function waitForUploadStatus(recordId,uploadKey){
         clearTimeout(timer);
       }
     }catch(e){
-      useJsonp=true;
       lastError=e&&e.name==='AbortError'
         ? new Error('Quá thời gian đọc trạng thái upload.')
         : e;
     }
 
-    // JSONP chỉ là lớp dự phòng khi fetch không đọc được phản hồi.
-    // Nếu fetch đã trả lời found:false, đừng hỏi máy chủ thêm một lần bằng JSONP;
-    // poll lại theo nhịp tăng dần để giảm tải trong khi vẫn chờ xác nhận.
-    if(useJsonp) try{
+    // Nếu fetch không đọc được phản hồi, thử JSONP như lớp dự phòng.
+    try{
       const result=await new Promise((resolve,reject)=>{
         const cb='pti093UploadStatus_'+Date.now()+'_'+Math.random().toString(36).slice(2);
         const script=document.createElement('script');
@@ -1286,12 +1281,11 @@ async function waitForUploadStatus(recordId,uploadKey){
       lastError=e;
     }
 
-    if(i<maxChecks-1&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,Math.min(2000,500*(i+1))));
+    if(i<maxChecks-1)await new Promise(resolve=>setTimeout(resolve,500));
   }
 
   throw lastError||new Error('Không xác nhận được ảnh đã lưu.');
 }
-
 
 async function sendDrivePayload(payload,recordId,uploadKey){
   // V17: ưu tiên postMessage; nếu lớp ContentService của Apps Script làm mất phản hồi,
