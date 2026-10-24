@@ -346,7 +346,7 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
         run: node --check core/app-core.js
 
-      - name: Run all Core regression tests 10 consecutive rounds
+      - name: Run all Core regression tests 20 consecutive rounds
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023'
         timeout-minutes: 30
         shell: bash
@@ -358,11 +358,11 @@ jobs:
             exit 1
           fi
           echo "Found ${#test_files[@]} standalone regression tests."
-          for round in $(seq 1 10); do
-            echo "===== CORE REGRESSION ROUND ${round}/10 ====="
+          for round in $(seq 1 20); do
+            echo "===== CORE REGRESSION ROUND ${round}/20 ====="
             for test_file in "${test_files[@]}"; do
-              echo "--- round ${round}/10: ${test_file} ---"
+              echo "--- round ${round}/20: ${test_file} ---"
               node "${test_file}"
             done
           done
-          echo "PASS: all ${#test_files[@]} regression tests passed in 10/10 rounds."
+          echo "PASS: all ${#test_files[@]} regression tests passed in 20/20 rounds."
