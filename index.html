@@ -1373,13 +1373,24 @@ async function sendDrivePayloadViaBridge(payload,recordId,uploadKey){
         try{data=JSON.parse(data)}catch(e){return}
       }
       if(!data || typeof data!=='object')return;
+
+      // Apps Script error responses contain only success:false + error, without
+      // recordId/uploadKey. Accept those only from this bridge iframe and reject
+      // supplied identifiers that point at a different upload.
+      if(data.success===false || data.ok===false){
+        if(event.source!==iframe.contentWindow)return;
+        const responseRecordId=String(data.recordId||'');
+        const responseUploadKey=String(data.uploadKey||'');
+        if(responseRecordId&&responseRecordId!==String(recordId||''))return;
+        if(responseUploadKey&&responseUploadKey!==String(uploadKey||''))return;
+        finish(reject,new Error(data.error||data.message||'Máy chủ không xác nhận được ảnh.'));
+        return;
+      }
+
       if(String(data.recordId||'')!==String(recordId||''))return;
       if(String(data.uploadKey||'')!==String(uploadKey||''))return;
-
       if(data.success===true || data.success===1 || data.ok===true){
         finish(resolve,data);
-      }else if(data.success===false || data.ok===false){
-        finish(reject,new Error(data.error||data.message||'Máy chủ không xác nhận được ảnh.'));
       }
     };
 
