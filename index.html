@@ -1296,36 +1296,10 @@ async function waitForUploadStatus(recordId,uploadKey,options={}){
 
 
 async function sendDrivePayload(payload,recordId,uploadKey){
-  // Đường chính: POST JSON nguyên bản (text/plain) để tránh form-urlencoded
-  // làm phình/truncate base64 của ảnh. Backend doPost hỗ trợ e.postData.contents.
-  // no-cors không đọc response, vì vậy chỉ công nhận khi uploadStatus xác nhận đúng hash.
-  let rawPostError=null;
-  try{
-    await fetch(PTI093_API,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain;charset=UTF-8'},
-      body:payload,
-      cache:'no-store',
-      keepalive:false
-    });
-    // Ngân sách chờ ngắn ở đường POST chính: nếu trạng thái không xuất hiện,
-    // chuyển sang bridge thay vì để mỗi ảnh giữ worker đến hết 30 giây.
-    return await waitForUploadStatus(recordId,uploadKey,{maxWaitMs:10000,maxChecks:6});
-  }catch(e){
-    rawPostError=e;
-  }
-
-  // Dự phòng: iframe/form bridge cũ; server khử trùng theo SHA-256 nên
-  // nếu POST đầu đã lưu nhưng trạng thái đến chậm, không tạo bản sao ảnh.
-  try{
-    return await sendDrivePayloadViaBridge(payload,recordId,uploadKey);
-  }catch(bridgeError){
-    throw new Error(
-      'POST JSON không được xác nhận: '+(rawPostError&&rawPostError.message?rawPostError.message:String(rawPostError))+
-      '; iframe bridge cũng thất bại: '+(bridgeError&&bridgeError.message?bridgeError.message:String(bridgeError))
-    );
-  }
+  // Dùng lại transport V24 đã có kết quả nhanh: form POST vào iframe và
+  // nhận xác nhận postMessage. Fallback chỉ kiểm tra trạng thái/idempotency,
+  // không gửi lại nếu máy chủ đã ghi nhận ảnh.
+  return await sendDrivePayloadViaBridge(payload,recordId,uploadKey);
 }
 async function sendDrivePayloadViaBridge(payload,recordId,uploadKey){
   // V17: ưu tiên postMessage; nếu lớp ContentService của Apps Script làm mất phản hồi,
