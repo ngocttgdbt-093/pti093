@@ -1861,11 +1861,12 @@ async function pti093UploadAll(){
   const seen=new Set();
   for(const it of items){
     const key=driveImageKey(it);
-    // Nếu ảnh đã có fileId/uploadKey từ project.pti thì chắc chắn đã được lưu.
-    // Không gửi lại ảnh chỉ vì localStorage của trình duyệt đã mất trạng thái.
-    if(!key || it.driveFileId || it.driveUploadKey || uploaded.has(key) || seen.has(key))continue;
+    if(!key || seen.has(key))continue;
     seen.add(key);
-    unique.push({it,key});
+    // Trạng thái trong nháp/trình duyệt chỉ là gợi ý. Xác minh lại với máy chủ
+    // trước khi bỏ qua ảnh, vì project.pti có thể còn thiếu mục chỉ mục sau lần ghi trước.
+    const needsValidation=!!(it.driveFileId || it.driveUploadKey || it.drivePendingUploadKey || uploaded.has(key) || getDrivePendingUploadKey(id,key));
+    unique.push({it,key,needsValidation});
   }
 
   if(!unique.length){
@@ -1918,23 +1919,24 @@ async function pti093UploadAll(){
           prepTotalMs+=prepMs;
 
           const pending=entry.it.drivePendingUploadKey||getDrivePendingUploadKey(id,entry.key)||'';
-          if(pending){
+          const priorKey=entry.it.driveUploadKey||pending||(uploaded.has(entry.key)?prepared.uploadKey:'');
+          if(entry.needsValidation&&priorKey){
             try{
-              const recovered=await waitForUploadStatus(id,pending);
-              if(recovered&&recovered.success&&recovered.found){
-                entry.it.driveFileId=recovered.fileId||entry.it.driveFileId||'';
-                entry.it.driveFileName=recovered.fileName||entry.it.driveFileName||((entry.it.file&&entry.it.file.name)||'');
-                entry.it.driveUploadKey=pending;
+              const verified=await waitForUploadStatus(id,priorKey,{maxWaitMs:7000,maxChecks:3});
+              if(verified&&verified.success&&verified.found){
+                entry.it.driveFileId=verified.fileId||entry.it.driveFileId||'';
+                entry.it.driveFileName=verified.fileName||entry.it.driveFileName||((entry.it.file&&entry.it.file.name)||'');
+                entry.it.driveUploadKey=priorKey;
                 entry.it.drivePendingUploadKey='';
                 saveDrivePendingUploadKey(id,entry.key,'');
                 uploaded.add(prepared.key);
                 scheduleAutoDraftSave(false);
                 sent++;
                 saveDriveUploadedKeys(id,uploaded);
-                updateUploadProgress('Khôi phục xác nhận');
+                updateUploadProgress('Đã xác minh lại trạng thái Drive');
                 return {ok:true,recovered:true};
               }
-            }catch(recoverError){}
+            }catch(validationError){}
           }
 
           entry.it.drivePendingUploadKey=prepared.uploadKey;
