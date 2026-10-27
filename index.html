@@ -1335,9 +1335,10 @@ async function sendDrivePayloadViaBridge(payload,recordId,uploadKey){
     try{
       const request=JSON.parse(payload);
       // Keep the image request alive through the normal Apps Script latency.
-      // A short timeout here creates status-poll storms while Drive is still
-      // creating files, and is slower than waiting for the original response.
-      if(request.action==='uploadImage'&&request.deferIndex===true)timeoutMs=8000;
+      // Give the POST enough time to reach Drive, then let the status endpoint
+      // observe its pending-index result while slower Drive requests finish.
+      // The grouped project.pti commit remains the only success confirmation.
+      if(request.action==='uploadImage'&&request.deferIndex===true)timeoutMs=6000;
       else if(request.action==='commitUploadIndex')timeoutMs=8000;
     }catch(e){}
 
