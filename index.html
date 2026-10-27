@@ -55,6 +55,20 @@
 @media(min-width:1200px){.thumbActions button{flex:1 1 calc(20% - 5px)!important;min-width:0!important;padding:4px 3px!important;font-size:11px!important}}
 @media(max-width:540px){.thumbActions button{flex:1 1 calc(50% - 5px)!important;min-width:64px!important}}
 
+
+/* Caption Tools 093 — isolated test-branch UI */
+.filegrid.caption-select-mode{position:relative;user-select:none}
+.thumb.caption-selected{outline:3px solid #16834a!important;box-shadow:0 0 0 3px #dff3e8}
+.thumb.caption-selected .n{background:#125c38}
+.caption-tool-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 4px}
+.caption-tool-bar .btn{font-size:13px}
+.caption-tool-bar .btn.on{background:#075d39;color:#fff}
+.caption-tool-hint{font-size:12px;color:#65736b}
+.caption-selection-rect{position:absolute;border:2px solid #16834a;background:rgba(22,131,74,.12);pointer-events:none;z-index:30;display:none}
+.caption-context-menu{position:fixed;z-index:99999;min-width:205px;padding:5px;background:#fff;border:1px solid #ccd8d0;border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+.caption-context-menu button{display:block;width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:6px;cursor:pointer;color:#20352a}
+.caption-context-menu button:hover{background:#eaf6ef}
+
 </style><style id="uiRefreshV42">
 /* V42 UI redesign: visual shell only; preserve all business logic and controls */
 :root{color-scheme:light;--v42-ink:#17382b;--v42-green:#08784b;--v42-deep:#064d35;--v42-mint:#e6f5ed;--v42-line:#d6e5dc;--v42-muted:#64786e;--v42-shadow:0 10px 26px rgba(20,67,44,.09)}
@@ -371,7 +385,15 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 <input id="replaceFile" class="hidden" type="file" accept="image/*">
 <input id="insertFile" class="hidden" type="file" accept="image/*" multiple>
 <p class="muted folderHelp">Ô trên: chọn nhiều ảnh · Ô dưới: <b>chọn thư mục</b> (PC/Chrome/Edge)</p></div>
-<div class="actions"><button id="clear" class="btn red" disabled>🗑 Xóa ảnh của mục này</button></div><div id="status" class="status hidden"></div><div id="grid" class="filegrid"></div>
+<div class="actions"><button id="clear" class="btn red" disabled>🗑 Xóa ảnh của mục này</button></div><div id="status" class="status hidden"></div><div id="captionToolBar" class="caption-tool-bar">
+<button type="button" id="captionSelectMode" class="btn light" aria-pressed="false">▧ Khoanh chọn ảnh</button>
+<button type="button" id="captionBulkButton" class="btn green" disabled>✎ Chú thích gộp (<span id="captionSelectedCount">0</span>)</button>
+<button type="button" id="captionClearSelection" class="btn light" disabled>Bỏ chọn</button>
+<span id="captionToolHint" class="caption-tool-hint">Giữ Ctrl và nhấp ảnh để chọn nhiều ảnh; bật “Khoanh chọn ảnh” để kéo vùng chọn.</span>
+</div>
+<div id="captionSelectionRect" class="caption-selection-rect"></div>
+<div id="captionContextMenu" class="caption-context-menu" hidden><button type="button" id="captionContextBulk">✎ Chú thích gộp ảnh…</button></div>
+<div id="grid" class="filegrid"></div>
 <div class="actions"><button id="saveNext" class="btn green" disabled>✓ Lưu mục này & thêm nội dung tiếp theo</button><button id="finish" class="btn dark" disabled>👁 Kết thúc & xem Preview</button></div>
 <div id="groupsBox" style="margin-top:14px"></div>
 </div></section>
@@ -379,6 +401,124 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 <section class="card"><div class="hd">3. Preview & xuất PDF</div><div class="bd"><div id="previewInfo" class="muted">Chưa có preview.</div><div id="preview" class="preview" style="margin-top:10px"></div><div class="actions"><button id="pdf" class="btn dark" disabled>📄 Xuất PDF A4</button><button id="backEdit" class="btn light" style="display:none">✎ Quay lại chỉnh sửa</button><button id="newCase" class="btn green" style="display:none">＋ Làm bản ảnh mới</button></div><div id="pdfWarn" class="pdfWarn hidden"></div><div class="driveBox"><div style="font-weight:700;color:#006f3d;margin-bottom:6px">☁️ Hồ sơ PTI trên Google Drive</div><div class="driveRow"><button type="button" id="driveCreate" class="btn green">☁️ Tạo & lưu hồ sơ Drive</button><button type="button" id="driveSaveProject" class="btn light">💾 Lưu thay đổi hồ sơ</button><button type="button" id="driveSaveDraft" class="btn light">💻 Lưu ảnh tại máy (không tải ảnh lên Drive)</button><span id="driveState" class="driveState">Chưa tạo hồ sơ Drive.</span></div><div id="driveId" class="driveId hidden"></div><div id="driveProgress" class="hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #cfe1d7;border-radius:8px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#176b4b"><span id="driveProgressText">Đang chuẩn bị...</span><strong id="driveProgressPct">0%</strong></div><div style="height:9px;background:#e7efeb;border-radius:999px;overflow:hidden;margin-top:6px"><div id="driveProgressBar" style="height:100%;width:0%;background:#00834a;transition:width .25s ease"></div></div><div id="driveProgressMeta" style="margin-top:5px;font-size:11px;color:#69766f"></div></div><div id="driveUploadMissing" class="driveWarn hidden" style="margin-top:8px;padding:9px 10px;border:1px solid #ead7a5;border-radius:8px;background:#fffaf0"></div><div id="openLoadBox" class="openLoadBox hidden"><div class="openLoadHead"><span id="openLoadText">Đang tải...</span><strong id="openLoadPct">0%</strong></div><div class="openLoadTrack"><div id="openLoadBar" class="openLoadBar"></div></div><div id="openLoadMeta" class="openLoadMeta"></div></div><div class="driveSearchRow" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="driveSearch" class="textInput" placeholder="🔎 Tìm Mã HS, BKS hoặc GĐV (nmn, Ngọc…)"><button type="button" id="driveSearchBtn" class="btn light">🔎 Tìm hồ sơ</button></div><div id="driveSearchResults" style="margin-top:8px"></div></div></section>
 <div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v59-20261020.1</span></div>
 </div>
+<script src="./modules/caption-tools-093/caption-tools-core.js"></script>
+<script>
+(function(){
+  'use strict';
+  if(!window.CaptionTools093) return;
+  const selected = new Set();
+  const grid = document.getElementById('grid');
+  const modeBtn = document.getElementById('captionSelectMode');
+  const bulkBtn = document.getElementById('captionBulkButton');
+  const clearBtn = document.getElementById('captionClearSelection');
+  const countEl = document.getElementById('captionSelectedCount');
+  const hint = document.getElementById('captionToolHint');
+  const rect = document.getElementById('captionSelectionRect');
+  const menu = document.getElementById('captionContextMenu');
+  let selectMode = false, dragging = false, startX = 0, startY = 0, gridRect = null;
+
+  function keyFor(card){return card && card.dataset ? card.dataset.dragId : ''}
+  function cards(){return Array.from(grid.querySelectorAll('.thumb[data-drag-id]'))}
+  function updateSelectionUI(){
+    cards().forEach(card=>card.classList.toggle('caption-selected',selected.has(keyFor(card))));
+    countEl.textContent=String(selected.size);
+    bulkBtn.disabled=selected.size===0;
+    clearBtn.disabled=selected.size===0;
+    modeBtn.classList.toggle('on',selectMode);
+    modeBtn.setAttribute('aria-pressed',String(selectMode));
+    grid.classList.toggle('caption-select-mode',selectMode);
+  }
+  function clearSelection(){selected.clear();updateSelectionUI()}
+  function toggleCard(card){
+    const key=keyFor(card); if(!key)return;
+    if(selected.has(key))selected.delete(key);else selected.add(key);
+    updateSelectionUI();
+  }
+  function closeMenu(){menu.hidden=true}
+  function openMenu(x,y){
+    menu.hidden=false;
+    const w=menu.offsetWidth||220,h=menu.offsetHeight||48;
+    menu.style.left=Math.max(8,Math.min(x,window.innerWidth-w-8))+'px';
+    menu.style.top=Math.max(8,Math.min(y,window.innerHeight-h-8))+'px';
+  }
+  function applyBulkCaption(){
+    closeMenu();
+    const targets=cards().filter(card=>selected.has(keyFor(card)));
+    if(!targets.length)return;
+    const raw=window.prompt('Nhập chú thích chung cho '+targets.length+' ảnh đã chọn:','');
+    if(raw===null)return;
+    const normalized=window.CaptionTools093.normalizeCaption(raw);
+    if(!normalized){window.alert('Chú thích đang trống. Không có ảnh nào được thay đổi.');return}
+    if(!window.confirm('Nội dung sau AutoCorrect:\n\n'+normalized+'\n\nÁp dụng cho '+targets.length+' ảnh đã chọn?'))return;
+    const ids=new Set(targets.map(keyFor));
+    let changed=0;
+    state.current.items.forEach(item=>{
+      if(ids.has(pti093EnsureDragId(item))){item.caption=normalized;changed++}
+    });
+    render();
+    scheduleAutoDraftSave(true);
+    msg('Đã áp dụng chú thích chung cho '+changed+' ảnh.',true);
+    updateSelectionUI();
+  }
+  modeBtn.addEventListener('click',()=>{
+    selectMode=!selectMode;
+    hint.textContent=selectMode
+      ?'Đang bật khoanh chọn: giữ chuột trái và kéo qua các ảnh; nhả chuột để hoàn tất.'
+      :'Giữ Ctrl và nhấp ảnh để chọn nhiều ảnh; bật “Khoanh chọn ảnh” để kéo vùng chọn.';
+    updateSelectionUI();
+  });
+  clearBtn.addEventListener('click',clearSelection);
+  bulkBtn.addEventListener('click',applyBulkCaption);
+  document.getElementById('captionContextBulk').addEventListener('click',applyBulkCaption);
+  document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target))closeMenu()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(dragging){dragging=false;rect.style.display='none'}}});
+  grid.addEventListener('click',e=>{
+    const card=e.target.closest('.thumb');
+    if(!card||e.target.closest('button,textarea,input,select'))return;
+    if(e.ctrlKey||e.metaKey){e.preventDefault();toggleCard(card)}
+    else if(selectMode && !dragging){e.preventDefault();toggleCard(card)}
+  },true);
+  grid.addEventListener('contextmenu',e=>{
+    const card=e.target.closest('.thumb');
+    if(!card)return;
+    e.preventDefault();
+    if(!selected.has(keyFor(card))){selected.clear();selected.add(keyFor(card));updateSelectionUI()}
+    openMenu(e.clientX,e.clientY);
+  });
+  grid.addEventListener('pointerdown',e=>{
+    if(!selectMode||e.button!==0||e.target.closest('button,textarea,input,select'))return;
+    e.preventDefault();
+    dragging=true;startX=e.clientX;startY=e.clientY;gridRect=grid.getBoundingClientRect();
+    rect.style.left=(startX-gridRect.left+grid.scrollLeft)+'px';
+    rect.style.top=(startY-gridRect.top+grid.scrollTop)+'px';
+    rect.style.width='0px';rect.style.height='0px';rect.style.display='block';
+    try{grid.setPointerCapture(e.pointerId)}catch(_){}
+  });
+  grid.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    const left=Math.min(startX,e.clientX),top=Math.min(startY,e.clientY);
+    const right=Math.max(startX,e.clientX),bottom=Math.max(startY,e.clientY);
+    rect.style.left=(left-gridRect.left+grid.scrollLeft)+'px';
+    rect.style.top=(top-gridRect.top+grid.scrollTop)+'px';
+    rect.style.width=(right-left)+'px';rect.style.height=(bottom-top)+'px';
+    const hit=new Set();
+    cards().forEach(card=>{
+      const r=card.getBoundingClientRect();
+      if(r.right>=left&&r.left<=right&&r.bottom>=top&&r.top<=bottom)hit.add(keyFor(card));
+    });
+    selected.clear();hit.forEach(id=>selected.add(id));updateSelectionUI();
+  });
+  function endSelection(){if(!dragging)return;dragging=false;rect.style.display='none';updateSelectionUI()}
+  grid.addEventListener('pointerup',endSelection);
+  grid.addEventListener('pointercancel',endSelection);
+  const originalRender=window.render;
+  if(typeof originalRender==='function'){
+    window.render=function(){originalRender();updateSelectionUI()};
+  }
+  updateSelectionUI();
+})();
+</script>
+
 <script>
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],localDraftId:''};
 const $=id=>document.getElementById(id); const drop=$('drop');
