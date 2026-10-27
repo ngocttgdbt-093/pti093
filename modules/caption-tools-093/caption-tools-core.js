@@ -1,11 +1,10 @@
 /**
  * GHÉP ẢNH 093 — Caption Tools Core Module
- * Version: 0.1.0 (test branch)
+ * Version: 0.2.0 (test branch)
  *
- * Conservative Vietnamese caption normalization and bulk-apply helpers.
- * UI selection/menu wiring remains adapter-driven until existing drag/reorder,
- * caption state, draft restore and PDF handlers have been audited.
- * No network calls and no AI service.
+ * Reusable caption normalization and bulk-apply operations.
+ * UI adapters must call these helpers and persist through each app's existing
+ * state/save pipeline. No network calls and no AI service.
  */
 (function (global) {
   "use strict";
@@ -33,8 +32,38 @@
   }
 
   /**
-   * Apply a normalized caption to each selected image's existing editor.
-   * The caller must persist through the app's established state/save pipeline.
+   * Core-level operation: apply one normalized caption to only the selected
+   * items. getId lets 093/PTI adapters use their own stable item identifier.
+   */
+  function applyCaptionToItems(items, selectedIds, caption, options = {}) {
+    const normalized = normalizeCaption(caption, options);
+    const list = Array.from(items || []);
+    const ids = selectedIds instanceof Set ? selectedIds : new Set(selectedIds || []);
+    if (!normalized) {
+      return { ok: false, applied: 0, total: ids.size, caption: normalized,
+        reason: "empty-caption", failures: [] };
+    }
+    const getId = typeof options.getId === "function"
+      ? options.getId
+      : item => item && (item.id ?? item.key);
+    let applied = 0;
+    const failures = [];
+    list.forEach((item, index) => {
+      try {
+        if (!ids.has(getId(item))) return;
+        item.caption = normalized;
+        applied += 1;
+      } catch (error) {
+        failures.push({ index, reason: String(error && error.message || error) });
+      }
+    });
+    return { ok: applied === ids.size && failures.length === 0, applied,
+      total: ids.size, caption: normalized, failures };
+  }
+
+  /**
+   * DOM adapter helper for consumers that explicitly need to update existing
+   * caption editors. State-driven apps should prefer applyCaptionToItems.
    */
   function applyCaptionToElements(elements, caption, options = {}) {
     const normalized = normalizeCaption(caption, options);
@@ -43,7 +72,6 @@
       return { ok: false, applied: 0, total: targets.length, caption: normalized,
         reason: "empty-caption" };
     }
-
     let applied = 0;
     const failures = [];
     targets.forEach((target, index) => {
@@ -63,7 +91,6 @@
         failures.push({ index, reason: String(error && error.message || error) });
       }
     });
-
     return { ok: applied > 0 && failures.length === 0, applied,
       total: targets.length, caption: normalized, failures };
   }
@@ -75,7 +102,7 @@
     return next;
   }
 
-  const api = { normalizeCaption, applyCaptionToElements, toggleSelection };
+  const api = { normalizeCaption, applyCaptionToItems, applyCaptionToElements, toggleSelection };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.CaptionTools093 = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
