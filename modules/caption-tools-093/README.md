@@ -16,7 +16,8 @@ Reusable Core-oriented caption behavior for GHÉP ẢNH 093 and future PTI integ
 5. Only selected items in the current working group are changed. The existing autosave path is triggered afterward.
 
 ## Current safety boundaries / known limitations
-- AutoCorrect performs conservative capitalization and whitespace normalization only. It does not claim to correct arbitrary Vietnamese spelling or semantic mistakes.
+- AutoCorrect performs conservative capitalization and whitespace normalization only. It handles sentence starts after `.`, `!`, `?`, or ellipsis, including common closing quotes/brackets before whitespace. It does not claim to correct arbitrary Vietnamese spelling or semantic mistakes.
+- Bulk updates fail closed if selected IDs are stale, ambiguous/duplicated, or cannot be resolved; no partial caption update is applied.
 - Drag selection and right-click menu are integrated in the test branch but have not yet passed browser-level regression tests.
 - The current editor uses `prompt/confirm` for the first test UI; this can be replaced with a polished dialog after behavior is validated.
 - Confirm that the actual deployed app path serves `./modules/caption-tools-093/caption-tools-core.js` from the same repository root.
