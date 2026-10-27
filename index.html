@@ -64,7 +64,7 @@
 .caption-tool-bar .btn{font-size:13px}
 .caption-tool-bar .btn.on{background:#075d39;color:#fff}
 .caption-tool-hint{font-size:12px;color:#65736b}
-.caption-selection-rect{position:absolute;border:2px solid #16834a;background:rgba(22,131,74,.12);pointer-events:none;z-index:30;display:none}
+.caption-selection-rect{position:fixed;border:2px solid #16834a;background:rgba(22,131,74,.12);pointer-events:none;z-index:30;display:none}
 .caption-context-menu{position:fixed;z-index:99999;min-width:205px;padding:5px;background:#fff;border:1px solid #ccd8d0;border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
 .caption-context-menu button{display:block;width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:6px;cursor:pointer;color:#20352a}
 .caption-context-menu button:hover{background:#eaf6ef}
@@ -415,7 +415,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   const hint = document.getElementById('captionToolHint');
   const rect = document.getElementById('captionSelectionRect');
   const menu = document.getElementById('captionContextMenu');
-  let selectMode = false, dragging = false, startX = 0, startY = 0, gridRect = null;
+  let selectMode = false, dragging = false, suppressClick = false, startX = 0, startY = 0, gridRect = null;
 
   function keyFor(card){return card && card.dataset ? card.dataset.dragId : ''}
   function cards(){return Array.from(grid.querySelectorAll('.thumb[data-drag-id]'))}
@@ -473,6 +473,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target))closeMenu()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(dragging){dragging=false;rect.style.display='none'}}});
   grid.addEventListener('click',e=>{
+    if(suppressClick){suppressClick=false;e.preventDefault();e.stopPropagation();return}
     const card=e.target.closest('.thumb');
     if(!card||e.target.closest('button,textarea,input,select'))return;
     if(e.ctrlKey||e.metaKey){e.preventDefault();toggleCard(card)}
@@ -488,9 +489,10 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   grid.addEventListener('pointerdown',e=>{
     if(!selectMode||e.button!==0||e.target.closest('button,textarea,input,select'))return;
     e.preventDefault();
+    suppressClick=true;
     dragging=true;startX=e.clientX;startY=e.clientY;gridRect=grid.getBoundingClientRect();
-    rect.style.left=(startX-gridRect.left+grid.scrollLeft)+'px';
-    rect.style.top=(startY-gridRect.top+grid.scrollTop)+'px';
+    rect.style.left=startX+'px';
+    rect.style.top=startY+'px';
     rect.style.width='0px';rect.style.height='0px';rect.style.display='block';
     try{grid.setPointerCapture(e.pointerId)}catch(_){}
   });
@@ -498,8 +500,8 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
     if(!dragging)return;
     const left=Math.min(startX,e.clientX),top=Math.min(startY,e.clientY);
     const right=Math.max(startX,e.clientX),bottom=Math.max(startY,e.clientY);
-    rect.style.left=(left-gridRect.left+grid.scrollLeft)+'px';
-    rect.style.top=(top-gridRect.top+grid.scrollTop)+'px';
+    rect.style.left=left+'px';
+    rect.style.top=top+'px';
     rect.style.width=(right-left)+'px';rect.style.height=(bottom-top)+'px';
     const hit=new Set();
     cards().forEach(card=>{
@@ -511,10 +513,8 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   function endSelection(){if(!dragging)return;dragging=false;rect.style.display='none';updateSelectionUI()}
   grid.addEventListener('pointerup',endSelection);
   grid.addEventListener('pointercancel',endSelection);
-  const originalRender=window.render;
-  if(typeof originalRender==='function'){
-    window.render=function(){originalRender();updateSelectionUI()};
-  }
+  const observer=new MutationObserver(()=>updateSelectionUI());
+  observer.observe(grid,{childList:true,subtree:true});
   updateSelectionUI();
 })();
 </script>
