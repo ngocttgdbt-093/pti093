@@ -39,4 +39,14 @@ assert.equal(selected.size, 1);
 assert.equal(selected.has(one), false);
 assert.equal(selected.has(two), true);
 
-console.log("PASS: 5 normalization cases; selected-only bulk update; empty-input safety; Ctrl-selection add/remove.");
+
+const beforeA = { id: "a", caption: "Original A" };
+const beforeB = { id: "b", caption: "Original B" };
+const staleSelection = applyCaptionToItems([beforeA, beforeB], new Set(["a", "missing"]),
+  "ghi chú chung", { getId: item => item.id });
+assert.equal(staleSelection.ok, false, "stale selected IDs must fail safely");
+assert.equal(staleSelection.applied, 0);
+assert.equal(beforeA.caption, "Original A", "bulk update must be atomic on selection mismatch");
+assert.equal(beforeB.caption, "Original B", "unselected item remains unchanged on mismatch");
+
+console.log("PASS: normalization, selected-only updates, empty-input safety, atomic stale-selection safety, and selection toggle.");
