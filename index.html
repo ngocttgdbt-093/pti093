@@ -442,7 +442,7 @@ body.classic-ui .filegrid{column-gap:14px!important;row-gap:16px!important}
     bulkBtn=document.getElementById('captionBulkButton'),
     countEl=document.getElementById('captionSelectedCount'),hint=document.getElementById('captionToolHint'),
     rect=document.getElementById('captionSelectionRect'),menu=document.getElementById('captionContextMenu');
-  let selectMode=false,dragging=false,movedEnough=false,suppressClick=false,startX=0,startY=0,pointerId=null;
+  let selectMode=false,dragging=false,movedEnough=false,suppressClick=false,startX=0,startY=0,pointerId=null,anchorKey='';
   function keyFor(card){return card&&card.dataset?card.dataset.dragId:''}
   function cards(){return Array.from(grid.querySelectorAll('.thumb[data-drag-id]'))}
   function updateSelectionUI(){
@@ -453,7 +453,8 @@ body.classic-ui .filegrid{column-gap:14px!important;row-gap:16px!important}
     grid.classList.toggle('caption-select-mode',selectMode);
   }
   function clearSelection(){selected.clear();updateSelectionUI()}
-  function toggleCard(card){const key=keyFor(card);if(!key)return;if(selected.has(key))selected.delete(key);else selected.add(key);updateSelectionUI()}
+  function toggleCard(card){const key=keyFor(card);if(!key)return;if(selected.has(key))selected.delete(key);else selected.add(key);anchorKey=key;updateSelectionUI()}
+  function selectRange(card,additive){const key=keyFor(card),list=cards(),from=list.findIndex(c=>keyFor(c)===anchorKey),to=list.findIndex(c=>keyFor(c)===key);if(!key||from<0||to<0){toggleCard(card);return}if(!additive)selected.clear();for(let i=Math.min(from,to);i<=Math.max(from,to);i++)selected.add(keyFor(list[i]));updateSelectionUI()}
   function closeMenu(){menu.hidden=true}
   function openMenu(x,y){menu.hidden=false;const w=menu.offsetWidth||230,h=menu.offsetHeight||48;
     menu.style.left=Math.max(8,Math.min(x,window.innerWidth-w-8))+'px';
@@ -516,6 +517,7 @@ body.classic-ui .filegrid{column-gap:14px!important;row-gap:16px!important}
       return;
     }
     if(e.target.closest('.imgBox')){
+      if(e.shiftKey){e.preventDefault();selectRange(card,e.ctrlKey||e.metaKey);return;}
       if(e.ctrlKey||e.metaKey||!desktop||!selectMode){e.preventDefault();toggleCard(card);return;}
       if(selectMode&&!dragging){e.preventDefault();toggleCard(card);return;}
     }
