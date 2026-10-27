@@ -402,142 +402,124 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 <div class="appFooter">The product was developed by the SOS 093 team - 10/2026<br><span class="version-footer">Version build v59-20261020.1</span></div>
 </div>
 <script src="./modules/caption-tools-093/caption-tools-core.js"></script>
+<style id="caption-tools-polish">
+.caption-context-menu{min-width:230px;padding:6px;border:1px solid #cbded2;border-radius:12px;box-shadow:0 12px 34px rgba(17,61,39,.2)}
+.caption-context-menu button{display:flex;align-items:center;gap:9px;padding:11px 13px;border-radius:8px;color:#075f3b;font-weight:700}
+.caption-context-menu button:hover{background:#eaf7ef}
+.caption-dialog-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(13,35,24,.36);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px}
+.caption-dialog{width:min(520px,100%);background:#fff;border:1px solid #cfe2d6;border-radius:18px;box-shadow:0 22px 65px rgba(10,58,35,.25);overflow:hidden;color:#17382b}
+.caption-dialog-head{padding:18px 22px 14px;background:linear-gradient(120deg,#f5fcf7,#e8f6ee);border-bottom:1px solid #dcebe1}
+.caption-dialog-title{font-size:18px;font-weight:800;color:#075f3b}
+.caption-dialog-sub{font-size:13px;color:#62766a;margin-top:4px}
+.caption-dialog-body{padding:20px 22px}
+.caption-dialog-label{display:block;font-size:13px;font-weight:750;color:#176b49;margin-bottom:7px}
+.caption-dialog-input{width:100%;min-height:50px!important;border:1px solid #bcd4c5!important;border-radius:11px!important;background:#fbfefc!important;padding:12px 14px!important;font-size:15px!important;box-shadow:none!important}
+.caption-dialog-input:focus{outline:0;border-color:#168657!important;box-shadow:0 0 0 4px rgba(22,134,87,.12)!important}
+.caption-dialog-preview{margin-top:10px;padding:10px 12px;background:#f3f8f5;border:1px solid #dfebe3;border-radius:10px;color:#315744;font-size:13px;overflow-wrap:anywhere}
+.caption-dialog-actions{display:flex;justify-content:flex-end;gap:9px;padding:0 22px 20px}
+.caption-dialog-actions button{min-height:42px;padding:10px 17px;border-radius:10px;font-weight:750;cursor:pointer;border:1px solid #cbded2}
+.caption-dialog-cancel{background:#fff;color:#4d6256}
+.caption-dialog-apply{background:#08784b;color:#fff;border-color:#08784b!important}
+.caption-dialog-apply:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:650px){.caption-dialog-backdrop{display:none!important}}
+</style>
 <script>
 (function(){
   'use strict';
-  // Desktop-only feature: keep mobile/touch UI unchanged.
-  const captionToolsDesktop = window.matchMedia('(min-width: 768px) and (pointer: fine)').matches;
-  if (!captionToolsDesktop) {
-    const captionBar = document.getElementById('captionToolBar');
-    if (captionBar) captionBar.hidden = true;
-    return;
-  }
-  if(!window.CaptionTools093) return;
-  const selected = new Set();
-  const grid = document.getElementById('grid');
-  const modeBtn = document.getElementById('captionSelectMode');
-  const bulkBtn = document.getElementById('captionBulkButton');
-  const clearBtn = document.getElementById('captionClearSelection');
-  const countEl = document.getElementById('captionSelectedCount');
-  const hint = document.getElementById('captionToolHint');
-  const rect = document.getElementById('captionSelectionRect');
-  const menu = document.getElementById('captionContextMenu');
-  let selectMode = false, dragging = false, movedEnough = false, suppressClick = false, startX = 0, startY = 0;
-
-  function keyFor(card){return card && card.dataset ? card.dataset.dragId : ''}
+  const desktop=window.matchMedia('(min-width:768px) and (pointer:fine)').matches;
+  if(!desktop){const bar=document.getElementById('captionToolBar');if(bar)bar.hidden=true;return;}
+  if(!window.CaptionTools093)return;
+  const selected=new Set(),grid=document.getElementById('grid'),modeBtn=document.getElementById('captionSelectMode'),
+    bulkBtn=document.getElementById('captionBulkButton'),clearBtn=document.getElementById('captionClearSelection'),
+    countEl=document.getElementById('captionSelectedCount'),hint=document.getElementById('captionToolHint'),
+    rect=document.getElementById('captionSelectionRect'),menu=document.getElementById('captionContextMenu');
+  let selectMode=false,dragging=false,movedEnough=false,suppressClick=false,startX=0,startY=0,pointerId=null;
+  function keyFor(card){return card&&card.dataset?card.dataset.dragId:''}
   function cards(){return Array.from(grid.querySelectorAll('.thumb[data-drag-id]'))}
   function updateSelectionUI(){
-    const liveCards=cards();
-    const liveIds=new Set(liveCards.map(keyFor));
-    Array.from(selected).forEach(id=>{if(!liveIds.has(id))selected.delete(id)});
-    liveCards.forEach(card=>card.classList.toggle('caption-selected',selected.has(keyFor(card))));
-    countEl.textContent=String(selected.size);
-    bulkBtn.disabled=selected.size===0;
-    clearBtn.disabled=selected.size===0;
-    modeBtn.classList.toggle('on',selectMode);
-    modeBtn.setAttribute('aria-pressed',String(selectMode));
+    const live=new Set(cards().map(keyFor));Array.from(selected).forEach(id=>{if(!live.has(id))selected.delete(id)});
+    cards().forEach(card=>card.classList.toggle('caption-selected',selected.has(keyFor(card))));
+    countEl.textContent=String(selected.size);bulkBtn.disabled=selected.size===0;clearBtn.disabled=selected.size===0;
+    modeBtn.classList.toggle('on',selectMode);modeBtn.setAttribute('aria-pressed',String(selectMode));
     grid.classList.toggle('caption-select-mode',selectMode);
   }
   function clearSelection(){selected.clear();updateSelectionUI()}
-  function toggleCard(card){
-    const key=keyFor(card); if(!key)return;
-    if(selected.has(key))selected.delete(key);else selected.add(key);
-    updateSelectionUI();
-  }
+  function toggleCard(card){const key=keyFor(card);if(!key)return;if(selected.has(key))selected.delete(key);else selected.add(key);updateSelectionUI()}
   function closeMenu(){menu.hidden=true}
-  function openMenu(x,y){
-    menu.hidden=false;
-    const w=menu.offsetWidth||220,h=menu.offsetHeight||48;
+  function openMenu(x,y){menu.hidden=false;const w=menu.offsetWidth||230,h=menu.offsetHeight||48;
     menu.style.left=Math.max(8,Math.min(x,window.innerWidth-w-8))+'px';
-    menu.style.top=Math.max(8,Math.min(y,window.innerHeight-h-8))+'px';
+    menu.style.top=Math.max(8,Math.min(y,window.innerHeight-h-8))+'px'}
+  function ensureDialog(){
+    let backdrop=document.getElementById('captionDialogBackdrop');if(backdrop)return backdrop;
+    backdrop=document.createElement('div');backdrop.id='captionDialogBackdrop';backdrop.className='caption-dialog-backdrop';backdrop.hidden=true;
+    backdrop.innerHTML='<section class="caption-dialog" role="dialog" aria-modal="true" aria-labelledby="captionDialogTitle"><header class="caption-dialog-head"><div class="caption-dialog-title" id="captionDialogTitle">Chú thích gộp ảnh</div><div class="caption-dialog-sub" id="captionDialogSub"></div></header><div class="caption-dialog-body"><label class="caption-dialog-label" for="captionDialogInput">Nội dung chú thích</label><input id="captionDialogInput" class="caption-dialog-input" type="text" autocomplete="off" placeholder="Nhập chú thích cho các ảnh đã chọn"><div class="caption-dialog-preview"><b>AutoCorrect:</b> <span id="captionDialogNormalized">Nội dung sẽ được chuẩn hóa khi nhập.</span></div></div><footer class="caption-dialog-actions"><button type="button" class="caption-dialog-cancel" id="captionDialogCancel">Hủy</button><button type="button" class="caption-dialog-apply" id="captionDialogApply">Áp dụng</button></footer></section>';
+    document.body.appendChild(backdrop);
+    const input=backdrop.querySelector('#captionDialogInput'),apply=backdrop.querySelector('#captionDialogApply');
+    input.addEventListener('input',()=>{const normalized=window.CaptionTools093.normalizeCaption(input.value);backdrop.querySelector('#captionDialogNormalized').textContent=normalized||'Nhập nội dung để xem trước.';apply.disabled=!normalized});
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commitCaption()}if(e.key==='Escape'){e.preventDefault();closeDialog()}});
+    backdrop.querySelector('#captionDialogCancel').addEventListener('click',closeDialog);
+    apply.addEventListener('click',commitCaption);
+    backdrop.addEventListener('pointerdown',e=>{if(e.target===backdrop)closeDialog()});
+    return backdrop;
+  }
+  function closeDialog(){const d=document.getElementById('captionDialogBackdrop');if(d)d.hidden=true}
+  function commitCaption(){
+    const d=document.getElementById('captionDialogBackdrop');if(!d)return;
+    const raw=d.querySelector('#captionDialogInput').value,normalized=window.CaptionTools093.normalizeCaption(raw);
+    if(!normalized)return;
+    const targets=cards().filter(card=>selected.has(keyFor(card)));if(!targets.length){closeDialog();return}
+    const ids=new Set(targets.map(keyFor));
+    const result=window.CaptionTools093.applyCaptionToItems(state.current.items,ids,normalized,{getId:item=>pti093EnsureDragId(item)});
+    if(!result.ok){d.querySelector('#captionDialogSub').textContent='Không thể cập nhật an toàn. Hãy bỏ chọn và chọn lại ảnh.';return}
+    closeDialog();render();scheduleAutoDraftSave(true);msg('Đã áp dụng chú thích chung cho '+result.applied+' ảnh.',true);updateSelectionUI();
   }
   function applyBulkCaption(){
     closeMenu();
-    const targets=cards().filter(card=>selected.has(keyFor(card)));
-    if(!targets.length)return;
-    const raw=window.prompt('Nhập chú thích chung cho '+targets.length+' ảnh đã chọn:','');
-    if(raw===null)return;
-    const normalized=window.CaptionTools093.normalizeCaption(raw);
-    if(!normalized){window.alert('Chú thích đang trống. Không có ảnh nào được thay đổi.');return}
-    if(!window.confirm('Nội dung sau AutoCorrect:\n\n'+normalized+'\n\nÁp dụng cho '+targets.length+' ảnh đã chọn?'))return;
-    const ids=new Set(targets.map(keyFor));
-    const result=window.CaptionTools093.applyCaptionToItems(
-      state.current.items,ids,normalized,{getId:item=>pti093EnsureDragId(item)}
-    );
-    if(!result.ok){
-      window.alert('Chỉ cập nhật được '+result.applied+' / '+result.total+' ảnh. Vui lòng kiểm tra lại.');
-      return;
-    }
-    render();
-    scheduleAutoDraftSave(true);
-    msg('Đã áp dụng chú thích chung cho '+result.applied+' ảnh.',true);
-    updateSelectionUI();
+    const targets=cards().filter(card=>selected.has(keyFor(card)));if(!targets.length)return;
+    const d=ensureDialog();d.hidden=false;d.querySelector('#captionDialogSub').textContent='Áp dụng cho '+targets.length+' ảnh đã chọn.';
+    const input=d.querySelector('#captionDialogInput');input.value='';
+    d.querySelector('#captionDialogNormalized').textContent='Nhập nội dung để xem trước.';
+    d.querySelector('#captionDialogApply').disabled=true;
+    requestAnimationFrame(()=>{input.focus();});
   }
-  modeBtn.addEventListener('click',()=>{
-    selectMode=!selectMode;
-    hint.textContent=selectMode
-      ?'Đang bật khoanh chọn: giữ chuột trái và kéo qua các ảnh; nhả chuột để hoàn tất.'
-      :'Giữ Ctrl và nhấp ảnh để chọn nhiều ảnh; bật “Khoanh chọn ảnh” để kéo vùng chọn.';
-    updateSelectionUI();
-  });
-  clearBtn.addEventListener('click',clearSelection);
-  bulkBtn.addEventListener('click',applyBulkCaption);
-  document.getElementById('captionContextBulk').addEventListener('click',applyBulkCaption);
+  modeBtn.addEventListener('click',()=>{selectMode=!selectMode;hint.textContent=selectMode?'Đang bật khoanh chọn: nhấn giữ chuột trái và kéo qua ảnh; nhả chuột để hoàn tất.':'Giữ Ctrl và nhấp ảnh để chọn nhiều ảnh; bật “Khoanh chọn ảnh” để kéo vùng chọn.';updateSelectionUI()});
+  clearBtn.addEventListener('click',clearSelection);bulkBtn.addEventListener('click',applyBulkCaption);
+  document.getElementById('captionContextBulk').addEventListener('click',()=>{closeMenu();applyBulkCaption()});
   document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target))closeMenu()});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(dragging){dragging=false;rect.style.display='none'}}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(dragging)endSelection()}});
   grid.addEventListener('click',e=>{
     if(suppressClick){suppressClick=false;e.preventDefault();e.stopPropagation();return}
-    const card=e.target.closest('.thumb');
-    if(!card||e.target.closest('button,textarea,input,select'))return;
+    const card=e.target.closest('.thumb');if(!card||e.target.closest('button,textarea,input,select'))return;
     if(e.ctrlKey||e.metaKey){e.preventDefault();toggleCard(card)}
-    else if(selectMode && !dragging){e.preventDefault();toggleCard(card)}
+    else if(selectMode&&!dragging){e.preventDefault();toggleCard(card)}
   },true);
   grid.addEventListener('contextmenu',e=>{
-    if(e.target.closest('textarea,input,button,select'))return;
-    const card=e.target.closest('.thumb');
-    if(!card)return;
-    e.preventDefault();
-    if(!selected.has(keyFor(card))){selected.clear();selected.add(keyFor(card));updateSelectionUI()}
-    openMenu(e.clientX,e.clientY);
+    if(e.target.closest('textarea,input,button,select'))return;const card=e.target.closest('.thumb');if(!card)return;
+    e.preventDefault();if(!selected.has(keyFor(card))){selected.clear();selected.add(keyFor(card));updateSelectionUI()}openMenu(e.clientX,e.clientY);
   });
-  // In selection mode, suppress the thumbnail's native HTML5 drag-and-drop so rectangle selection cannot reorder images.
   grid.addEventListener('dragstart',e=>{if(selectMode){e.preventDefault();e.stopPropagation()}},true);
   grid.addEventListener('pointerdown',e=>{
     if(!selectMode||e.button!==0||e.target.closest('button,textarea,input,select'))return;
-    dragging=true;movedEnough=false;startX=e.clientX;startY=e.clientY;
-    rect.style.left=startX+'px';
-    rect.style.top=startY+'px';
-    rect.style.width='0px';rect.style.height='0px';rect.style.display='none';
-    try{grid.setPointerCapture(e.pointerId)}catch(_){}
-  });
-  grid.addEventListener('pointermove',e=>{
-    if(!dragging)return;
-    const dx=e.clientX-startX,dy=e.clientY-startY;
-    if(!movedEnough && Math.hypot(dx,dy)<5)return;
+    if(!e.target.closest('.thumb')&&!e.target.closest('.filegrid'))return;
+    e.preventDefault();dragging=true;movedEnough=false;pointerId=e.pointerId;startX=e.clientX;startY=e.clientY;
+    rect.style.left=startX+'px';rect.style.top=startY+'px';rect.style.width='0px';rect.style.height='0px';rect.style.display='none';
+  },true);
+  document.addEventListener('pointermove',e=>{
+    if(!dragging||e.pointerId!==pointerId)return;
+    const dx=e.clientX-startX,dy=e.clientY-startY;if(!movedEnough&&Math.hypot(dx,dy)<5)return;
     if(!movedEnough){movedEnough=true;suppressClick=true;rect.style.display='block'}
-    const left=Math.min(startX,e.clientX),top=Math.min(startY,e.clientY);
-    const right=Math.max(startX,e.clientX),bottom=Math.max(startY,e.clientY);
-    rect.style.left=left+'px';
-    rect.style.top=top+'px';
-    rect.style.width=(right-left)+'px';rect.style.height=(bottom-top)+'px';
-    const hit=new Set();
-    cards().forEach(card=>{
-      const r=card.getBoundingClientRect();
-      if(r.right>=left&&r.left<=right&&r.bottom>=top&&r.top<=bottom)hit.add(keyFor(card));
-    });
+    const left=Math.min(startX,e.clientX),top=Math.min(startY,e.clientY),right=Math.max(startX,e.clientX),bottom=Math.max(startY,e.clientY);
+    Object.assign(rect.style,{left:left+'px',top:top+'px',width:(right-left)+'px',height:(bottom-top)+'px'});
+    const hit=new Set();cards().forEach(card=>{const r=card.getBoundingClientRect();if(r.right>=left&&r.left<=right&&r.bottom>=top&&r.top<=bottom)hit.add(keyFor(card))});
     selected.clear();hit.forEach(id=>selected.add(id));updateSelectionUI();
-  });
-  function endSelection(){
-    if(!dragging)return;
-    dragging=false;rect.style.display='none';updateSelectionUI();
-    if(movedEnough)setTimeout(()=>{suppressClick=false},0);
-    movedEnough=false;
+  },true);
+  function endSelection(e){
+    if(!dragging)return;if(e&&pointerId!==null&&e.pointerId!==pointerId)return;
+    dragging=false;pointerId=null;rect.style.display='none';updateSelectionUI();
+    if(movedEnough)setTimeout(()=>{suppressClick=false},80);movedEnough=false;
   }
-  grid.addEventListener('pointerup',endSelection);
-  grid.addEventListener('pointercancel',endSelection);
-  const observer=new MutationObserver(()=>updateSelectionUI());
-  observer.observe(grid,{childList:true,subtree:true});
-  updateSelectionUI();
+  document.addEventListener('pointerup',endSelection,true);document.addEventListener('pointercancel',endSelection,true);
+  new MutationObserver(updateSelectionUI).observe(grid,{childList:true,subtree:true});updateSelectionUI();
 })();
 </script>
 
