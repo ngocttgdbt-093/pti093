@@ -451,13 +451,16 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
     if(!normalized){window.alert('Chú thích đang trống. Không có ảnh nào được thay đổi.');return}
     if(!window.confirm('Nội dung sau AutoCorrect:\n\n'+normalized+'\n\nÁp dụng cho '+targets.length+' ảnh đã chọn?'))return;
     const ids=new Set(targets.map(keyFor));
-    let changed=0;
-    state.current.items.forEach(item=>{
-      if(ids.has(pti093EnsureDragId(item))){item.caption=normalized;changed++}
-    });
+    const result=window.CaptionTools093.applyCaptionToItems(
+      state.current.items,ids,normalized,{getId:item=>pti093EnsureDragId(item)}
+    );
+    if(!result.ok){
+      window.alert('Chỉ cập nhật được '+result.applied+' / '+result.total+' ảnh. Vui lòng kiểm tra lại.');
+      return;
+    }
     render();
     scheduleAutoDraftSave(true);
-    msg('Đã áp dụng chú thích chung cho '+changed+' ảnh.',true);
+    msg('Đã áp dụng chú thích chung cho '+result.applied+' ảnh.',true);
     updateSelectionUI();
   }
   modeBtn.addEventListener('click',()=>{
