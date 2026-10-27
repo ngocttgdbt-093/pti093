@@ -46,19 +46,26 @@
     const getId = typeof options.getId === "function"
       ? options.getId
       : item => item && (item.id ?? item.key);
-    let applied = 0;
+    const matches = [];
     const failures = [];
     list.forEach((item, index) => {
       try {
-        if (!ids.has(getId(item))) return;
-        item.caption = normalized;
-        applied += 1;
+        if (ids.has(getId(item))) matches.push({ item, index });
       } catch (error) {
         failures.push({ index, reason: String(error && error.message || error) });
       }
     });
-    return { ok: applied === ids.size && failures.length === 0, applied,
-      total: ids.size, caption: normalized, failures };
+
+    // Fail closed: never mutate a subset if any requested ID is stale or invalid.
+    if (failures.length || matches.length !== ids.size) {
+      return { ok: false, applied: 0, total: ids.size, caption: normalized,
+        reason: failures.length ? "id-resolution-failed" : "selection-mismatch",
+        failures };
+    }
+
+    matches.forEach(({ item }) => { item.caption = normalized; });
+    return { ok: true, applied: matches.length, total: ids.size,
+      caption: normalized, failures };
   }
 
   /**
