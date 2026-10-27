@@ -28,3 +28,5 @@ jobs:
           node-version: "20"
       - name: Run caption module tests
         run: node modules/caption-tools-093/caption-tools-core.test.cjs
+      - name: Run caption UI integration-contract smoke tests
+        run: node modules/caption-tools-093/caption-tools-ui-smoke.test.cjs
