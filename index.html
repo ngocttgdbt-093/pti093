@@ -1331,7 +1331,12 @@ async function sendDrivePayloadViaBridge(payload,recordId,uploadKey){
 
   return await new Promise((resolve,reject)=>{
     let settled=false;
-    const timeoutMs=8000;
+    let timeoutMs=8000;
+    try{
+      const request=JSON.parse(payload);
+      if(request.action==='uploadImage'&&request.deferIndex===true)timeoutMs=1200;
+      else if(request.action==='commitUploadIndex')timeoutMs=1000;
+    }catch(e){}
 
     const cleanup=()=>{
       window.removeEventListener('message',onMessage);
