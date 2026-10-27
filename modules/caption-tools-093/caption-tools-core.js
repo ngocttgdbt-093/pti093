@@ -102,6 +102,14 @@
       total: targets.length, caption: normalized, failures };
   }
 
+  // Presentation helper shared by host apps. Center is the safe default.
+  function normalizeCaptionAlignment(value) {
+    const alignment = String(value || "center").trim().toLowerCase();
+    return alignment === "left" || alignment === "right" || alignment === "center"
+      ? alignment
+      : "center";
+  }
+
   function toggleSelection(selection, item) {
     const next = new Set(selection || []);
     if (next.has(item)) next.delete(item);
@@ -109,7 +117,7 @@
     return next;
   }
 
-  const api = { normalizeCaption, applyCaptionToItems, applyCaptionToElements, toggleSelection };
+  const api = { normalizeCaption, normalizeCaptionAlignment, applyCaptionToItems, applyCaptionToElements, toggleSelection };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.CaptionTools093 = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
