@@ -493,6 +493,8 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
     if(!selected.has(keyFor(card))){selected.clear();selected.add(keyFor(card));updateSelectionUI()}
     openMenu(e.clientX,e.clientY);
   });
+  // In selection mode, suppress the thumbnail's native HTML5 drag-and-drop so rectangle selection cannot reorder images.
+  grid.addEventListener('dragstart',e=>{if(selectMode){e.preventDefault();e.stopPropagation()}},true);
   grid.addEventListener('pointerdown',e=>{
     if(!selectMode||e.button!==0||e.target.closest('button,textarea,input,select'))return;
     dragging=true;movedEnough=false;startX=e.clientX;startY=e.clientY;
