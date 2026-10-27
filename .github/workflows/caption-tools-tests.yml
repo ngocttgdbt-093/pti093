@@ -6,6 +6,7 @@ on:
       - test-caption-bulk-autocorrect-20261027
     paths:
       - "modules/caption-tools-093/**"
+      - "index.html"
       - ".github/workflows/caption-tools-tests.yml"
   pull_request:
     branches:
