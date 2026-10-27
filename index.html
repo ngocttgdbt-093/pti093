@@ -480,6 +480,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
     else if(selectMode && !dragging){e.preventDefault();toggleCard(card)}
   },true);
   grid.addEventListener('contextmenu',e=>{
+    if(e.target.closest('textarea,input,button,select'))return;
     const card=e.target.closest('.thumb');
     if(!card)return;
     e.preventDefault();
@@ -510,7 +511,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
     });
     selected.clear();hit.forEach(id=>selected.add(id));updateSelectionUI();
   });
-  function endSelection(){if(!dragging)return;dragging=false;rect.style.display='none';updateSelectionUI()}
+  function endSelection(){if(!dragging)return;dragging=false;rect.style.display='none';updateSelectionUI();setTimeout(()=>{suppressClick=false},0)}
   grid.addEventListener('pointerup',endSelection);
   grid.addEventListener('pointercancel',endSelection);
   const observer=new MutationObserver(()=>updateSelectionUI());
