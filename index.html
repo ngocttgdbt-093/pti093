@@ -403,6 +403,13 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 </div>
 <script src="./modules/caption-tools-093/caption-tools-core.js"></script>
 <style id="caption-tools-polish">
+/* A little extra breathing room between cards makes drag-selection more precise. */
+body:not(.classic-ui) .filegrid{column-gap:14px!important;row-gap:16px!important}
+body.classic-ui .filegrid{column-gap:14px!important;row-gap:16px!important}
+.filegrid>.thumb{margin:0!important}
+@media(max-width:650px){
+  body:not(.classic-ui) .filegrid,body.classic-ui .filegrid{column-gap:10px!important;row-gap:12px!important}
+}
 .caption-context-menu{min-width:230px;padding:6px;border:1px solid #cbded2;border-radius:12px;box-shadow:0 12px 34px rgba(17,61,39,.2)}
 .caption-context-menu button{display:flex;align-items:center;gap:9px;padding:11px 13px;border-radius:8px;color:#075f3b;font-weight:700}
 .caption-context-menu button:hover{background:#eaf7ef}
