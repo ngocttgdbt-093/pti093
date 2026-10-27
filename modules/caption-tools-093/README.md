@@ -1,34 +1,36 @@
 # Caption Tools 093 — Test module
 
 ## Purpose
-This is a Core-oriented, reusable module for GHÉP ẢNH 093 and later PTI integration.
-PTI should consume the same module/API rather than fork or reimplement its behavior.
+Reusable Core-oriented caption behavior for GHÉP ẢNH 093 and future PTI integration. PTI must reuse this module/API instead of maintaining a fork.
 
-## Current API
-- `normalizeCaption(text, options)`: conservative Vietnamese capitalization and whitespace normalization.
-- `toggleSelection(set, item)`: pure Ctrl-click selection toggle helper.
-- `applyCaptionToElements(elements, text, options)`: applies one normalized caption to each target's existing textarea and dispatches input/change events.
+## Current implementation
+- `modules/caption-tools-093/caption-tools-core.js`: conservative Vietnamese capitalization/spacing normalization, bulk-caption helper, and selection helper.
+- `index.html` on this test branch: selection toolbar, Ctrl/Cmd-click selection, dedicated drag-to-select mode, custom right-click menu, normalized-caption confirmation, and application to the selected items' existing `item.caption` field.
+- Bulk application calls the existing `render()` and `scheduleAutoDraftSave(true)` paths. No network calls or external AI service are used.
 
-## Safety boundary
-This commit deliberately does not attach global mouse/pointer/context-menu handlers and does not modify the app HTML. The current app already has thumbnail drag/reorder behavior and textarea listeners; wiring selection events before auditing those exact handlers risks breaking existing workflows. Next integration step is to trace the actual image model/update callback, draft persistence, reorder handlers, and PDF caption renderer, then provide an adapter that calls the existing update/persist path.
+## Interaction design
+1. Ctrl-click (or Cmd-click on Mac) toggles an individual thumbnail.
+2. Click **Khoanh chọn ảnh** to enter a dedicated drag-selection mode. This explicit mode is intentional: it prevents the existing thumbnail drag/reorder interaction from being hijacked.
+3. Right-click a selected thumbnail and choose **Chú thích gộp ảnh…**; the same action is available from the toolbar.
+4. Enter one caption. The normalized result is shown for confirmation before application to the selected image set.
+5. Only selected items in the current working group are changed. The existing autosave path is triggered afterward.
 
-## Intended UX
-1. Ctrl+click toggles individual thumbnails in the selected set.
-2. Left-button drag on a designated selection surface draws a selection rectangle, without starting image reorder.
-3. Right-click on a selected thumbnail opens a custom context menu with “Chú thích gộp ảnh…”.
-4. The editor previews normalized text before applying to N selected images.
-5. Apply updates each image through the app's existing state pipeline; undo/cancel is preferred before commit.
-6. AutoCorrect remains conservative by default: capitalization and spacing are automatic; spelling substitutions require an explicit reviewed Vietnamese/domain dictionary.
+## Current safety boundaries / known limitations
+- AutoCorrect performs conservative capitalization and whitespace normalization only. It does not claim to correct arbitrary Vietnamese spelling or semantic mistakes.
+- Drag selection and right-click menu are integrated in the test branch but have not yet passed browser-level regression tests.
+- The current editor uses `prompt/confirm` for the first test UI; this can be replaced with a polished dialog after behavior is validated.
+- Confirm that the actual deployed app path serves `./modules/caption-tools-093/caption-tools-core.js` from the same repository root.
+- Do not merge into `main` until the browser-level acceptance suite passes.
 
 ## Acceptance checks
-- `xe bị móp. kiểm tra phần đầu xe.` -> `Xe bị móp. Kiểm tra phần đầu xe.`
-- `hư hỏng ở cửa trước! kiểm tra thêm.` -> `Hư hỏng ở cửa trước! Kiểm tra thêm.`
-- Empty input remains empty; whitespace is normalized.
-- Selection toggling adds/removes exactly one item.
-- Applying to N selected cards updates only those cards; unselected cards are unchanged.
-- Reload restores all captions; PDF preview/export displays the same text.
-- Existing drag reorder, individual caption editing, image removal/replacement, and draft restoration remain unchanged.
+- Capitalize the first letter and the first lowercase letter after `.`, `!`, `?`, or ellipsis when followed by whitespace.
+- Preserve empty captions; normalize repeated spaces and tabs.
+- Ctrl/Cmd-click adds/removes exactly one thumbnail from selection.
+- Drag-selection selects only cards intersecting the rectangle and does not reorder them.
+- Right-clicking a selected card retains the selection; right-clicking an unselected card selects only that card before opening the menu.
+- Applying a caption updates selected items only, leaves unselected captions unchanged, triggers autosave, and appears in preview/PDF.
+- Reload restores captions; individual editing, image removal/replacement, drag reorder and draft restoration continue to work.
 
 ## Branch and integration policy
-Test branch: `test-caption-bulk-autocorrect-20261027`
-Do not merge to `main` until browser-level regression tests pass. After acceptance, merge the module into the 093 Core integration point, then have PTI import the same module/API while retaining its own skin and administration/user-list behavior.
+Test branch: `test-caption-bulk-autocorrect-20261027`.
+After browser testing succeeds, merge the module into the 093 Core integration point. Then integrate the same module/API into PTI while retaining PTI's separate skin and administration/user-list behavior.
