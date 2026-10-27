@@ -388,7 +388,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 <div class="actions"><button id="clear" class="btn red" disabled>🗑 Xóa ảnh của mục này</button></div><div id="status" class="status hidden"></div><div id="captionToolBar" class="caption-tool-bar">
 <button type="button" id="captionSelectMode" class="btn light" aria-pressed="false">▧ Khoanh chọn ảnh</button>
 <button type="button" id="captionBulkButton" class="btn green" disabled>✎ Chú thích gộp (<span id="captionSelectedCount">0</span>)</button>
-<button type="button" id="captionClearSelection" class="btn light" disabled>Bỏ chọn</button>
+
 <span id="captionToolHint" class="caption-tool-hint">Giữ Ctrl và nhấp ảnh để chọn nhiều ảnh; bật “Khoanh chọn ảnh” để kéo vùng chọn.</span>
 </div>
 <div id="captionSelectionRect" class="caption-selection-rect"></div>
@@ -429,10 +429,10 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 (function(){
   'use strict';
   const desktop=window.matchMedia('(min-width:768px) and (pointer:fine)').matches;
-  if(!desktop){const bar=document.getElementById('captionToolBar');if(bar)bar.hidden=true;return;}
   if(!window.CaptionTools093)return;
+  if(!desktop){const selectModeButton=document.getElementById('captionSelectMode');if(selectModeButton)selectModeButton.hidden=true;}
   const selected=new Set(),grid=document.getElementById('grid'),modeBtn=document.getElementById('captionSelectMode'),
-    bulkBtn=document.getElementById('captionBulkButton'),clearBtn=document.getElementById('captionClearSelection'),
+    bulkBtn=document.getElementById('captionBulkButton'),
     countEl=document.getElementById('captionSelectedCount'),hint=document.getElementById('captionToolHint'),
     rect=document.getElementById('captionSelectionRect'),menu=document.getElementById('captionContextMenu');
   let selectMode=false,dragging=false,movedEnough=false,suppressClick=false,startX=0,startY=0,pointerId=null;
@@ -441,7 +441,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   function updateSelectionUI(){
     const live=new Set(cards().map(keyFor));Array.from(selected).forEach(id=>{if(!live.has(id))selected.delete(id)});
     cards().forEach(card=>card.classList.toggle('caption-selected',selected.has(keyFor(card))));
-    countEl.textContent=String(selected.size);bulkBtn.disabled=selected.size===0;clearBtn.disabled=selected.size===0;
+    countEl.textContent=String(selected.size);bulkBtn.disabled=selected.size===0;
     modeBtn.classList.toggle('on',selectMode);modeBtn.setAttribute('aria-pressed',String(selectMode));
     grid.classList.toggle('caption-select-mode',selectMode);
   }
@@ -485,16 +485,33 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
     d.querySelector('#captionDialogApply').disabled=true;
     requestAnimationFrame(()=>{input.focus();});
   }
-  modeBtn.addEventListener('click',()=>{selectMode=!selectMode;hint.textContent=selectMode?'Đang bật khoanh chọn: nhấn giữ chuột trái và kéo qua ảnh; nhả chuột để hoàn tất.':'Giữ Ctrl và nhấp ảnh để chọn nhiều ảnh; bật “Khoanh chọn ảnh” để kéo vùng chọn.';updateSelectionUI()});
-  clearBtn.addEventListener('click',clearSelection);bulkBtn.addEventListener('click',applyBulkCaption);
+  modeBtn.addEventListener('click',()=>{selectMode=!selectMode;hint.textContent=selectMode?'Đang bật khoanh chọn: giữ chuột trái, kéo qua các ảnh rồi thả.':'Nhấp vùng ảnh để chọn nhiều ảnh; nhấp vùng trắng để bỏ chọn. Có thể giữ Ctrl hoặc bật khoanh vùng.';updateSelectionUI()});
+  bulkBtn.addEventListener('click',applyBulkCaption);
   document.getElementById('captionContextBulk').addEventListener('click',()=>{closeMenu();applyBulkCaption()});
   document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target))closeMenu()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(dragging)endSelection()}});
   grid.addEventListener('click',e=>{
     if(suppressClick){suppressClick=false;e.preventDefault();e.stopPropagation();return}
-    const card=e.target.closest('.thumb');if(!card||e.target.closest('button,textarea,input,select'))return;
-    if(e.ctrlKey||e.metaKey){e.preventDefault();toggleCard(card)}
-    else if(selectMode&&!dragging){e.preventDefault();toggleCard(card)}
+    const card=e.target.closest('.thumb');
+    if(!card){
+      if(e.target===grid||e.target.closest('.filegrid')){clearSelection();closeMenu();}
+      return;
+    }
+    if(e.target.closest('button,input,select'))return;
+    const caption=e.target.closest('textarea');
+    if(caption){
+      if(selected.size>=2){e.preventDefault();e.stopPropagation();applyBulkCaption();return;}
+      if(selected.size===1){
+        const only=[...selected][0];
+        if(only!==keyFor(card)){clearSelection();}
+        else clearSelection();
+      }
+      return;
+    }
+    if(e.target.closest('.imgBox')){
+      if(e.ctrlKey||e.metaKey||!desktop||!selectMode){e.preventDefault();toggleCard(card);return;}
+      if(selectMode&&!dragging){e.preventDefault();toggleCard(card);return;}
+    }
   },true);
   grid.addEventListener('contextmenu',e=>{
     if(e.target.closest('textarea,input,button,select'))return;const card=e.target.closest('.thumb');if(!card)return;
@@ -502,8 +519,8 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   });
   grid.addEventListener('dragstart',e=>{if(selectMode){e.preventDefault();e.stopPropagation()}},true);
   grid.addEventListener('pointerdown',e=>{
-    if(!selectMode||e.button!==0||e.target.closest('button,textarea,input,select'))return;
-    if(!e.target.closest('.thumb')&&!e.target.closest('.filegrid'))return;
+    if(!desktop||!selectMode||e.button!==0||e.target.closest('button,textarea,input,select'))return;
+    if(!e.target.closest('.thumb')&&e.target!==grid)return;
     e.preventDefault();dragging=true;movedEnough=false;pointerId=e.pointerId;startX=e.clientX;startY=e.clientY;
     rect.style.left=startX+'px';rect.style.top=startY+'px';rect.style.width='0px';rect.style.height='0px';rect.style.display='none';
   },true);
@@ -609,7 +626,7 @@ d.addEventListener('pointermove',e=>{
   const r=target.getBoundingClientRect(),before=e.clientY<r.top+r.height/2;
   target.parentNode.insertBefore(pti093TouchSource,before?target:target.nextSibling);
 });
-d.addEventListener('pointerup',e=>{if(e.pointerType==='touch'&&pti093TouchSource===d){e.preventDefault();pti093FinishDrag()}});
+d.addEventListener('pointerup',e=>{if(e.pointerType==='touch'&&pti093TouchSource===d){if(d.classList.contains('dragging')){e.preventDefault();pti093FinishDrag()}else{clearTimeout(pti093TouchTimer);pti093TouchTimer=null;pti093TouchSource=null;pti093DragId='';}}});
 d.addEventListener('pointercancel',e=>{if(e.pointerType==='touch'&&pti093TouchSource===d)pti093FinishDrag()});
 const imgBox=document.createElement('div');imgBox.className='imgBox';const im=document.createElement('img');im.src=URL.createObjectURL(it.file);im.style.transform=`rotate(${it.rotate}deg)`;im.onload=()=>URL.revokeObjectURL(im.src);imgBox.appendChild(im);const n=document.createElement('span');n.className='n';n.textContent=i+1;const actions=document.createElement('div');actions.className='thumbActions';const rb=document.createElement('button');rb.className='replace';rb.textContent='🖼 Thay';rb.title='Thay ảnh, giữ nguyên vị trí';rb.onclick=()=>{state.replaceIndex=i;$('replaceFile').click()};const rot=document.createElement('button');rot.className='rotate';rot.textContent='↻ Xoay';rot.title='Xoay ảnh 90°';rot.onclick=()=>{it.rotate=(it.rotate+90)%360;render();scheduleAutoDraftSave(true);msg(`Ảnh số ${i+1} đã xoay ${it.rotate}°.`,true)};const ins=document.createElement('button');ins.className='insert';ins.textContent='＋ Thêm';ins.title='Chèn ảnh mới ngay sau ảnh này';ins.onclick=()=>{state.insertIndex=i;$('insertFile').click()};const vw=document.createElement('button');vw.className='view';vw.textContent='👁️ Xem';vw.title='Xem ảnh kích thước lớn';vw.onclick=()=>openImageViewer(it,i);const b2=document.createElement('button');b2.className='del2';b2.textContent='🗑️ Xóa';b2.title='Xóa ảnh';b2.onclick=()=>{state.current.items.splice(i,1);render();scheduleAutoDraftSave(true)};actions.append(rb,rot,ins,vw,b2);const ta=document.createElement('textarea');ta.placeholder='Thuyết minh ảnh (tùy chọn)…';ta.value=it.caption;ta.oninput=()=>{it.caption=ta.value;scheduleAutoDraftSave(false)};ta.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const captions=[...g.querySelectorAll('.thumb textarea')],index=captions.indexOf(ta),next=index+(e.shiftKey?-1:1);if(next>=0&&next<captions.length){e.preventDefault();captions[next].focus()}});d.append(imgBox,n,actions,ta);g.appendChild(d)});const has=state.current.items.length>0;$('clear').disabled=!has;$('saveNext').disabled=!has;$('finish').disabled=!has&&!state.groups.length;renderGroups()}function renderGroups(){const box=$('groupsBox');box.innerHTML='';if(!state.groups.length){box.innerHTML='<div class="muted">Chưa có nội dung nào được lưu. Bạn có thể chỉ làm 1 nội dung và bấm “Kết thúc & xem Preview”.</div>';return}const h=document.createElement('div');h.className='muted';h.style.fontWeight='700';h.textContent='Các nội dung đã lưu';box.appendChild(h);state.groups.forEach((gr,i)=>{const d=document.createElement('div');d.style.cssText='margin-top:8px;padding:10px;border:1px solid #dbe4df;border-radius:8px;background:#fbfdfc;display:flex;justify-content:space-between;align-items:center;gap:8px';const sp=document.createElement('span');sp.innerHTML=`<b>${i+1}. ${gr.title}</b> · ${gr.items.length} ảnh`;const b=document.createElement('button');b.className='btn light';b.textContent='✎ Sửa';b.onclick=()=>editGroup(i);d.append(sp,b);box.appendChild(d)})}
 function editGroup(i){if(state.current.items.length){if(!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return}state.current={title:state.groups[i].title,items:state.groups[i].items};state.filenameCaption=false;$('filenameCaption').checked=false;$('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');state.groups.splice(i,1);state.editing=i;state.pages=[];$('preview').innerHTML='';$('previewInfo').textContent='Preview cũ đã được hủy vì hồ sơ đang được chỉnh sửa.';scheduleAutoDraftSave(true);$('pdf').disabled=true;$('backEdit').style.display='none';$('newCase').style.display='none';$('title').value=state.current.title;render();window.scrollTo({top:$('drop').getBoundingClientRect().top+scrollY-100,behavior:'smooth'})}
