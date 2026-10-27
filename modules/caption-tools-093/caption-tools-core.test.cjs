@@ -49,4 +49,23 @@ assert.equal(staleSelection.applied, 0);
 assert.equal(beforeA.caption, "Original A", "bulk update must be atomic on selection mismatch");
 assert.equal(beforeB.caption, "Original B", "unselected item remains unchanged on mismatch");
 
-console.log("PASS: normalization, selected-only updates, empty-input safety, atomic stale-selection safety, and selection toggle.");
+
+const punctuationCases = [
+  ['đâm vào cửa." kiểm tra lại.', 'Đâm vào cửa." Kiểm tra lại.'],
+  ['móp nhẹ… kiểm tra kính.', 'Móp nhẹ… Kiểm tra kính.'],
+  ['lỗi ở cửa? xem lại ảnh.', 'Lỗi ở cửa? Xem lại ảnh.'],
+  ['hư hỏng.\nkiểm tra thêm.', 'Hư hỏng.\nKiểm tra thêm.']
+];
+for (const [input, expected] of punctuationCases) {
+  assert.equal(normalizeCaption(input), expected, "sentence-start case: " + JSON.stringify(input));
+}
+
+const duplicateIdA = { id: "dup", caption: "A" };
+const duplicateIdB = { id: "dup", caption: "B" };
+const duplicateIdResult = applyCaptionToItems([duplicateIdA, duplicateIdB], new Set(["dup"]),
+  "ghi chú", { getId: item => item.id });
+assert.equal(duplicateIdResult.ok, false, "duplicate IDs must fail safely rather than update ambiguously");
+assert.equal(duplicateIdA.caption, "A");
+assert.equal(duplicateIdB.caption, "B");
+
+console.log("PASS: normalization, punctuation edge cases, selected-only updates, empty-input safety, atomic stale/duplicate-ID safety, and selection toggle.");
