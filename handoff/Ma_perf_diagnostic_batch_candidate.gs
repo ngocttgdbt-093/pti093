@@ -2042,11 +2042,13 @@ function doPost(e) {
         if (!project || typeof project !== 'object' || Array.isArray(project)) {
           throw new Error('project.pti không phải JSON hồ sơ hợp lệ.');
         }
-        const index = project.uploadIndex && typeof project.uploadIndex === 'object' && !Array.isArray(project.uploadIndex)
-          ? project.uploadIndex : {};
+        const hasValidIndex = project.uploadIndex && typeof project.uploadIndex === 'object' && !Array.isArray(project.uploadIndex);
+        const index = hasValidIndex ? project.uploadIndex : {};
+        const indexBefore = JSON.stringify(index);
+        const versionBefore = Number(project.uploadIndexVersion || 0);
 
         // Migration an toàn nếu lô này gặp hồ sơ chưa khởi tạo uploadIndex.
-        if (Number(project.uploadIndexVersion || 0) < 1) {
+        if (!(Number(project.uploadIndexVersion || 0) >= 1)) {
           const oldFiles = imageFolder.getFiles();
           while (oldFiles.hasNext()) {
             const oldFile = oldFiles.next();
@@ -2158,8 +2160,9 @@ function doPost(e) {
 
         project.uploadIndex = index;
         project.uploadIndexVersion = 1;
+        const indexChanged = !hasValidIndex || !(versionBefore >= 1) || JSON.stringify(index) !== indexBefore;
         _ptiStart('batchProjectIndexWrite');
-        projectFile.setContent(JSON.stringify(project));
+        if (indexChanged) projectFile.setContent(JSON.stringify(project));
         _ptiEnd('batchProjectIndexWrite');
 
         for (let i = 0; i < committedItems.length; i++) {
