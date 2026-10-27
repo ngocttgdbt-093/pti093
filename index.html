@@ -1195,14 +1195,19 @@ async function sha256HexBlob(blob){
 
 async function prepareDriveItem(it,index,total){
   const optimized=await optimizeDriveImage(it.file);
-  const dataUrl=await new Promise((resolve,reject)=>{
-    const fr=new FileReader();
-    fr.onload=()=>resolve(fr.result);
-    fr.onerror=()=>reject(new Error('Không đọc được ảnh số '+(index+1)));
-    fr.readAsDataURL(optimized.blob);
-  });
+  // Đọc payload và băm SHA-256 độc lập trên cùng blob đã tối ưu; chờ song song
+  // để không cộng thời gian đọc và thời gian băm nối tiếp cho từng ảnh.
+  const [dataUrl,uploadHash]=await Promise.all([
+    new Promise((resolve,reject)=>{
+      const fr=new FileReader();
+      fr.onload=()=>resolve(fr.result);
+      fr.onerror=()=>reject(new Error('Không đọc được ảnh số '+(index+1)));
+      fr.readAsDataURL(optimized.blob);
+    }),
+    sha256HexBlob(optimized.blob)
+  ]);
   const base64=String(dataUrl).split(',')[1]||'';
-  const uploadKey='sha256:'+await sha256HexBlob(optimized.blob);
+  const uploadKey='sha256:'+uploadHash;
   return {
     key:driveImageKey(it),
     uploadKey,
@@ -1213,7 +1218,8 @@ async function prepareDriveItem(it,index,total){
       uploadKey,
       fileName:optimized.fileName,
       mimeType:optimized.mimeType,
-      base64
+      base64,
+      deferIndex:true
     })
   };
 }
@@ -1811,6 +1817,21 @@ async function createDriveRecord(){
   }catch(e){setDriveState('Chưa hoàn tất hồ sơ: '+e.message,false);msg('Lỗi lưu hồ sơ: '+e.message,true)}finally{btn.disabled=false}
 }
 window.pti093UploadAll = pti093UploadAll;
+async function commitDriveUploadBatch(recordId,results){
+  if(!results.length)return {success:true,items:[]};
+  const uploadKey='sha256:'+await sha256HexBlob(new Blob([recordId+'|'+results.map(x=>x.prepared.uploadKey).join('|')+'|'+Date.now()]));
+  const payload=JSON.stringify({
+    action:'commitUploadIndex',
+    recordId,
+    uploadKey,
+    items:results.map(x=>({
+      uploadKey:x.prepared.uploadKey,
+      clientKey:x.entry.key,
+      fileId:x.result.fileId
+    }))
+  });
+  return await sendDrivePayload(payload,recordId,uploadKey);
+}
 async function pti093UploadAll(){
   const id=state.driveRecordId||sessionStorage.getItem('pti093_driveRecordId')||'';
   if(!id){
@@ -1877,9 +1898,10 @@ async function pti093UploadAll(){
   try{
     updateUploadProgress('Đang bắt đầu');
 
-    // V22: tối đa 3 ảnh cùng xử lý. Không fire-and-forget; mỗi ảnh vẫn phải xác nhận.
+    // Tối đa 5 ảnh cùng xử lý; project.pti xác nhận từng ảnh trước khi tăng bộ đếm.
     for(let start=0;start<unique.length;start+=DRIVE_CONCURRENCY){
       const batch=unique.slice(start,start+DRIVE_CONCURRENCY);
+      const batchResults=[];
       setDriveState('Đang xử lý '+Math.min(start+1,total)+'-'+Math.min(start+batch.length,total)+'/'+total+' ảnh · đã xác nhận '+sent+'/'+total+'...');
 
       const processOne=async(entry)=>{
@@ -1898,6 +1920,10 @@ async function pti093UploadAll(){
             try{
               const verified=await waitForUploadStatus(id,priorKey,{maxWaitMs:7000,maxChecks:3});
               if(verified&&verified.success&&verified.found){
+                if(verified.pendingIndex){
+                  batchResults.push({entry,prepared,result:verified,prepMs,sendMs:0});
+                  return {ok:true,pendingCommit:true,recovered:true};
+                }
                 entry.it.driveFileId=verified.fileId||entry.it.driveFileId||'';
                 entry.it.driveFileName=verified.fileName||entry.it.driveFileName||((entry.it.file&&entry.it.file.name)||'');
                 entry.it.driveUploadKey=priorKey;
@@ -1919,6 +1945,11 @@ async function pti093UploadAll(){
           const result=await sendDrivePayload(prepared.payload,id,prepared.uploadKey);
           sendMs=performance.now()-sendStartedAt;
           sendTotalMs+=sendMs;
+
+          if(result&&result.pendingIndex){
+            batchResults.push({entry,prepared,result,prepMs,sendMs});
+            return {ok:true,pendingCommit:true};
+          }
 
           entry.it.driveFileId=result&&result.fileId?result.fileId:(entry.it.driveFileId||'');
           entry.it.driveFileName=result&&result.fileName?result.fileName:((entry.it.file&&entry.it.file.name)||'');
@@ -1950,6 +1981,36 @@ async function pti093UploadAll(){
 
       const entries=batch.map((x,j)=>({it:x.it,key:x.key,offset:start+j}));
       await Promise.all(entries.map(processOne));
+      if(batchResults.length){
+        try{
+          const committed=await commitDriveUploadBatch(id,batchResults);
+          const committedItems=committed&&Array.isArray(committed.items)
+            ?committed.items
+            :(committed&&committed.found?batchResults.map(x=>({success:true,uploadKey:x.prepared.uploadKey,fileId:x.result.fileId,fileName:x.result.fileName})):[]);
+          const committedByKey=new Map(committedItems.map(x=>[x.uploadKey,x]));
+          for(const pendingResult of batchResults){
+            const {entry,prepared,result,prepMs,sendMs}=pendingResult;
+            const confirmed=committedByKey.get(prepared.uploadKey);
+            if(!confirmed||confirmed.success!==true)throw new Error('Máy chủ chưa xác nhận chỉ mục ảnh '+(entry.offset+1)+'.');
+            entry.it.driveFileId=confirmed.fileId||result.fileId||'';
+            entry.it.driveFileName=confirmed.fileName||result.fileName||((entry.it.file&&entry.it.file.name)||'');
+            entry.it.driveUploadKey=prepared.uploadKey;
+            entry.it.drivePendingUploadKey='';
+            saveDrivePendingUploadKey(id,entry.key,'');
+            uploaded.add(prepared.key);
+            scheduleAutoDraftSave(false);
+            sent++;
+            saveDriveUploadedKeys(id,uploaded);
+            updateUploadProgress('Đã xác nhận trên Google Drive · ảnh '+(entry.offset+1)+': chuẩn bị '+(prepMs/1000).toFixed(1)+'s · gửi/xác nhận '+(sendMs/1000).toFixed(1)+'s');
+          }
+        }catch(commitError){
+          for(const pendingResult of batchResults){
+            const {entry}=pendingResult;
+            failures.push({key:entry.key,name:(entry.it&&entry.it.file&&entry.it.file.name)||('Ảnh số '+(entry.offset+1)),index:entry.offset,error:commitError&&commitError.message?commitError.message:String(commitError)});
+          }
+          updateUploadProgress('Chưa xác nhận được chỉ mục của nhóm ảnh');
+        }
+      }
       await new Promise(resolve=>setTimeout(resolve,0));
     }
 
@@ -2454,3 +2515,4 @@ body:not(.classic-ui) .pcImageGallery #pcSavedGroupsGallery{
   });
 })();
 </script></body></html>
+
