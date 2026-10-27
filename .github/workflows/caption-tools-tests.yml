@@ -13,6 +13,7 @@ on:
       - main
     paths:
       - "modules/caption-tools-093/**"
+      - "index.html"
       - ".github/workflows/caption-tools-tests.yml"
 
 jobs:
