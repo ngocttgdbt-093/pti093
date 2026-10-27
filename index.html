@@ -1335,10 +1335,9 @@ async function sendDrivePayloadViaBridge(payload,recordId,uploadKey){
     try{
       const request=JSON.parse(payload);
       // Keep the image request alive through the normal Apps Script latency.
-      // Give the POST enough time to reach Drive, then let the status endpoint
-      // observe its pending-index result while slower Drive requests finish.
+      // Match the measured Drive POST latency while avoiding early status polling.
       // The grouped project.pti commit remains the only success confirmation.
-      if(request.action==='uploadImage'&&request.deferIndex===true)timeoutMs=6000;
+      if(request.action==='uploadImage'&&request.deferIndex===true)timeoutMs=8000;
       else if(request.action==='commitUploadIndex')timeoutMs=8000;
     }catch(e){}
 
@@ -1890,6 +1889,7 @@ async function pti093UploadAll(){
   let failures=[];
   let prepTotalMs=0;
   let sendTotalMs=0;
+  const pendingIndexResults=[];
 
   function updateUploadProgress(extra=''){
     const box=$('driveProgress');
@@ -1991,36 +1991,42 @@ async function pti093UploadAll(){
       const entries=batch.map((x,j)=>({it:x.it,key:x.key,offset:start+j}));
       await Promise.all(entries.map(processOne));
       if(batchResults.length){
-        try{
-          const committed=await commitDriveUploadBatch(id,batchResults);
-          const committedItems=committed&&Array.isArray(committed.items)
-            ?committed.items
-            :(committed&&committed.found?batchResults.map(x=>({success:true,uploadKey:x.prepared.uploadKey,fileId:x.result.fileId,fileName:x.result.fileName})):[]);
-          const committedByKey=new Map(committedItems.map(x=>[x.uploadKey,x]));
-          for(const pendingResult of batchResults){
-            const {entry,prepared,result,prepMs,sendMs}=pendingResult;
-            const confirmed=committedByKey.get(prepared.uploadKey);
-            if(!confirmed||confirmed.success!==true)throw new Error('Máy chủ chưa xác nhận chỉ mục ảnh '+(entry.offset+1)+'.');
-            entry.it.driveFileId=confirmed.fileId||result.fileId||'';
-            entry.it.driveFileName=confirmed.fileName||result.fileName||((entry.it.file&&entry.it.file.name)||'');
-            entry.it.driveUploadKey=prepared.uploadKey;
-            entry.it.drivePendingUploadKey='';
-            saveDrivePendingUploadKey(id,entry.key,'');
-            uploaded.add(prepared.key);
-            scheduleAutoDraftSave(false);
-            sent++;
-            saveDriveUploadedKeys(id,uploaded);
-            updateUploadProgress('Đã xác nhận trên Google Drive · ảnh '+(entry.offset+1)+': chuẩn bị '+(prepMs/1000).toFixed(1)+'s · gửi/xác nhận '+(sendMs/1000).toFixed(1)+'s');
-          }
-        }catch(commitError){
-          for(const pendingResult of batchResults){
-            const {entry}=pendingResult;
-            failures.push({key:entry.key,name:(entry.it&&entry.it.file&&entry.it.file.name)||('Ảnh số '+(entry.offset+1)),index:entry.offset,error:commitError&&commitError.message?commitError.message:String(commitError)});
-          }
-          updateUploadProgress('Chưa xác nhận được chỉ mục của nhóm ảnh');
-        }
+        // Keep the next group moving while Drive finishes its file writes.
+        // The single final index commit still gates every per-image success count.
+        pendingIndexResults.push(...batchResults);
       }
       await new Promise(resolve=>setTimeout(resolve,0));
+    }
+
+    if(pendingIndexResults.length){
+      try{
+        const committed=await commitDriveUploadBatch(id,pendingIndexResults);
+        const committedItems=committed&&Array.isArray(committed.items)
+          ?committed.items
+          :(committed&&committed.found?pendingIndexResults.map(x=>({success:true,uploadKey:x.prepared.uploadKey,fileId:x.result.fileId,fileName:x.result.fileName})):[]);
+        const committedByKey=new Map(committedItems.map(x=>[x.uploadKey,x]));
+        for(const pendingResult of pendingIndexResults){
+          const {entry,prepared,result,prepMs,sendMs}=pendingResult;
+          const confirmed=committedByKey.get(prepared.uploadKey);
+          if(!confirmed||confirmed.success!==true)throw new Error('Máy chủ chưa xác nhận chỉ mục ảnh '+(entry.offset+1)+'.');
+          entry.it.driveFileId=confirmed.fileId||result.fileId||'';
+          entry.it.driveFileName=confirmed.fileName||result.fileName||((entry.it.file&&entry.it.file.name)||'');
+          entry.it.driveUploadKey=prepared.uploadKey;
+          entry.it.drivePendingUploadKey='';
+          saveDrivePendingUploadKey(id,entry.key,'');
+          uploaded.add(prepared.key);
+          scheduleAutoDraftSave(false);
+          sent++;
+          saveDriveUploadedKeys(id,uploaded);
+          updateUploadProgress('Đã xác nhận trên Google Drive · ảnh '+(entry.offset+1)+': chuẩn bị '+(prepMs/1000).toFixed(1)+'s · gửi/xác nhận '+(sendMs/1000).toFixed(1)+'s');
+        }
+      }catch(commitError){
+        for(const pendingResult of pendingIndexResults){
+          const {entry}=pendingResult;
+          failures.push({key:entry.key,name:(entry.it&&entry.it.file&&entry.it.file.name)||('Ảnh số '+(entry.offset+1)),index:entry.offset,error:commitError&&commitError.message?commitError.message:String(commitError)});
+        }
+        updateUploadProgress('Chưa xác nhận được chỉ mục của nhóm ảnh');
+      }
     }
 
 
