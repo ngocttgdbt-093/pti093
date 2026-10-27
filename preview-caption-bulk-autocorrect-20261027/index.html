@@ -406,6 +406,8 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 .caption-context-menu{min-width:230px;padding:6px;border:1px solid #cbded2;border-radius:12px;box-shadow:0 12px 34px rgba(17,61,39,.2)}
 .caption-context-menu button{display:flex;align-items:center;gap:9px;padding:11px 13px;border-radius:8px;color:#075f3b;font-weight:700}
 .caption-context-menu button:hover{background:#eaf7ef}
+.caption-dialog-backdrop[hidden]{display:none!important}
+.caption-dialog-backdrop[hidden] *{pointer-events:none!important}
 .caption-dialog-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(13,35,24,.36);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px}
 .caption-dialog{width:min(520px,100%);background:#fff;border:1px solid #cfe2d6;border-radius:18px;box-shadow:0 22px 65px rgba(10,58,35,.25);overflow:hidden;color:#17382b}
 .caption-dialog-head{padding:18px 22px 14px;background:linear-gradient(120deg,#f5fcf7,#e8f6ee);border-bottom:1px solid #dcebe1}
@@ -462,7 +464,8 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
     backdrop.addEventListener('pointerdown',e=>{if(e.target===backdrop)closeDialog()});
     return backdrop;
   }
-  function closeDialog(){const d=document.getElementById('captionDialogBackdrop');if(d)d.hidden=true}
+  function closeDialog(){const d=document.getElementById('captionDialogBackdrop');if(d){d.hidden=true;d.style.display='none';} }
+  function showDialog(d){d.hidden=false;d.style.display='flex';}
   function commitCaption(){
     const d=document.getElementById('captionDialogBackdrop');if(!d)return;
     const raw=d.querySelector('#captionDialogInput').value,normalized=window.CaptionTools093.normalizeCaption(raw);
@@ -476,7 +479,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   function applyBulkCaption(){
     closeMenu();
     const targets=cards().filter(card=>selected.has(keyFor(card)));if(!targets.length)return;
-    const d=ensureDialog();d.hidden=false;d.querySelector('#captionDialogSub').textContent='Áp dụng cho '+targets.length+' ảnh đã chọn.';
+    const d=ensureDialog();showDialog(d);d.querySelector('#captionDialogSub').textContent='Áp dụng cho '+targets.length+' ảnh đã chọn.';
     const input=d.querySelector('#captionDialogInput');input.value='';
     d.querySelector('#captionDialogNormalized').textContent='Nhập nội dung để xem trước.';
     d.querySelector('#captionDialogApply').disabled=true;
