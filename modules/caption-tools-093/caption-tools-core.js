@@ -9,7 +9,7 @@
 (function (global) {
   "use strict";
 
-  const SENTENCE_START = /(^|[.!?…]\s+)([\p{Ll}])/gu;
+  const SENTENCE_START = /(^|[.!?…]["'”’»)\]]*\s+)([\p{Ll}])/gu;
 
   function normalizeCaption(input, options = {}) {
     if (input == null) return "";
