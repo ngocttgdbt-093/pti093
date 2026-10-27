@@ -420,7 +420,10 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
   function keyFor(card){return card && card.dataset ? card.dataset.dragId : ''}
   function cards(){return Array.from(grid.querySelectorAll('.thumb[data-drag-id]'))}
   function updateSelectionUI(){
-    cards().forEach(card=>card.classList.toggle('caption-selected',selected.has(keyFor(card))));
+    const liveCards=cards();
+    const liveIds=new Set(liveCards.map(keyFor));
+    Array.from(selected).forEach(id=>{if(!liveIds.has(id))selected.delete(id)});
+    liveCards.forEach(card=>card.classList.toggle('caption-selected',selected.has(keyFor(card))));
     countEl.textContent=String(selected.size);
     bulkBtn.disabled=selected.size===0;
     clearBtn.disabled=selected.size===0;
