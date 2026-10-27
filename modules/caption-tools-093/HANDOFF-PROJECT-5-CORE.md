@@ -1,34 +1,41 @@
-# Bàn giao Project 5 Core — Chọn ảnh và thuyết minh nhóm
+# Project 5 Core Handoff — Image Selection & Caption Tools
 
-Ngày bàn giao: 27/10/2026  
-Nguồn: GHÉP ẢNH 093, nhánh `test-caption-bulk-autocorrect-20261027`  
-Trạng thái: gói bàn giao để tích hợp; chưa tự động ghép vào Core/Project 5.
+Source release: `ngocttgdbt-093/pti093` — `Final-v1-20261027.1`
+PTI target: `ngocttgdbt-093/pti`
 
-## Phạm vi đã thống nhất
+**Scope excludes Google Drive image upload/storage.** Do not copy or modify the 093 Drive upload/storage module. Existing app-specific Drive administration/user-catalogue functions are outside this handoff and must remain untouched.
 
-1. Nhãn nút chọn file là **“Chọn ảnh”**.
-2. Bộ chọn tệp chỉ lọc ảnh. Ở bản chính GHÉP ẢNH 093 hiện dùng `accept="image/*"`; đường xử lý ảnh kiểm tra MIME `image/*` và đọc bằng `createImageBitmap` hoặc `Image`. Khả năng đọc thực tế phụ thuộc trình duyệt/codec; không nên tuyên bố mọi định dạng ảnh đều được hỗ trợ.
-3. Máy tính: chọn nhiều ảnh bằng nhấp ảnh, Ctrl/Cmd + nhấp, hoặc kéo khoanh vùng khi bật chế độ khoanh vùng.
-4. Mobile: chạm vùng ảnh để chọn/bỏ chọn từng ảnh; không yêu cầu Ctrl và không bật kéo khoanh vùng desktop.
-5. Nhấp vùng trắng để bỏ chọn toàn bộ. Không cần nút “Bỏ chọn”.
-6. Nhấp vùng thuyết minh khi đang chọn từ 2 ảnh trở lên mở thuyết minh chung cho nhóm hiện tại. Không tự thêm ảnh được nhấp nếu ảnh đó chưa nằm trong nhóm. Với một ảnh, sửa thuyết minh riêng.
-7. Thuyết minh chung có AutoCorrect bảo thủ (chuẩn hóa khoảng trắng và viết hoa đầu câu), xem trước trước khi áp dụng; Enter/Áp dụng đóng hộp thoại, Hủy/Escape đóng mà không áp dụng.
-8. Khoảng cách giữa thẻ ảnh được tăng nhẹ để thao tác khoanh vùng ít chọn nhầm ảnh liền kề.
+## Included upgrades
+- Image-only multi-file picker label “Chọn ảnh”.
+- Desktop Ctrl/Cmd-click toggle selection.
+- Desktop Shift-click inclusive range selection in current rendered image order.
+- Desktop rectangle drag-select.
+- Mobile tap-to-toggle selection; clicking blank space clears selection.
+- Selection count and visible selected state.
+- Bulk caption dialog with Apply/Cancel and Enter/Escape behavior.
+- Conservative caption normalization (whitespace cleanup and sentence-start capitalization; not a full Vietnamese spellchecker).
+- Autosave through the host app's existing local-draft mechanism.
+- Caption text alignment centered in editor and preview/PDF canvas; generated DOCX caption paragraphs are centered already.
+- Footer version label aligned with the 093 release naming: `Final-v1-20261027.1`.
 
-## Quy tắc tích hợp vào Core
+## Core integration contract
+1. Reuse `modules/caption-tools-093/caption-tools-core.js` for normalization and bulk-apply operations.
+2. Adapt UI selectors and save hooks to each host app; do not copy app-specific state or storage logic blindly.
+3. Treat caption alignment as a presentation property with allowed values `left`, `center`, `right`, default `center`; apply consistently to editor, preview/PDF, and generated documents.
+4. Keep transient selected IDs out of persisted case data.
+5. Preserve image reorder, PDF export, local draft recovery, and application-specific administration.
+6. No Drive image upload/storage code is part of this package.
 
-- Giữ module giao diện (skin) tách khỏi logic Core; Core chỉ nhận danh sách ID ảnh đã chọn và nội dung thuyết minh đã xác nhận.
-- Xác thực ID ảnh trước khi cập nhật; nếu ID thiếu/trùng/stale thì dừng an toàn, không cập nhật một phần.
-- Không sửa cơ chế lưu Drive, draft/AUTO-DRAFT, thứ tự nhóm ảnh, xoay ảnh hoặc luồng xuất PDF.
-- Không ép giao diện desktop lên mobile. Mobile chọn ảnh bằng chạm, giữ nguyên thao tác cuộn và các nút chức năng của thẻ.
-- Bỏ chọn không được xóa thuyết minh đã lưu.
-- Không đưa module vào production cho đến khi kiểm thử tương tác trình duyệt trên desktop và mobile, F5/khôi phục nháp, lưu, và xuất PDF.
+## Verification checklist
+- [ ] Shift-click selects the inclusive range in both directions.
+- [ ] Ctrl/Cmd-click toggles single images without losing other selections.
+- [ ] Rectangle drag-select works and does not interfere with reorder.
+- [ ] Mobile tap selection and blank-area clear work.
+- [ ] Bulk caption apply/cancel/Enter/Escape works.
+- [ ] Draft recovery survives reload.
+- [ ] Center alignment is consistent in editor, preview/PDF, and generated documents.
+- [ ] Existing reorder, PDF export, local draft, and administration still work.
+- [ ] No Drive image upload/storage module was added.
 
-## Tệp nguồn
-
-- `modules/caption-tools-093/caption-tools-core.js`
-- `index.html` trên nhánh nguồn nói trên (phần tích hợp giao diện thử nghiệm)
-
-## Trạng thái kiểm chứng
-
-Các kiểm tra tự động cho module/cú pháp đã chạy trong nhánh thử nghiệm; chưa có nghiệm thu browser-level đầy đủ. Đây là gói bàn giao kỹ thuật để Project 5 Core tích hợp và kiểm thử, không phải xác nhận rằng đã tích hợp vào repo Core.
+## Status and limitation
+The PTI implementation was committed to its `main` branch. This document is the Core handoff package, not proof that the separate Project 5 Core repository has been modified. The Project 5 Core repository was not identifiable among repositories currently accessible through the connected GitHub account. Browser-level regression testing and live behavior remain unverified.
