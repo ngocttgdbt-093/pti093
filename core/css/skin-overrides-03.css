@@ -1,0 +1,32 @@
+
+/* PC dashboard test based on user's reference screenshot; UI-only overrides. */
+body:not(.classic-ui){--pc-blue:#1267e8;--pc-ink:#10285b;--pc-line:#d8e5fb;background:linear-gradient(135deg,#f2f7ff,#e8f1ff);color:var(--pc-ink)}
+body:not(.classic-ui) .top{background:linear-gradient(110deg,#063b91,#0968e8 70%,#2d8bff);border-bottom:0;box-shadow:0 5px 18px #164e9b30;padding:13px clamp(14px,2vw,28px)}
+body:not(.classic-ui) .topin{max-width:none}body:not(.classic-ui) .top h1{font-size:clamp(20px,1.7vw,27px);letter-spacing:-.4px}body:not(.classic-ui) .top p{font-size:13px}
+body:not(.classic-ui) .logo{border-radius:12px;box-shadow:0 2px 8px #001d5a30}
+body:not(.classic-ui) .wrap{max-width:none;width:100%;margin:14px auto 28px;padding:0 clamp(10px,1.2vw,20px);display:grid;grid-template-columns:minmax(265px,.82fr) minmax(430px,1.55fr) minmax(300px,1fr);gap:14px;align-items:start}
+body:not(.classic-ui) .wrap>.card{min-width:0;margin:0;border:1px solid var(--pc-line);border-radius:15px;box-shadow:0 5px 18px #1c4f9510;overflow:hidden}
+body:not(.classic-ui) .wrap>.card:nth-of-type(1){grid-column:1;grid-row:1}body:not(.classic-ui) .wrap>.card:nth-of-type(2){grid-column:2;grid-row:1 / span 2}body:not(.classic-ui) .wrap>.card:nth-of-type(3){grid-column:3;grid-row:1 / span 2}
+body:not(.classic-ui) .hd{background:linear-gradient(100deg,#eaf2ff,#dceaff);color:#123c89;border-bottom:1px solid #d2e2ff;font-size:clamp(16px,1.2vw,20px);padding:13px 15px}
+body:not(.classic-ui) .bd{padding:clamp(12px,1.2vw,18px)}body:not(.classic-ui) .field label,body:not(.classic-ui) .field>label{color:#25477f}
+body:not(.classic-ui) input:not([type=checkbox]):not([type=radio]):not([type=file]),body:not(.classic-ui) select,body:not(.classic-ui) textarea{border-color:#c9d9f5;background:#fff;border-radius:9px;min-height:40px}
+body:not(.classic-ui) input:focus,body:not(.classic-ui) select:focus,body:not(.classic-ui) textarea:focus{border-color:var(--pc-blue);box-shadow:0 0 0 3px #1267e81b}
+body:not(.classic-ui) .btn{border-radius:9px;box-shadow:0 2px 7px #194b9514}body:not(.classic-ui) .green,body:not(.classic-ui) .dark{background:linear-gradient(135deg,#2383ff,#0758d9);color:#fff}
+body:not(.classic-ui) .light{background:#eef4ff;color:#1754b1;border-color:#cbdcff}body:not(.classic-ui) .red{background:linear-gradient(135deg,#ff6c6c,#e53935)}
+body:not(.classic-ui) .drop{border-color:#8ab5ff;background:linear-gradient(145deg,#fbfdff,#edf4ff);border-radius:13px}body:not(.classic-ui) .drop h2{color:#1459c5}
+body:not(.classic-ui) .filePick{border-color:#9bbdff;border-radius:10px}body:not(.classic-ui) .filePickBtn,body:not(.classic-ui) .native::file-selector-button{background:#176be8}
+body:not(.classic-ui) .filegrid{grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:10px}
+body:not(.classic-ui) .thumb{border-color:#d6e2f7;border-radius:11px;box-shadow:0 3px 9px #244c8610}body:not(.classic-ui) .thumb .n{background:#176be8}
+body:not(.classic-ui) .thumbActions .rotate,body:not(.classic-ui) .thumbActions .insert,body:not(.classic-ui) .thumb .replace{background:#176be8}
+body:not(.classic-ui) .status{background:#eff8ff;border-color:#cde5ff;color:#1455a8;border-radius:9px}
+body:not(.classic-ui) .layoutbox,body:not(.classic-ui) .driveBox{border-color:#d4e3fb;background:#f7faff;border-radius:12px}
+body:not(.classic-ui) .layoutgrid{border-color:#b5cdf7}body:not(.classic-ui) .layoutcell{background:#eef4ff;border-color:#86aef4;color:#1754b1}
+body:not(.classic-ui) .pageprev{border-color:#cbdaf3;border-radius:10px;box-shadow:0 2px 8px #17427c0b}
+body:not(.classic-ui) #pdfHighProgressWrap{background:#f5f9ff!important;border-color:#cfe0ff!important}
+body:not(.classic-ui) #pdfHighProgressBar,body:not(.classic-ui) #driveProgressBar,body:not(.classic-ui) .openLoadBar{background:linear-gradient(90deg,#1677f8,#38a1ff)!important}
+body:not(.classic-ui) #uiModeToggle{right:14px;bottom:14px;border-color:#c8d9f8;color:#1453ad}
+body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61769d}
+@media(min-width:1450px){body:not(.classic-ui) .filegrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}body:not(.classic-ui) .thumb .imgBox,body:not(.classic-ui) .thumb .imgBox img{height:130px}}
+@media(min-width:1000px) and (max-width:1240px){body:not(.classic-ui) .wrap{grid-template-columns:minmax(245px,.75fr) minmax(360px,1.3fr) minmax(270px,.9fr);gap:10px}body:not(.classic-ui) .filegrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:999px){body:not(.classic-ui) .wrap{display:block;max-width:850px;margin:12px auto 30px}body:not(.classic-ui) .wrap>.card{margin-bottom:14px}body:not(.classic-ui) .filegrid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr))}}
+@media(max-width:650px){body:not(.classic-ui) .top{padding:11px 12px}body:not(.classic-ui) .wrap{padding:0 9px}body:not(.classic-ui) .hd{font-size:16px;padding:11px 13px}body:not(.classic-ui) .bd{padding:12px}body:not(.classic-ui) .filegrid{grid-template-columns:repeat(2,minmax(0,1fr))}}

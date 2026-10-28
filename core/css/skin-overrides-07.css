@@ -1,0 +1,43 @@
+
+/* V2: icon-only translucent circular controls, matching the requested reference */
+#grid .thumbActions{
+ display:flex!important;flex-flow:row nowrap!important;align-items:center!important;justify-content:center!important;
+ gap:clamp(8px,1.15vw,16px)!important;padding:9px 8px!important;
+ min-height:52px!important;background:rgba(248,251,255,.72)!important;
+ -webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important;
+ border-top:1px solid rgba(210,225,245,.65)!important;overflow:visible!important;
+}
+#grid .thumbActions button{
+ position:relative!important;display:inline-flex!important;flex:0 0 36px!important;
+ align-items:center!important;justify-content:center!important;width:36px!important;min-width:36px!important;
+ height:36px!important;padding:0!important;margin:0!important;border:1px solid rgba(255,255,255,.8)!important;
+ border-radius:50%!important;font-size:0!important;line-height:1!important;color:#fff!important;
+ opacity:.86!important;box-shadow:0 3px 9px rgba(28,54,82,.14),inset 0 1px 1px rgba(255,255,255,.3)!important;
+ transition:transform .18s ease,opacity .18s ease,filter .18s ease,box-shadow .18s ease!important;
+}
+#grid .thumbActions button::before{display:block!important;font:700 19px/1 Arial,sans-serif!important;color:#fff!important}
+#grid .thumbActions .replace{background:rgba(27,111,245,.88)!important}
+#grid .thumbActions .replace::before{content:"▣"!important}
+#grid .thumbActions .rotate{background:rgba(235,145,0,.9)!important}
+#grid .thumbActions .rotate::before{content:"⟳"!important;font-size:23px!important}
+#grid .thumbActions .insert{background:rgba(20,166,82,.9)!important}
+#grid .thumbActions .insert::before{content:"＋"!important;font-size:23px!important}
+#grid .thumbActions .view{background:rgba(0,151,174,.9)!important}
+#grid .thumbActions .view::before{content:"●"!important;font-size:17px!important;text-shadow:0 0 0 #fff!important}
+#grid .thumbActions .del2{background:rgba(229,45,45,.9)!important}
+#grid .thumbActions .del2::before{content:"▤"!important}
+#grid .thumbActions button:hover,#grid .thumbActions button:focus-visible{
+ opacity:1!important;filter:saturate(1.2) brightness(1.12)!important;transform:translateY(-2px) scale(1.12)!important;
+ box-shadow:0 7px 16px rgba(15,42,75,.25),0 0 0 3px rgba(255,255,255,.8)!important;outline:none!important;z-index:20!important
+}
+#grid .thumbActions button::after{
+ content:attr(title)!important;position:absolute!important;left:50%!important;bottom:calc(100% + 9px)!important;
+ transform:translate(-50%,4px)!important;width:max-content!important;max-width:190px!important;white-space:normal!important;
+ text-align:center!important;padding:7px 10px!important;border-radius:8px!important;background:rgba(25,39,59,.96)!important;
+ color:#fff!important;font:600 12px/1.35 Arial,'Segoe UI',sans-serif!important;box-shadow:0 5px 14px #0003!important;
+ opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:opacity .15s,transform .15s!important;z-index:30!important
+}
+#grid .thumbActions button:hover::after,#grid .thumbActions button:focus-visible::after{
+ opacity:1!important;visibility:visible!important;transform:translate(-50%,0)!important
+}
+@media(max-width:540px){#grid .thumbActions{gap:clamp(5px,2vw,9px)!important;padding:8px 4px!important}#grid .thumbActions button{flex-basis:32px!important;width:32px!important;min-width:32px!important;height:32px!important}#grid .thumbActions button::before{font-size:17px!important}}
