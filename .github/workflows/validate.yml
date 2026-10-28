@@ -11,6 +11,7 @@ jobs:
   syntax-check:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Check Project 5 caption core and integration modules
         run: |
           node --check core/caption-tools.js
@@ -30,7 +31,6 @@ jobs:
           if (html.indexOf('./core/caption-tools.js') > html.indexOf('./core/app-core.js')) throw new Error('Caption module must load before app-core');
           console.log('Project 5 local asset order: OK');
           NODE
-      - uses: actions/checkout@v4
       - name: Check each embedded JavaScript block
         run: |
           node <<'NODE'
