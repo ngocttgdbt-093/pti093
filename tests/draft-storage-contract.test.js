@@ -19,6 +19,7 @@ const contract = global.PTIDraftStorageContract.install({
       requestedId = id;
       return expected;
     },
+    async getLocalDraftBundles(ids){return Object.fromEntries(ids.map(id=>[id,{meta:expected.meta,images:expected.images}]))},
     async writeLocalDraftBundle(meta,images,onProgress){writtenBundle={meta,images,onProgress};if(onProgress)onProgress();return 'written'},
     async writeLocalDraftMetadata(meta){metadataWritten=meta;return 'metadata-written'},
     async deleteLocalDraftBundle(id){deletedId=id;return 'deleted'}
@@ -29,6 +30,8 @@ const contract = global.PTIDraftStorageContract.install({
   const bundle = await contract.readBundle('LOCAL-1');
   assert.equal(requestedId,'LOCAL-1');
   assert.deepEqual(bundle,expected);
+  const bundles=await contract.readBundles(['LOCAL-1','AUTO-DRAFT']);
+  assert.deepEqual(Object.keys(bundles),['LOCAL-1','AUTO-DRAFT']);
   const imageBatch=[{id:'LOCAL-1|0|0',draftId:'LOCAL-1',file:{}}];
   let progressCalled=false;
   assert.equal(await contract.writeBundle(expected.meta,imageBatch,()=>{progressCalled=true}),'written');
@@ -42,7 +45,7 @@ const contract = global.PTIDraftStorageContract.install({
   await assert.rejects(contract.writeBundle(expected.meta,[{draftId:'OTHER'}]),/match the metadata id/);
   await assert.rejects(contract.readBundle(''),/non-empty draft ID/);
   await assert.rejects(
-    global.PTIDraftStorageContract.install({provider:{async getLocalDraftBundle(){return {meta:{id:'bad'}}},async writeLocalDraftBundle(){},async writeLocalDraftMetadata(){},async deleteLocalDraftBundle(){}}}).readBundle('bad'),
+    global.PTIDraftStorageContract.install({provider:{async getLocalDraftBundle(){return {meta:{id:'bad'}}},async getLocalDraftBundles(){return {}},async writeLocalDraftBundle(){},async writeLocalDraftMetadata(){},async deleteLocalDraftBundle(){}}}).readBundle('bad'),
     /invalid bundle/,
     'Malformed provider responses must fail closed'
   );
@@ -55,6 +58,8 @@ const contract = global.PTIDraftStorageContract.install({
   const recovery=fs.readFileSync('core/draft-recovery.js','utf8');
   assert.ok(appCore.includes('localDraftTransactionDone,draftStorage,fileKey'),
     'App assembly must inject storage contract into autosave recovery');
+  assert.ok(recovery.includes('await draftStorage.readBundles([activeAutoDraftId,PTI093_AUTO_DRAFT_ID])'),
+    'Autosave restore must read active and legacy snapshots atomically');
   assert.ok(recovery.includes('await draftStorage.writeBundle(meta,imageRecords)'),
     'Autosave must use the contract when image data is dirty');
   assert.ok(recovery.includes('await draftStorage.writeMetadata(meta)'),
