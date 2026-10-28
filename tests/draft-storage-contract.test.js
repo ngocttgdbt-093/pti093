@@ -12,13 +12,14 @@ assert.throws(
 );
 
 const expected = {meta:{id:'LOCAL-1',sections:[]},images:[{sectionIndex:0,itemIndex:0,file:{}}]};
-let requestedId = '';
+let requestedId = '',writtenBundle=null;
 const contract = global.PTIDraftStorageContract.install({
   provider: {
     async getLocalDraftBundle(id) {
       requestedId = id;
       return expected;
-    }
+    },
+    async writeLocalDraftBundle(meta,images,onProgress){writtenBundle={meta,images,onProgress};if(onProgress)onProgress();return 'written'}
   }
 });
 
@@ -26,6 +27,13 @@ const contract = global.PTIDraftStorageContract.install({
   const bundle = await contract.readBundle('LOCAL-1');
   assert.equal(requestedId,'LOCAL-1');
   assert.deepEqual(bundle,expected);
+  const imageBatch=[{id:'LOCAL-1|0|0',draftId:'LOCAL-1',file:{}}];
+  let progressCalled=false;
+  assert.equal(await contract.writeBundle(expected.meta,imageBatch,()=>{progressCalled=true}),'written');
+  assert.equal(writtenBundle.meta,expected.meta);
+  assert.deepEqual(writtenBundle.images,imageBatch);
+  assert.equal(progressCalled,true,'storage progress callback should be forwarded');
+  await assert.rejects(contract.writeBundle(expected.meta,[{draftId:'OTHER'}]),/match the metadata id/);
   await assert.rejects(contract.readBundle(''),/non-empty draft ID/);
   await assert.rejects(
     global.PTIDraftStorageContract.install({provider:{async getLocalDraftBundle(){return {meta:{id:'bad'}}}}}).readBundle('bad'),
@@ -38,6 +46,13 @@ const contract = global.PTIDraftStorageContract.install({
   const localOpen=fs.readFileSync('core/local-open.js','utf8');
   assert.ok(appCore.includes('window.PTIDraftStorageContract.install({provider:localDraftStore})'),
     'App assembly must inject the neutral draft storage contract');
+  const localSave=fs.readFileSync('core/local-save.js','utf8');
+  assert.ok(appCore.includes('openLocalDraftDB,localDraftTransactionDone,draftStorage,getDateISO'),
+    'App assembly must inject the storage contract into local-save');
+  assert.ok(localSave.includes('await draftStorage.writeBundle(meta,imageRecords,'),
+    'Manual local saves must prefer the storage contract');
+  assert.ok(localSave.includes('if(!draftStorage)db=await openLocalDraftDB()'),
+    'Contract-backed local saves must not open a second database connection');
   assert.ok(appCore.includes('openLocalDraftDB,draftStorage,setDateInput'),
     'Local-open Core must receive the storage contract');
   assert.ok(localOpen.includes('const bundle=await draftStorage.readBundle(id)'),
