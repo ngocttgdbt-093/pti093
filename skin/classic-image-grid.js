@@ -114,7 +114,7 @@
           const caption=doc.createElement('textarea');caption.placeholder='Thuyết minh ảnh (tùy chọn)…';caption.value=item.caption;
           caption.oninput=()=>onCaptionChange(item,caption.value);
           caption.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const captions=[...grid.querySelectorAll('.thumb textarea')],currentIndex=captions.indexOf(caption),nextIndex=currentIndex+(event.shiftKey?-1:1);if(nextIndex>=0&&nextIndex<captions.length){event.preventDefault();captions[nextIndex].focus();}});
-          imageBox.addEventListener('click',event=>{if(suppressClick)return;if(event.button!==0)return;if(selectionMode||event.ctrlKey||event.metaKey||event.shiftKey){event.preventDefault();selectByIndex(index,event);}});
+          imageBox.addEventListener('click',event=>{if(suppressClick)return;if(event.button!==0)return;event.preventDefault();selectByIndex(index,event);});
           imageBox.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectByIndex(index,event);}});
           thumb.append(imageBox,number,actions,caption);grid.appendChild(thumb);
         });
