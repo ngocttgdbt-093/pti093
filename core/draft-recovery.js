@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093DraftRecovery = {
     install: function(deps){
-      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg, openLocalDraftDB, localDraftTransactionDone, fileKey:makeFileKey} = deps;
+      const {state, $, getDateISO, setDateInput, render, renderLayout, setDriveState, msg, openLocalDraftDB, localDraftTransactionDone, draftStorage, fileKey:makeFileKey} = deps;
       const fileKey=makeFileKey||function(file){
         const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
         const relative=String(file.webkitRelativePath||'').trim();
@@ -64,33 +64,47 @@ function scheduleAutoDraftSave(imagesDirty=true){
             gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',driveOpenIncomplete:!!state.driveOpenIncomplete,localCopyFromIncompleteDrive:!!state.localCopyFromIncompleteDrive,
             localDraftId:state.localDraftId||'',editing:Number.isInteger(state.editing)&&state.editing>=0?state.editing:-1,settings:{orientation:state.orientation,imagesPerPage:state.per,rowGap:state.rowGap||18,columnGap:state.columnGap||18},
             currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
-          const db=await openLocalDraftDB();
-          try{
-            // IndexedDB open yields control. Another workspace may open and finish while
-            // this autosave waits, so reject snapshots captured from an older revision.
+          // Storage initialization yields control. Reject stale snapshots before committing.
+          if(!draftStorage){
+            const db=await openLocalDraftDB();
+            try{
+              if(state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart||
+                (Number(state.workspaceMutationRevision)||0)!==workspaceMutationRevisionAtStart)return;
+              const tx=db.transaction(imagesNeedSaving?['drafts','draftImages']:['drafts'],'readwrite');
+              tx.objectStore('drafts').put(meta);
+              if(imagesNeedSaving){
+                const idx=tx.objectStore('draftImages').index('draftId');
+                const cursorReq=idx.openCursor(IDBKeyRange.only(draftId));
+                cursorReq.onsuccess=()=>{
+                  const cursor=cursorReq.result;
+                  if(cursor){cursor.delete();cursor.continue();return}
+                  sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
+                    const original=groups[si]&&groups[si].items[ii];
+                    if(original&&original.file)tx.objectStore('draftImages').put({
+                      id:draftId+'|'+si+'|'+ii,draftId,
+                      sectionIndex:si,itemIndex:ii,file:original.file,fileName:item.fileName,
+                      type:item.type,lastModified:item.lastModified
+                    });
+                  }));
+                };
+              }
+              await localDraftTransactionDone(tx);
+            }finally{db.close()}
+          }else{
             if(state.workspaceOpenPending||(Number(state.workspaceRevision)||0)!==workspaceRevisionAtStart||
               (Number(state.workspaceMutationRevision)||0)!==workspaceMutationRevisionAtStart)return;
-            const tx=db.transaction(imagesNeedSaving?['drafts','draftImages']:['drafts'],'readwrite');
-            tx.objectStore('drafts').put(meta);
             if(imagesNeedSaving){
-              const idx=tx.objectStore('draftImages').index('draftId');
-              const cursorReq=idx.openCursor(IDBKeyRange.only(draftId));
-              cursorReq.onsuccess=()=>{
-                const cursor=cursorReq.result;
-                if(cursor){cursor.delete();cursor.continue();return}
-                sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
-                  const original=groups[si]&&groups[si].items[ii];
-                  if(original&&original.file)tx.objectStore('draftImages').put({
-                    id:draftId+'|'+si+'|'+ii,draftId,
-                    sectionIndex:si,itemIndex:ii,file:original.file,fileName:item.fileName,
-                    type:item.type,lastModified:item.lastModified
-                  });
-                }));
-              };
-            }
-            await localDraftTransactionDone(tx);
-            if(autoDraftImageRevision===imageRevision)autoDraftImagesDirty=false;
-          }finally{db.close()}
+              const imageRecords=[];
+              sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
+                const original=groups[si]&&groups[si].items[ii];
+                if(original&&original.file)imageRecords.push({id:draftId+'|'+si+'|'+ii,draftId,
+                  sectionIndex:si,itemIndex:ii,file:original.file,fileName:item.fileName,
+                  type:item.type,lastModified:item.lastModified});
+              }));
+              await draftStorage.writeBundle(meta,imageRecords);
+            }else await draftStorage.writeMetadata(meta);
+          }
+          if(autoDraftImageRevision===imageRevision)autoDraftImagesDirty=false;
         }finally{
           autoDraftSaving=false;
           if(autoDraftAgain){autoDraftAgain=false;saveAutoDraft().catch(e=>console.warn('Không tự lưu được bản nháp PTI093:',e))}
