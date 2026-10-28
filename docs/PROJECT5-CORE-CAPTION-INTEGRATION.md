@@ -25,6 +25,12 @@ Trạng thái: **đã tích hợp trên nhánh thử nghiệm; CI và browser te
 - Browser test bằng Chromium: PASS — click chọn đơn, Ctrl-click, Shift-click, preview chuẩn hóa, áp dụng caption cho đúng tập ảnh, ảnh không chọn giữ nguyên caption, autosave chỉ được gọi một lần, khoanh vùng PC, mobile emulation tap chọn nhiều và điều khiển rowGap/columnGap. Bổ sung bài test Chromium dùng IndexedDB thật để lưu AUTO-DRAFT, reload trang và xác nhận rowGap=27, columnGap=31 được khôi phục đúng; cùng bài test kiểm tra các trường hồ sơ, caption, xoay ảnh và blob ảnh. Unit test canvas PDF cũng xác nhận rowGap=24/columnGap=30 tác động đúng tới tọa độ ô ảnh thực tế.
 - Bộ regression Core hiện có: **PASS 10 vòng liên tiếp** trên GitHub Actions run 1684, gồm kiểm tra lưu nháp, Drive Fusion, PDF và các module Core/Skin hiện có.
 
+## Rà soát tiếp theo — triển khai thử nghiệm và phạm vi kiểm thử
+- CI run **1685** đã hoàn tất PASS sau khi cập nhật tài liệu và test: [xem kết quả](https://github.com/ngocttgdbt-093/pti093/actions/runs/40630709632).
+- Đã xác minh có test trình duyệt cho các thao tác ảnh hiện hữu: `tests/classic-image-grid-skin.test.cjs` kiểm tra thay ảnh, chèn ảnh, xoay, xóa, sửa chú thích và trạng thái nút; `tests/image-reorder-browser.test.cjs` kiểm tra kéo sắp xếp bằng chuột/chạm, autosave và chặn đổi thứ tự khi hồ sơ khác đang mở; `tests/image-editing.test.js` và `tests/image-ingest.test.js` kiểm tra logic Core tương ứng.
+- Tại thời điểm rà soát, `.github/workflows/validate.yml` chỉ là workflow kiểm thử; không có workflow deploy Pages trong nhánh tích hợp. Vì vậy chưa có URL chạy riêng đã được xác minh cho đúng commit Core.
+- Không tự thêm nội dung vào nhánh production hoặc nhánh Pages đang phục vụ ứng dụng chỉ để tạo URL thử nghiệm. Bước triển khai cần một đích preview cô lập, hoặc xác minh được cấu hình Pages hiện tại trước khi thay đổi.
+
 ## Chưa nghiệm thu
 - Chưa kiểm thử trực tiếp trên iPhone/Android vật lý; mobile hiện được kiểm thử bằng Chromium mobile emulation.
 - Chưa thực hiện phiên upload Google Drive thật với bộ ảnh người dùng; CI chỉ kiểm tra các bài test hồi quy/mô-đun sẵn có.
