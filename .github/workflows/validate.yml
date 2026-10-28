@@ -373,6 +373,7 @@ jobs:
           node --check skins/classic/skin.js
           node tests/module-packaging-boundaries.test.js
           node tests/classic-skin-calendar-browser.test.cjs
+          node tests/pti-gdv-admin-browser.test.cjs
 
       - name: Run all Core regression tests 10 consecutive rounds
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.ref_name == 'feat/project5-module-packaging-20261028' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'feat/project5-module-packaging-20261028' || github.head_ref == 'integration/project5-caption-core-20261027'
