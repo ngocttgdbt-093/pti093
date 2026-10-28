@@ -23,6 +23,7 @@ const classicImageViewerSkin=window.PTI093ClassicImageViewerSkin.install({docume
 const {openImageViewer}=classicImageViewerSkin;
 const dateUtils=window.PTI093DateUtils.install({$});
 const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
+const dateCalendarSkin=window.PTI093DateCalendarSkin.install({$,document,dateUtils});
 const deviceContext=window.PTI093DeviceContext.install({navigator});
 const {deviceStorageLabel}=deviceContext;
 const workspaceCore=window.PTIWorkspaceCore;
