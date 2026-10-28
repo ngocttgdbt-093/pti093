@@ -208,6 +208,7 @@ jobs:
           node tests/classic-image-viewer-skin.test.cjs
           node tests/classic-status-skin.test.cjs
           node tests/classic-layout-skin.test.cjs
+          node tests/project5-caption-tools-browser.test.cjs
           node tests/classic-group-list-skin.test.cjs
           node tests/classic-image-grid-skin.test.cjs
           node tests/classic-pdf-warning-skin.test.cjs
