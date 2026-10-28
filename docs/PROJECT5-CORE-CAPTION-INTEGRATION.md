@@ -1,35 +1,43 @@
 # Project 5 Core — tích hợp chọn ảnh, thuyết minh và bố cục
 
-Trạng thái: **đã cập nhật trên nhánh tích hợp; chờ CI và kiểm thử trình duyệt/nghiệm thu thực tế. Không merge production.**
+Trạng thái: **đã tích hợp trên nhánh thử nghiệm; CI và browser tests tự động đạt; còn cần nghiệm thu trực tiếp trên thiết bị và xác nhận upload Drive thực tế. Không merge production.**
 
 ## Đã tích hợp trong nhánh này
 - `core/caption-tools.js`: API `PTI093CaptionTools` cho chuẩn hóa chữ, áp dụng chú thích theo ID có kiểm tra toàn bộ tập chọn trước khi thay đổi, và helper toggle selection.
-- `skin/classic-image-grid.js`: chọn một ảnh bằng click/chạm; Ctrl/Cmd-click chọn nhiều; Shift-click chọn dải; chế độ chọn nhiều cho thao tác chạm; khoanh vùng bằng chuột trên PC; phân biệt vùng ảnh với textarea chú thích.
-- Hộp thoại thuyết minh nhóm: đếm ảnh chọn, xem trước chuẩn hóa, Áp dụng, Hủy, đóng bằng Escape/nhấp nền. Chặn cập nhật khi đang mở hồ sơ khác; áp dụng theo kiểu fail-closed rồi gọi autosave một lần.
-- `skin/classic-layout.js` + `core/image-canvas.js`: điều chỉnh rowGap/columnGap; cùng giá trị được dùng cho bố cục canvas preview/PDF.
-- `core/draft-recovery.js`: lưu/khôi phục hai giá trị khoảng cách trong metadata AUTO-DRAFT; giữ giá trị trong khoảng 4–36 px.
-- `css/project5-caption-tools.css`: style cho chọn ảnh, khoanh vùng, hộp thoại và điều khiển khoảng cách.
-- `.github/workflows/validate.yml`: thêm bước CI kiểm tra cú pháp các module liên quan, chạy unit test chú thích và xác minh thứ tự nạp module/stylesheet.
+- `skin/classic-image-grid.js`: click chọn một ảnh; Ctrl/Cmd-click chọn nhiều; Shift-click chọn dải; chế độ chọn nhiều cho mobile tap; khoanh vùng bằng chuột trên PC.
+- Khi bật chế độ chọn nhiều, tạm vô hiệu hóa native drag/touch-reorder để tránh xung đột với khoanh vùng/chạm chọn; khi tắt chế độ này, thao tác kéo sắp xếp được khôi phục.
+- Hộp thoại thuyết minh nhóm: đếm ảnh đã chọn, xem trước chuẩn hóa, Áp dụng, Hủy, đóng bằng Escape/nhấp nền. Kiểm tra toàn bộ ID trước khi sửa; chặn cập nhật khi đang mở hồ sơ khác; gọi autosave một lần.
+- `skin/classic-layout.js` + `core/image-canvas.js`: điều chỉnh rowGap/columnGap; giá trị dùng chung cho layout preview và canvas xuất PDF.
+- `core/draft-recovery.js`: lưu/khôi phục khoảng cách dòng/cột trong metadata AUTO-DRAFT; giới hạn giá trị 4–36 px.
+- `css/project5-caption-tools.css`: giao diện chọn ảnh, khoanh vùng, hộp thoại và điều khiển khoảng cách.
+- GitHub Actions có bước kiểm tra cú pháp, unit test, kiểm tra thứ tự asset và browser test bằng Chromium cho chọn ảnh, Shift/Ctrl, khoanh vùng, thuyết minh nhóm, mobile tap và khoảng cách bố cục.
 
 ## Bảo toàn
-- Không sửa mã nguồn `fusion/drive.js` hoặc pipeline upload Drive.
-- Không sửa logic kéo sắp xếp, xoay, thay, chèn, xóa ảnh hoặc xây dựng PDF ngoài việc dùng khoảng cách hàng/cột trong canvas.
-- Hộp thoại chú thích chỉ thay `item.caption` của tập ảnh đã chọn và gọi autosave hiện hữu một lần sau khi kiểm tra thành công.
-- Nhánh tích hợp được tạo từ `test/core-093-20261023`; PR vẫn ở trạng thái Draft.
+- Không thay đổi `fusion/drive.js` hoặc thuật toán upload Drive.
+- Không thay đổi thuật toán kéo sắp xếp, xoay, thay/chèn/xóa ảnh; chỉ có guard để không chạy touch-reorder khi chế độ chọn nhiều đang bật.
+- Thuyết minh nhóm chỉ sửa `item.caption` sau khi xác thực đầy đủ tập ID, sau đó gọi autosave hiện hữu một lần.
+- Nhánh tích hợp được tạo từ `test/core-093-20261023`; PR vẫn ở trạng thái Draft, không merge production.
 
-## Kết quả kiểm thử đã thực hiện
-- Chạy cục bộ bộ test unit tái dựng từ nội dung hiện có của `core/caption-tools.js` và `core/caption-tools.test.cjs`: **PASS** cho chuẩn hóa tiếng Việt, cập nhật nhiều ID hợp lệ, ID thiếu không cập nhật một phần, ID trùng, toggle selection. Do môi trường làm việc không có checkout trực tiếp repository, đây không phải là lệnh chạy trực tiếp trên checkout GitHub.
-- Đã thêm lệnh kiểm thử tương ứng vào GitHub Actions. Tại thời điểm cập nhật tài liệu, chưa nhận được workflow run/status check để xác nhận CI trên commit mới.
-- Chưa thực hiện browser-test PC/mobile; chưa kiểm tra trực quan preview/PDF, AUTO-DRAFT sau F5 hoặc upload Drive thật.
+## Kết quả kiểm thử đã xác minh
+- GitHub Actions run **1678**: PASS — [mở kết quả CI](https://github.com/ngocttgdbt-093/pti093/actions/runs/40629311861).
+- Kiểm tra cú pháp các module Core/Skin được sửa: PASS.
+- Unit test caption core: PASS — chuẩn hóa tiếng Việt, áp dụng nhiều ảnh, ID thiếu/trùng không gây cập nhật một phần, toggle selection.
+- Browser test bằng Chromium: PASS — click chọn đơn, Ctrl-click, Shift-click, preview chuẩn hóa, áp dụng caption cho đúng tập ảnh, ảnh không chọn giữ nguyên caption, autosave chỉ được gọi một lần, khoanh vùng PC, mobile emulation tap chọn nhiều và điều khiển rowGap/columnGap.
+- Bộ regression Core hiện có: **PASS 10 vòng liên tiếp** trên GitHub Actions run 1678, gồm kiểm tra lưu nháp, Drive Fusion, PDF và các module Core/Skin hiện có.
 
-## Kiểm thử bắt buộc trước khi merge
-1. Mở bản triển khai của nhánh PR; kiểm tra console và tải đủ các asset.
-2. PC: click đơn, Ctrl/Cmd-click, Shift-click, khoanh vùng; xác nhận kéo sắp xếp vẫn hoạt động khi không bật chế độ khoanh vùng.
-3. Mobile: bật “Chọn nhiều”, chạm chọn/bỏ chọn; cuộn trang không bị khóa; thao tác nút và textarea không làm chọn ảnh.
-4. Thuyết minh nhóm: xem trước, hủy/Escape, áp dụng cho đúng tập ảnh; nội dung đồng bộ sau render và F5.
-5. Điều chỉnh rowGap/columnGap; xác nhận preview và PDF có khoảng cách tương ứng; kiểm tra AUTO-DRAFT khôi phục giá trị sau tải lại.
-6. Hồi quy thêm/thay/chèn/xóa/xoay/kéo sắp xếp, lưu nháp/khôi phục, xuất PDF và lưu/upload Drive.
-7. Chỉ merge sau khi CI và các kiểm thử liên quan đều đạt; nếu lỗi, rollback nhánh tích hợp hoặc revert commit cụ thể.
+## Chưa nghiệm thu
+- Chưa kiểm thử trực tiếp trên iPhone/Android vật lý; mobile hiện được kiểm thử bằng Chromium mobile emulation.
+- Chưa thực hiện phiên upload Google Drive thật với bộ ảnh người dùng; CI chỉ kiểm tra các bài test hồi quy/mô-đun sẵn có.
+- Chưa xác nhận bằng mắt trên dữ liệu nghiệp vụ thực rằng mọi trường hợp preview/PDF đều đạt; cần kiểm tra bản triển khai thử nghiệm và tải lại AUTO-DRAFT với gap tùy chỉnh.
+
+## Các bước tiếp theo trước khi merge
+1. Mở bản chạy thử của nhánh PR; kiểm tra console và tải đầy đủ CSS/JS.
+2. Trên PC: click đơn, Ctrl/Cmd-click, Shift-click, khoanh vùng; tắt chế độ chọn nhiều rồi kiểm tra kéo sắp xếp.
+3. Trên điện thoại: bật “Chọn nhiều”, chạm chọn nhiều ảnh, cuộn trang và thao tác textarea/nút.
+4. Nhập thuyết minh nhóm, thử Hủy/Escape, áp dụng và kiểm tra sau F5.
+5. Đổi rowGap/columnGap; kiểm tra preview, PDF và AUTO-DRAFT khôi phục cùng giá trị.
+6. Thực hiện upload Drive thật và kiểm tra đủ ảnh, tiến trình, tên tệp, thứ tự ảnh và thời gian.
+7. Chỉ bỏ Draft/merge khi nghiệm thu trực tiếp hoàn tất; nếu có lỗi, sửa trên nhánh tích hợp và chạy lại bộ test.
 
 ## Quy tắc báo cáo
-Mỗi hạng mục phải ghi rõ: trạng thái, tệp đã đổi, phép thử thực tế và kết quả. Không coi việc có code hoặc test file là nghiệm thu chức năng.
+Mỗi hạng mục phải ghi rõ trạng thái, tệp đã đổi, phép thử thực tế và kết quả. Không coi việc có code hoặc test file là nghiệm thu chức năng.
