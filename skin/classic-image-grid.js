@@ -94,7 +94,7 @@
       }
       function render(){
         ensureSelectionUi();
-        const grid=$('grid');grid.innerHTML='';
+        const grid=$('grid');grid.style.setProperty('--p5-row-gap',(state.rowGap||18)+'px');grid.style.setProperty('--p5-column-gap',(state.columnGap||18)+'px');grid.innerHTML='';
         state.current.items.forEach((item,index)=>{
           item.rotate=((item.rotate||0)%360+360)%360;
           const thumb=doc.createElement('div');thumb.className='thumb';
