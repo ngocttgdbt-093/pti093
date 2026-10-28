@@ -21,7 +21,7 @@
         toolbar.append(mode,bulk,clearSel,help);grid.parentNode.insertBefore(toolbar,grid);
         const dialog=doc.createElement('div');dialog.id='p5CaptionDialog';dialog.className='p5-caption-backdrop';dialog.hidden=true;dialog.innerHTML='<section class="p5-caption-dialog" role="dialog" aria-modal="true" aria-labelledby="p5CaptionTitle"><h3 id="p5CaptionTitle">Thuyết minh nhóm ảnh</h3><p id="p5CaptionCount"></p><label for="p5CaptionInput">Nội dung áp dụng cho các ảnh đã chọn</label><textarea id="p5CaptionInput" rows="4" placeholder="Nhập thuyết minh chung…"></textarea><p class="p5-caption-preview"><strong>Xem trước:</strong> <span id="p5CaptionPreview">(Chưa có nội dung)</span></p><div class="p5-caption-actions"><button type="button" id="p5CaptionCancel">Hủy</button><button type="button" id="p5CaptionApply">Áp dụng</button></div></section>';
         doc.body.appendChild(dialog);
-        mode.addEventListener('click',()=>{selectionMode=!selectionMode;mode.setAttribute('aria-pressed',String(selectionMode));mode.classList.toggle('active',selectionMode);mode.textContent=selectionMode?'☑ Đang chọn nhiều':'☑ Chọn nhiều';help.textContent=selectionMode?'Chạm/click ảnh để bật tắt chọn; kéo chuột trên ảnh để khoanh vùng.':'Ctrl/Cmd-click: chọn nhiều · Shift-click: chọn dải · bật Chọn nhiều để chạm trên mobile hoặc khoanh vùng bằng chuột.';});
+        mode.addEventListener('click',()=>{selectionMode=!selectionMode;mode.setAttribute('aria-pressed',String(selectionMode));mode.classList.toggle('active',selectionMode);mode.textContent=selectionMode?'☑ Đang chọn nhiều':'☑ Chọn nhiều';getThumbs().forEach(thumb=>{thumb.draggable=!selectionMode;thumb.title=selectionMode?'Chạm/click để chọn; kéo chuột để khoanh vùng':'Kéo ảnh để đổi thứ tự';});help.textContent=selectionMode?'Chạm/click ảnh để bật tắt chọn; kéo chuột trên ảnh để khoanh vùng.':'Ctrl/Cmd-click: chọn nhiều · Shift-click: chọn dải · bật Chọn nhiều để chạm trên mobile hoặc khoanh vùng bằng chuột.';});
         clearSel.addEventListener('click',()=>{selected.clear();lastIndex=-1;updateSelectionUi();});
         bulk.addEventListener('click',openCaptionDialog);
         const input=$('p5CaptionInput');
@@ -99,7 +99,7 @@
         state.current.items.forEach((item,index)=>{
           item.rotate=((item.rotate||0)%360+360)%360;
           const thumb=doc.createElement('div');thumb.className='thumb';
-          thumb.dataset.dragId=idOf(item);thumb.title='Kéo ảnh để đổi thứ tự';thumb.draggable=true;
+          thumb.dataset.dragId=idOf(item);thumb.title=selectionMode?'Chạm/click để chọn; kéo chuột để khoanh vùng':'Kéo ảnh để đổi thứ tự';thumb.draggable=!selectionMode;
           imageReorder.bindThumb(thumb,grid);
           const imageBox=doc.createElement('div');imageBox.className='imgBox';imageBox.tabIndex=0;imageBox.setAttribute('role','button');imageBox.setAttribute('aria-label','Chọn ảnh '+(index+1));
           const image=doc.createElement('img'),imageUrl=urlApi.createObjectURL(item.file);image.src=imageUrl;
