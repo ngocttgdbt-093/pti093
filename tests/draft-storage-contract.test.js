@@ -61,7 +61,7 @@ const contract = global.PTIDraftStorageContract.install({
             transactionCalls++;
             assert.deepEqual(names,['drafts','draftImages']);
             assert.equal(mode,'readonly');
-            return {
+            const tx={
               objectStore(name){
                 if(name==='drafts')return {get(id){
                   assert.equal(id,'LOCAL-ATOMIC');
@@ -77,6 +77,8 @@ const contract = global.PTIDraftStorageContract.install({
                 throw new Error('Unexpected object store '+name);
               }
             };
+            queueMicrotask(()=>{if(tx.oncomplete)tx.oncomplete()});
+            return tx;
           }
         };
         request.onsuccess&&request.onsuccess();
