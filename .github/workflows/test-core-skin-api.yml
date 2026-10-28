@@ -1,0 +1,22 @@
+name: Test Core Skin API
+on:
+  push:
+    branches: [test/core-skin-api-20261028]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'core/skin-manager.js'
+      - 'core/skin-manager.test.cjs'
+      - '.github/workflows/test-core-skin-api.yml'
+jobs:
+  skin-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax check
+        run: node --check core/skin-manager.js
+      - name: Test registration and replacement lifecycle
+        run: node core/skin-manager.test.cjs
