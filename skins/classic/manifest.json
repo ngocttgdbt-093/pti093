@@ -33,7 +33,8 @@
       "../../css/skin-overrides-13.css",
       "../../css/skin-overrides-14.css",
       "../../css/skin-overrides-15.css",
-      "../../css/project5-caption-tools.css"
+      "../../css/project5-caption-tools.css",
+      "./date-calendar.css"
     ],
     "scripts": [
       "../../skin/classic-local-save.js",
@@ -45,7 +46,8 @@
       "../../skin/classic-image-grid.js",
       "../../skin/classic-pdf-warning.js",
       "../../skin/classic-preview.js",
-      "../../skin/classic-file-intake.js"
+      "../../skin/classic-file-intake.js",
+      "./date-calendar.js"
     ]
   },
   "contract": {
