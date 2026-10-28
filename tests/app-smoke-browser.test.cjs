@@ -59,15 +59,15 @@ const {chromium}=require('playwright');
     assert.equal(await page.locator('#dateCalTitle').textContent(),janTitle,'previous-month control should return to the original month');
     await page.locator('#dateCalendar [data-date="2026-01-06"]').click();
     assert.equal(await page.locator('#date').inputValue(),'06/01/2026','calendar selection should update the existing input in dd/mm/yyyy');
-    await page.waitForSelector('#dateCalendar.hidden');
+    await page.waitForFunction(()=>document.getElementById('dateCalendar').classList.contains('hidden'));
     await page.locator('#datePickerBtn').click();
     await page.locator('#dateCalClear').click();
     assert.equal(await page.locator('#date').inputValue(),'','Clear should empty the date field');
-    await page.waitForSelector('#dateCalendar.hidden');
+    await page.waitForFunction(()=>document.getElementById('dateCalendar').classList.contains('hidden'));
     await page.locator('#datePickerBtn').click();
     await page.locator('#dateCalToday').click();
     assert.match(await page.locator('#date').inputValue(),/^\d{2}\/\d{2}\/\d{4}$/,'Today should set a formatted date');
-    await page.waitForSelector('#dateCalendar.hidden');
+    await page.waitForFunction(()=>document.getElementById('dateCalendar').classList.contains('hidden'));
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
     await page.locator('#files').setInputFiles({
