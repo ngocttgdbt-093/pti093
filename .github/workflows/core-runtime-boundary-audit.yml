@@ -1,0 +1,24 @@
+name: Project 5 Core Runtime Boundary Audit
+
+on:
+  push:
+    branches:
+      - audit/core-runtime-boundaries-20261028
+  pull_request:
+    branches:
+      - feat/project5-module-packaging-20261028
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-runtime-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check tests/core-runtime-boundaries.test.js
+      - name: Verify Core integration boundaries
+        run: node tests/core-runtime-boundaries.test.js
