@@ -1,0 +1,59 @@
+{
+  "name": "classic",
+  "version": "1.0.0",
+  "role": "default-core-skin",
+  "description": "Default Classic UI skin for shared Core.",
+  "includes": [
+    "shared case metadata form",
+    "image intake and grouping UI",
+    "caption tools",
+    "layout preview",
+    "preview and PDF controls"
+  ],
+  "excludes": [
+    "Google Drive case-storage UI and progress",
+    "GĐV administration UI, menu, and management tables",
+    "Modern skin and skin-switch control"
+  ],
+  "assets": {
+    "template": "template.html",
+    "adapter": "skin.js",
+    "styles": [
+      "../../css/skin-classic.css",
+      "../../css/skin-overrides-03.css",
+      "../../css/skin-overrides-04.css",
+      "../../css/skin-overrides-05.css",
+      "../../css/skin-overrides-06.css",
+      "../../css/skin-overrides-07.css",
+      "../../css/skin-overrides-08.css",
+      "../../css/skin-overrides-09.css",
+      "../../css/skin-overrides-10.css",
+      "../../css/skin-overrides-11.css",
+      "../../css/skin-overrides-12.css",
+      "../../css/skin-overrides-13.css",
+      "../../css/skin-overrides-14.css",
+      "../../css/skin-overrides-15.css",
+      "../../css/project5-caption-tools.css"
+    ],
+    "scripts": [
+      "../../skin/classic-local-save.js",
+      "../../skin/classic-load-progress.js",
+      "../../skin/classic-image-viewer.js",
+      "../../skin/classic-status.js",
+      "../../skin/classic-layout.js",
+      "../../skin/classic-group-list.js",
+      "../../skin/classic-image-grid.js",
+      "../../skin/classic-pdf-warning.js",
+      "../../skin/classic-preview.js",
+      "../../skin/classic-file-intake.js"
+    ]
+  },
+  "contract": {
+    "entry": "mount({root,context})",
+    "returns": [
+      "update(context)",
+      "unmount()"
+    ],
+    "coreChangesRequiredForNewSkin": false
+  }
+}
