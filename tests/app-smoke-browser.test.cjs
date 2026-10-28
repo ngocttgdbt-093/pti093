@@ -16,6 +16,7 @@ const {chromium}=require('playwright');
       datePlaceholder:document.getElementById('date').placeholder,
       modules:{
         date:!!window.PTI093DateUtils,
+        dateCalendar:!!window.PTI093DateCalendarSkin,
         naming:!!window.PTI093FileNaming,
         reorder:!!window.PTI093ImageReorder,
         pdf:!!window.PTI093PdfBuilder,
@@ -45,7 +46,28 @@ const {chromium}=require('playwright');
     assert.equal(initial.layoutCells,6,'default layout should show six image slots');
     assert.match(initial.layoutText,/6 ảnh/);
     assert.equal(initial.datePlaceholder,'dd/mm/yyyy');
-    assert.deepEqual(initial.modules,{date:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,imageEditing:true,fileIntakeSkin:true,previewSkin:true,groupWorkflow:true,driveBindings:true,driveUploadEntry:true,sessionActions:true,deviceContext:true,previewModal:true});
+    assert.deepEqual(initial.modules,{date:true,dateCalendar:true,naming:true,reorder:true,pdf:true,canvas:true,localSaveSkin:true,loadProgressSkin:true,imageViewerSkin:true,statusSkin:true,layoutSkin:true,groupListSkin:true,imageGridSkin:true,pdfWarningSkin:true,gdvFusion:true,imageIngest:true,imageEditing:true,fileIntakeSkin:true,previewSkin:true,groupWorkflow:true,driveBindings:true,driveUploadEntry:true,sessionActions:true,deviceContext:true,previewModal:true});
+    await page.locator('#date').fill('05012026');
+    assert.equal(await page.locator('#date').inputValue(),'05/01/2026','direct entry should retain dd/mm/yyyy');
+    await page.locator('#datePickerBtn').click();
+    await page.waitForSelector('#dateCalendar:not(.hidden)');
+    const janTitle=await page.locator('#dateCalTitle').textContent();
+    await page.locator('#dateCalNext').click();
+    const febTitle=await page.locator('#dateCalTitle').textContent();
+    assert.notEqual(febTitle,janTitle,'next-month control should change the displayed month');
+    await page.locator('#dateCalPrev').click();
+    assert.equal(await page.locator('#dateCalTitle').textContent(),janTitle,'previous-month control should return to the original month');
+    await page.locator('#dateCalendar [data-date="2026-01-06"]').click();
+    assert.equal(await page.locator('#date').inputValue(),'06/01/2026','calendar selection should update the existing input in dd/mm/yyyy');
+    await page.waitForSelector('#dateCalendar.hidden');
+    await page.locator('#datePickerBtn').click();
+    await page.locator('#dateCalClear').click();
+    assert.equal(await page.locator('#date').inputValue(),'','Clear should empty the date field');
+    await page.waitForSelector('#dateCalendar.hidden');
+    await page.locator('#datePickerBtn').click();
+    await page.locator('#dateCalToday').click();
+    assert.match(await page.locator('#date').inputValue(),/^\\d{2}\\/\\d{2}\\/\\d{4}$/,'Today should set a formatted date');
+    await page.waitForSelector('#dateCalendar.hidden');
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
     await page.locator('#files').setInputFiles({
