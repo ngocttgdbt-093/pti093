@@ -161,40 +161,45 @@ function scheduleAutoDraftSave(imagesDirty=true){
         autoDraftRestoring=true;
         autoDraftUserChangedDuringRestore=false;
         try{
-          const db=await openLocalDraftDB();
           let meta,images=[],foreignDraftFound=false;
-          try{
-            // Read metadata and image blobs from one readonly transaction. Separate transactions
-            // can observe different commits if another tab saves/replaces this draft between reads.
-            // Request both possible metadata IDs and both image sets up front so legacy fallback
-            // remains atomic with the blob snapshot.
-            const snapshot=await new Promise((resolve,reject)=>{
-              const tx=db.transaction(['drafts','draftImages'],'readonly');
-              const drafts=tx.objectStore('drafts'),imageIndex=tx.objectStore('draftImages').index('draftId');
-              const activeId=activeAutoDraftId,legacyId=PTI093_AUTO_DRAFT_ID;
-              const activeMetaReq=drafts.get(activeId);
-              const legacyMetaReq=activeId===legacyId?null:drafts.get(legacyId);
-              const activeImagesReq=imageIndex.getAll(IDBKeyRange.only(activeId));
-              const legacyImagesReq=activeId===legacyId?null:imageIndex.getAll(IDBKeyRange.only(legacyId));
-              const requests=[activeMetaReq,activeImagesReq,...(legacyMetaReq?[legacyMetaReq]:[]),...(legacyImagesReq?[legacyImagesReq]:[])];
-              let pending=requests.length,failed=false;
-              const finish=()=>{if(!failed&&--pending===0)resolve({
-                activeMeta:activeMetaReq.result,
-                legacyMeta:legacyMetaReq&&legacyMetaReq.result,
-                activeImages:activeImagesReq.result||[],
-                legacyImages:legacyImagesReq&&legacyImagesReq.result||[]
-              })};
-              requests.forEach(req=>{req.onsuccess=finish;req.onerror=()=>{if(!failed){failed=true;reject(req.error||new Error('Không đọc được dữ liệu nháp tự động.'))}}});
-              tx.onabort=()=>{if(!failed){failed=true;reject(tx.error||new Error('Giao dịch đọc nháp tự động bị hủy.'))}};
-            });
-            meta=snapshot.activeMeta;
-            if(meta)images=snapshot.activeImages;
-            else if(snapshot.legacyMeta){
-              if(snapshot.legacyMeta.sessionId===PTI093_SESSION_ID){
-                activeAutoDraftId=PTI093_AUTO_DRAFT_ID;meta=snapshot.legacyMeta;images=snapshot.legacyImages;
-              }else foreignDraftFound=true;
-            }
-          }finally{db.close()}
+          const activeId=activeAutoDraftId,legacyId=PTI093_AUTO_DRAFT_ID;
+          let snapshot;
+          if(draftStorage){
+            const bundles=await draftStorage.readBundles([activeId,legacyId]);
+            snapshot={activeMeta:bundles[activeId].meta,activeImages:bundles[activeId].images,
+              legacyMeta:activeId===legacyId?null:bundles[legacyId].meta,
+              legacyImages:activeId===legacyId?[]:bundles[legacyId].images};
+          }else{
+            const db=await openLocalDraftDB();
+            try{
+              // Read active and legacy metadata/images in one readonly transaction to avoid torn snapshots.
+              snapshot=await new Promise((resolve,reject)=>{
+                const tx=db.transaction(['drafts','draftImages'],'readonly');
+                const drafts=tx.objectStore('drafts'),imageIndex=tx.objectStore('draftImages').index('draftId');
+                const activeMetaReq=drafts.get(activeId);
+                const legacyMetaReq=activeId===legacyId?null:drafts.get(legacyId);
+                const activeImagesReq=imageIndex.getAll(IDBKeyRange.only(activeId));
+                const legacyImagesReq=activeId===legacyId?null:imageIndex.getAll(IDBKeyRange.only(legacyId));
+                const requests=[activeMetaReq,activeImagesReq,...(legacyMetaReq?[legacyMetaReq]:[]),...(legacyImagesReq?[legacyImagesReq]:[])];
+                let pending=requests.length,failed=false,transactionComplete=false,settled=false;
+                const finish=()=>{if(!failed&&!settled&&transactionComplete&&pending===0){settled=true;resolve({
+                  activeMeta:activeMetaReq.result,legacyMeta:legacyMetaReq&&legacyMetaReq.result,
+                  activeImages:activeImagesReq.result||[],legacyImages:legacyImagesReq&&legacyImagesReq.result||[]
+                })}};
+                requests.forEach(req=>{req.onsuccess=()=>{pending--;finish()};req.onerror=()=>{if(!failed){failed=true;reject(req.error||new Error('Không đọc được dữ liệu nháp tự động.'))}}});
+                tx.oncomplete=()=>{transactionComplete=true;finish()};
+                tx.onerror=()=>{if(!failed){failed=true;reject(tx.error||new Error('Lỗi đọc nháp tự động.'))}};
+                tx.onabort=()=>{if(!failed){failed=true;reject(tx.error||new Error('Giao dịch đọc nháp tự động bị hủy.'))}};
+              });
+            }finally{db.close()}
+          }
+          meta=snapshot.activeMeta;
+          if(meta)images=snapshot.activeImages;
+          else if(snapshot.legacyMeta){
+            if(snapshot.legacyMeta.sessionId===PTI093_SESSION_ID){
+              activeAutoDraftId=PTI093_AUTO_DRAFT_ID;meta=snapshot.legacyMeta;images=snapshot.legacyImages;
+            }else foreignDraftFound=true;
+          }
           // Người dùng có thể thao tác trong lúc IndexedDB đang đọc. Không cho bản nháp cũ
           // ghi đè các thay đổi mới phát sinh trong tab; phần finally sẽ lưu trạng thái hiện tại.
           // Opening a local/Drive case can complete while this IndexedDB read is pending.
