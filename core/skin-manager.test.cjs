@@ -1,0 +1,16 @@
+const assert=require("node:assert/strict");
+const {createSkinManager}=require("./skin-manager.js");
+let log=[];
+const manager=createSkinManager({context:{value:1}});
+manager.register("classic",{mount:({context})=>{log.push("mount-classic-"+context.value);return {update:c=>log.push("update-classic-"+c.value),unmount:()=>log.push("unmount-classic")};}});
+manager.register("modern",{mount:({context})=>{log.push("mount-modern-"+context.value);return {unmount:()=>log.push("unmount-modern")};}});
+manager.use("classic");
+manager.update({value:2});
+manager.use("modern");
+manager.use("classic");
+assert.deepEqual(log,["mount-classic-1","update-classic-2","unmount-classic","mount-modern-2","unmount-modern","mount-classic-2"]);
+assert.equal(manager.getActive(),"classic");
+assert.deepEqual(manager.getRegistered(),["classic","modern"]);
+assert.throws(()=>manager.use("missing"),/Unknown skin/);
+assert.throws(()=>manager.register("classic",{}),/already registered/);
+console.log("PASS: skin registration, switch, update, unmount and validation");
