@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, feat/project5-module-packaging-20261028]
   pull_request:
-    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023]
+    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, integration/project5-caption-core-20261027]
   workflow_dispatch:
 
 jobs:
