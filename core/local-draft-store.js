@@ -28,6 +28,34 @@
         });
       }
       
+      async function writeLocalDraftBundle(meta, imageRecords, onProgress){
+        if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
+        if(!Array.isArray(imageRecords))throw new TypeError('Draft images must be an array.');
+        const db=await openLocalDraftDB();
+        try{
+          await new Promise((resolve,reject)=>{
+            let settled=false;
+            const tx=db.transaction(['drafts','draftImages'],'readwrite');
+            const fail=error=>{if(!settled){settled=true;reject(error)}};
+            tx.objectStore('drafts').put(meta);
+            const images=tx.objectStore('draftImages');
+            const cursorRequest=images.index('draftId').openCursor(IDBKeyRange.only(meta.id));
+            cursorRequest.onsuccess=()=>{
+              const cursor=cursorRequest.result;
+              if(cursor){cursor.delete();cursor.continue();return;}
+              try{
+                if(typeof onProgress==='function')onProgress();
+                imageRecords.forEach(record=>images.put(record));
+              }catch(error){try{tx.abort()}catch(e){}fail(error);}
+            };
+            cursorRequest.onerror=()=>fail(cursorRequest.error||new Error('Không thể thay thế ảnh của bản lưu tại máy.'));
+            tx.oncomplete=()=>{if(!settled){settled=true;resolve()}};
+            tx.onerror=()=>fail(tx.error||new Error('Lỗi giao dịch ghi bản lưu tại máy.'));
+            tx.onabort=()=>fail(tx.error||new Error('Giao dịch ghi bản lưu tại máy bị hủy.'));
+          });
+        }finally{db.close()}
+      }
+
       async function getLocalDrafts(){
         const db=await openLocalDraftDB();
         try{
@@ -65,7 +93,7 @@
           });
         }finally{db.close()}
       }
-      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle};
+      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle, writeLocalDraftBundle};
     }
   };
 
@@ -76,13 +104,20 @@
       if(!provider||typeof provider.getLocalDraftBundle!=='function'){
         throw new TypeError('Draft storage provider must implement getLocalDraftBundle(id).');
       }
+      async function writeBundle(meta, images, onProgress){
+        if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
+        if(!Array.isArray(images))throw new TypeError('Draft images must be an array.');
+        if(images.some(image=>!image||image.draftId!==meta.id))throw new TypeError('Every draft image must match the metadata id.');
+        if(typeof provider.writeLocalDraftBundle!=='function')throw new TypeError('Draft storage provider must implement writeLocalDraftBundle(meta, images).');
+        return provider.writeLocalDraftBundle(meta,images,onProgress);
+      }
       async function readBundle(id){
         if(id===undefined||id===null||String(id)==='')throw new TypeError('A non-empty draft ID is required.');
         const result=await provider.getLocalDraftBundle(String(id));
         if(!result||!Array.isArray(result.images))throw new Error('Draft storage returned an invalid bundle.');
         return {meta:result.meta||null,images:result.images};
       }
-      return {readBundle};
+      return {readBundle,writeBundle};
     }
   };
 })(window);
