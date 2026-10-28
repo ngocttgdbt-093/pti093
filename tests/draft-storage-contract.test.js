@@ -116,7 +116,7 @@ const contract = global.PTIDraftStorageContract.install({
       writeTransactionCount++;assert.deepEqual(names,['drafts','draftImages']);assert.equal(mode,'readwrite');
       const tx={objectStore(name){
         if(name==='drafts')return {put(value){stored.meta=value}};
-        if(name==='draftImages')return {index(name){assert.equal(name,'draftId');return {openCursor(key){
+        if(name==='draftImages')return {put(value){stored.images.push(value)},index(name){assert.equal(name,'draftId');return {openCursor(key){
           assert.equal(key,'LOCAL-WRITE');const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess();queueMicrotask(()=>tx.oncomplete&&tx.oncomplete())});return req;
         }}}};
         throw new Error('Unexpected write store '+name);
@@ -128,7 +128,7 @@ const contract = global.PTIDraftStorageContract.install({
   const writeMeta={id:'LOCAL-WRITE',sections:[]};
   const writeImages=[{id:'LOCAL-WRITE|0|0',draftId:'LOCAL-WRITE',file:{blob:true}}];
   let writeProgress=false;
-  await writeStore.writeLocalDraftBundle(writeMeta,writeImages,()=>{writeProgress=true;stored.images=writeImages.slice()});
+  await writeStore.writeLocalDraftBundle(writeMeta,writeImages,()=>{writeProgress=true});
   assert.equal(writeTransactionCount,1,'metadata and images must use one readwrite transaction');
   assert.equal(writeDbClosed,1,'database connection must close after the write');
   assert.equal(stored.meta,writeMeta);
