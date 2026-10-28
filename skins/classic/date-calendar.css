@@ -1,0 +1,21 @@
+.dateFieldWrap{display:flex;align-items:stretch;gap:5px;position:relative;padding:3px;border:1px solid #c8ddd2;border-radius:9px;background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
+.dateFieldWrap:focus-within{border-color:#00854a;box-shadow:0 0 0 2px rgba(0,133,74,.08)}
+.dateFieldWrap #date{flex:1;min-width:0;border:0!important;border-radius:6px!important;outline:none!important;background:transparent!important;padding:8px 9px!important}
+.datePickerBtn{flex:0 0 36px;border:1px solid #c8ddd2;border-radius:7px;background:#f4faf6;color:#176b4b;cursor:pointer;font-size:17px;transition:background .15s ease,border-color .15s ease}
+.datePickerBtn:hover{background:#e4f4eb;border-color:#00854a}
+.datePickerBtn:focus-visible,.dateCalHead button:focus-visible,.dateCalDays button:focus-visible,.dateCalFoot button:focus-visible{outline:2px solid #16834a;outline-offset:2px}
+.dateCalendar{position:absolute;z-index:1000;right:0;top:calc(100% + 7px);width:252px;max-width:calc(100vw - 32px);padding:10px;background:#fff;border:1px solid #a8cdb8;border-radius:12px;box-shadow:0 8px 24px rgba(0,70,38,.16);color:#173b2a}
+.dateCalendar.hidden{display:none}
+.dateCalHead{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;align-items:center;gap:6px;margin-bottom:10px}
+.dateCalHead strong{text-align:center;font-size:13px;color:#006f3d;text-transform:capitalize}
+.dateCalHead button{height:30px;border:1px solid #d1e4d8;border-radius:8px;background:#f4faf6;color:#176b4b;font-size:21px;line-height:1;cursor:pointer}
+.dateCalHead button:hover,.dateCalFoot button:hover{border-color:#00854a;background:#e6f5ec}
+.dateCalWeek,.dateCalDays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+.dateCalWeek{margin-bottom:5px;color:#47735c;font-size:11px;font-weight:700}
+.dateCalDays button{height:28px;min-width:0;padding:0;border:1px solid transparent;border-radius:7px;background:#fff;color:#263c30;font-size:12px;cursor:pointer}
+.dateCalDays button:hover{background:#e7f5ed;border-color:#b7d9c5}
+.dateCalDays button.outside{color:#a5b0a9}
+.dateCalDays button.today{border-color:#8ac5a3;font-weight:700}
+.dateCalDays button.selected{background:#00854a;border-color:#00854a;color:#fff;font-weight:700}
+.dateCalFoot{display:flex;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #e6efe9}
+.dateCalFoot button{border:1px solid transparent;border-radius:7px;padding:5px 9px;background:#f4faf6;color:#176b4b;font-size:12px;cursor:pointer}
