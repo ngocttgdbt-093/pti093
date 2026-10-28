@@ -25,6 +25,16 @@ const assert = require('node:assert/strict');
     assert.deepEqual(await page.evaluate(() => window.__saveFlags), [false, false],
       'blur normalization is persisted as metadata-only without marking image data dirty');
 
+    await page.evaluate(() => { state.workspaceOpenPending = true; });
+    await caption.fill('không được ghi đè hồ sơ');
+    assert.equal(await caption.inputValue(), 'Tổn thất xe. Hư hỏng',
+      'caption input is reverted while another workspace is opening');
+    assert.equal(await page.evaluate(() => state.groups[0].items[0].caption), 'Tổn thất xe. Hư hỏng',
+      'pending workspace transition blocks model mutation');
+    assert.deepEqual(await page.evaluate(() => window.__saveFlags), [false, false],
+      'blocked transition does not schedule autosave');
+    await page.evaluate(() => { state.workspaceOpenPending = false; });
+
     await caption.fill('va chạm! kính vỡ');
     assert.equal(await caption.inputValue(), 'Va chạm! Kính vỡ',
       'sentence after punctuation is capitalized on direct individual entry');
