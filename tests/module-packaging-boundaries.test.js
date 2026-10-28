@@ -48,5 +48,5 @@ assert.doesNotMatch(html, /skins\/classic\/skin\.js/);
 assert.doesNotMatch(html, /modules\/pti-gdv-admin\/admin-gdv\.js/);
 assert.match(handoff, /093:.*Drive Storage/i);
 assert.match(handoff, /PTI GĐV Admin/);
-assert.match(handoff, /date calendar/i);
+assert.match(handoff, /lịch chọn ngày/i);
 console.log('PASS: Drive, Classic Skin and PTI GĐV packages remain separate from shared Core runtime.');
