@@ -45,5 +45,51 @@ const contract = global.PTIDraftStorageContract.install({
   assert.ok(localOpen.includes('// Compatibility fallback for older integrations/tests'),
     'Legacy callers must retain the compatibility fallback');
 
-  console.log('Draft Storage Contract tests passed (provider validation, bundle shape, app wiring, compatibility fallback).');
+  // Exercise the actual IndexedDB provider: metadata and image blobs must be read
+  // through one readonly transaction, avoiding mixed snapshots during concurrent saves.
+  const metaRecord={id:'LOCAL-ATOMIC',sections:[]};
+  const imageRecords=[{draftId:'LOCAL-ATOMIC',sectionIndex:0,itemIndex:0,file:{bytes:true}}];
+  let transactionCalls=0,closed=0;
+  global.IDBKeyRange={only:value=>value};
+  global.indexedDB={
+    open(){
+      const request={};
+      queueMicrotask(()=>{
+        request.result={
+          close(){closed++},
+          transaction(names,mode){
+            transactionCalls++;
+            assert.deepEqual(names,['drafts','draftImages']);
+            assert.equal(mode,'readonly');
+            return {
+              objectStore(name){
+                if(name==='drafts')return {get(id){
+                  assert.equal(id,'LOCAL-ATOMIC');
+                  const req={};queueMicrotask(()=>{req.result=metaRecord;req.onsuccess&&req.onsuccess()});return req;
+                }};
+                if(name==='draftImages')return {index(name){
+                  assert.equal(name,'draftId');
+                  return {getAll(key){
+                    assert.equal(key,'LOCAL-ATOMIC');
+                    const req={};queueMicrotask(()=>{req.result=imageRecords;req.onsuccess&&req.onsuccess()});return req;
+                  }};
+                }};
+                throw new Error('Unexpected object store '+name);
+              }
+            };
+          }
+        };
+        request.onsuccess&&request.onsuccess();
+      });
+      return request;
+    }
+  };
+  const localStore=global.PTILocalDraftStore.install({dbName:'test-draft-storage'});
+  const actual=await localStore.getLocalDraftBundle('LOCAL-ATOMIC');
+  assert.equal(transactionCalls,1,'metadata and image blobs must be read from exactly one transaction');
+  assert.equal(closed,1,'database connection must close after the read');
+  assert.equal(actual.meta,metaRecord);
+  assert.deepEqual(actual.images,imageRecords);
+
+  console.log('Draft Storage Contract tests passed (provider validation, atomic bundle read, app wiring, compatibility fallback).');
 })().catch(error=>{console.error(error);process.exitCode=1});
