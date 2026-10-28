@@ -31,7 +31,7 @@
         // Bố cục luôn lấy theo state.per, không lấy theo số ảnh còn lại của trang cuối.
         // 6 ảnh: ngang 3x2, dọc 2x3. 8 ảnh: ngang 4x2, dọc 2x4.
         const layout=layoutDims();
-        const cols=layout.cols,rows=layout.rows,gapX=Math.max(4,Math.min(40,Number(state.columnGap)||18)),gapY=Math.max(4,Math.min(40,Number(state.rowGap)||18));
+        const cols=layout.cols,rows=layout.rows,gapX=Math.max(4,Math.min(36,Number(state.columnGap)||18)),gapY=Math.max(4,Math.min(36,Number(state.rowGap)||18));
         const areaX=m,areaY=header+22,areaW=W-2*m,areaH=H-header-footer-30;
         const cellW=(areaW-gapX*(cols-1))/cols,cellH=(areaH-gapY*(rows-1))/rows;
         for(let i=0;i<pageItems.length;i++){
