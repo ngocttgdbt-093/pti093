@@ -11,6 +11,25 @@ jobs:
   syntax-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Project 5 caption core and integration modules
+        run: |
+          node --check core/caption-tools.js
+          node --check core/app-core.js
+          node --check core/image-canvas.js
+          node --check skin/classic-image-grid.js
+          node --check skin/classic-layout.js
+      - name: Test Project 5 caption core helpers
+        run: node core/caption-tools.test.cjs
+      - name: Check Project 5 caption stylesheet reference
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          if (!html.includes('./css/project5-caption-tools.css')) throw new Error('Missing Project 5 CSS link');
+          if (!html.includes('./core/caption-tools.js')) throw new Error('Missing caption core script');
+          if (html.indexOf('./core/caption-tools.js') > html.indexOf('./core/app-core.js')) throw new Error('Caption module must load before app-core');
+          console.log('Project 5 local asset order: OK');
+          NODE
       - uses: actions/checkout@v4
       - name: Check each embedded JavaScript block
         run: |
