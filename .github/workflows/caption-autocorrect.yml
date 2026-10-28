@@ -39,3 +39,23 @@ jobs:
           node tests/modern-gallery-caption-autocorrect.test.cjs
           node tests/project5-caption-tools-browser.test.cjs
           node tests/classic-image-grid-skin.test.cjs
+
+      - name: Run Core regression suite 10 consecutive rounds
+        timeout-minutes: 30
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t test_files < <(find tests -maxdepth 1 -type f -name '*.test.js' | sort)
+          if [ "${#test_files[@]}" -eq 0 ]; then
+            echo "ERROR: no tests/*.test.js files found"
+            exit 1
+          fi
+          echo "Found ${#test_files[@]} standalone Core regression tests."
+          for round in $(seq 1 10); do
+            echo "===== CORE REGRESSION ROUND ${round}/10 ====="
+            for test_file in "${test_files[@]}"; do
+              echo "--- round ${round}/10: ${test_file} ---"
+              node "${test_file}"
+            done
+          done
+          echo "PASS: all ${#test_files[@]} Core regression tests passed in 10/10 rounds."
