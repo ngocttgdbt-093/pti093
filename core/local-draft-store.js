@@ -28,6 +28,37 @@
         });
       }
       
+      async function writeLocalDraftMetadata(meta){
+        if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
+        const db=await openLocalDraftDB();
+        try{
+          await new Promise((resolve,reject)=>{
+            const tx=db.transaction('drafts','readwrite');let settled=false;
+            tx.objectStore('drafts').put(meta);
+            tx.oncomplete=()=>{if(!settled){settled=true;resolve()}};
+            tx.onerror=()=>{if(!settled){settled=true;reject(tx.error||new Error('Lỗi cập nhật metadata bản nháp.'))}};
+            tx.onabort=()=>{if(!settled){settled=true;reject(tx.error||new Error('Giao dịch cập nhật metadata bị hủy.'))}};
+          });
+        }finally{db.close()}
+      }
+
+      async function deleteLocalDraftBundle(id){
+        if(id===undefined||id===null||String(id)==='')throw new TypeError('A non-empty draft ID is required.');
+        const db=await openLocalDraftDB();
+        try{
+          await new Promise((resolve,reject)=>{
+            const tx=db.transaction(['drafts','draftImages'],'readwrite');let settled=false;
+            tx.objectStore('drafts').delete(String(id));
+            const req=tx.objectStore('draftImages').index('draftId').openCursor(IDBKeyRange.only(String(id)));
+            req.onsuccess=()=>{const cursor=req.result;if(cursor){cursor.delete();cursor.continue()}};
+            req.onerror=()=>{if(!settled){settled=true;reject(req.error||new Error('Không thể xóa ảnh của bản nháp.'))}};
+            tx.oncomplete=()=>{if(!settled){settled=true;resolve()}};
+            tx.onerror=()=>{if(!settled){settled=true;reject(tx.error||new Error('Lỗi xóa bản nháp.'))}};
+            tx.onabort=()=>{if(!settled){settled=true;reject(tx.error||new Error('Giao dịch xóa bản nháp bị hủy.'))}};
+          });
+        }finally{db.close()}
+      }
+
       async function writeLocalDraftBundle(meta, imageRecords, onProgress){
         if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
         if(!Array.isArray(imageRecords))throw new TypeError('Draft images must be an array.');
@@ -93,7 +124,7 @@
           });
         }finally{db.close()}
       }
-      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle, writeLocalDraftBundle};
+      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle, writeLocalDraftBundle, writeLocalDraftMetadata, deleteLocalDraftBundle};
     }
   };
 
@@ -103,6 +134,16 @@
       const provider=options&&options.provider;
       if(!provider||typeof provider.getLocalDraftBundle!=='function'){
         throw new TypeError('Draft storage provider must implement getLocalDraftBundle(id).');
+      }
+      async function writeMetadata(meta){
+        if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
+        if(typeof provider.writeLocalDraftMetadata!=='function')throw new TypeError('Draft storage provider must implement writeLocalDraftMetadata(meta).');
+        return provider.writeLocalDraftMetadata(meta);
+      }
+      async function deleteBundle(id){
+        if(id===undefined||id===null||String(id)==='')throw new TypeError('A non-empty draft ID is required.');
+        if(typeof provider.deleteLocalDraftBundle!=='function')throw new TypeError('Draft storage provider must implement deleteLocalDraftBundle(id).');
+        return provider.deleteLocalDraftBundle(String(id));
       }
       async function writeBundle(meta, images, onProgress){
         if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
@@ -117,7 +158,7 @@
         if(!result||!Array.isArray(result.images))throw new Error('Draft storage returned an invalid bundle.');
         return {meta:result.meta||null,images:result.images};
       }
-      return {readBundle,writeBundle};
+      return {readBundle,writeBundle,writeMetadata,deleteBundle};
     }
   };
 })(window);
