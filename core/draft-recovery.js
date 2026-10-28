@@ -62,7 +62,7 @@ function scheduleAutoDraftSave(imagesDirty=true){
           const draftId=activeAutoDraftId;
           const meta={id:draftId,auto:true,sessionId:PTI093_SESSION_ID,caseNumber:($('hoso').value||'').trim(),bks:($('bks').value||'').trim(),garage:($('garage').value||'').trim(),
             gdv,date:getDateISO(),status:'Tự động lưu trên máy',driveRecordId:state.driveRecordId||'',driveOpenIncomplete:!!state.driveOpenIncomplete,localCopyFromIncompleteDrive:!!state.localCopyFromIncompleteDrive,
-            localDraftId:state.localDraftId||'',editing:Number.isInteger(state.editing)&&state.editing>=0?state.editing:-1,settings:{orientation:state.orientation,imagesPerPage:state.per},
+            localDraftId:state.localDraftId||'',editing:Number.isInteger(state.editing)&&state.editing>=0?state.editing:-1,settings:{orientation:state.orientation,imagesPerPage:state.per,rowGap:state.rowGap||18,columnGap:state.columnGap||18},
             currentTitle:$('title').value||state.current.title||'Bản ảnh chi tiết thiệt hại',sections,updatedAt:new Date().toISOString()};
           const db=await openLocalDraftDB();
           try{
@@ -263,6 +263,8 @@ function scheduleAutoDraftSave(imagesDirty=true){
             const settings=meta.settings||{};
             if(settings.orientation==='landscape'||settings.orientation==='portrait')state.orientation=settings.orientation;
             if([1,2,3,4,6,8].includes(Number(settings.imagesPerPage)))state.per=Number(settings.imagesPerPage);
+            if(Number.isFinite(Number(settings.rowGap)))state.rowGap=Math.max(4,Math.min(36,Number(settings.rowGap)));
+            if(Number.isFinite(Number(settings.columnGap)))state.columnGap=Math.max(4,Math.min(36,Number(settings.columnGap)));
           }else{
             state.per=6;
             state.orientation='portrait';
