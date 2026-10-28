@@ -15,6 +15,7 @@ const template = read('skins/classic/template.html');
 const calendarSkin = read('skins/classic/date-calendar.js');
 const calendarCss = read('skins/classic/date-calendar.css');
 const gdv = read('modules/pti-gdv-admin/admin-gdv.js');
+const gdvReadme = read('modules/pti-gdv-admin/README.md');
 const handoff = read('docs/PROJECT5-MODULE-PACKAGING-20261028.md');
 
 assert.match(drive, /const DRIVE_CONCURRENCY\s*=\s*5/);
@@ -42,6 +43,8 @@ assert.match(gdv, /PTI_GDV_ADMIN_API_URL/);
 assert.match(gdv, /publicList/);
 assert.match(gdv, /call\('save'/);
 assert.match(gdv, /call\('logout'/);
+assert.match(gdvReadme, /dedicated PTI admin Apps Script API/i);
+assert.match(gdvReadme, /Server-side authorization/i);
 assert.doesNotMatch(gdv, /AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/);
 assert.doesNotMatch(html, /modules\/drive-storage-093\/DriveStorage093\.frontend\.js/);
 assert.doesNotMatch(html, /skins\/classic\/skin\.js/);
