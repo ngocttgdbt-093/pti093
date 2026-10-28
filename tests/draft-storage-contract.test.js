@@ -42,7 +42,7 @@ const contract = global.PTIDraftStorageContract.install({
   await assert.rejects(contract.writeBundle(expected.meta,[{draftId:'OTHER'}]),/match the metadata id/);
   await assert.rejects(contract.readBundle(''),/non-empty draft ID/);
   await assert.rejects(
-    global.PTIDraftStorageContract.install({provider:{async getLocalDraftBundle(){return {meta:{id:'bad'}}}}}).readBundle('bad'),
+    global.PTIDraftStorageContract.install({provider:{async getLocalDraftBundle(){return {meta:{id:'bad'}}},async writeLocalDraftBundle(){},async writeLocalDraftMetadata(){},async deleteLocalDraftBundle(){}}}).readBundle('bad'),
     /invalid bundle/,
     'Malformed provider responses must fail closed'
   );
