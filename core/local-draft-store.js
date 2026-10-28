@@ -28,6 +28,32 @@
         });
       }
       
+      async function getLocalDraftBundles(ids){
+        if(!Array.isArray(ids)||!ids.length||ids.some(id=>id===undefined||id===null||String(id)===''))throw new TypeError('A non-empty array of draft IDs is required.');
+        const uniqueIds=[...new Set(ids.map(String))];
+        const db=await openLocalDraftDB();
+        try{
+          return await new Promise((resolve,reject)=>{
+            const tx=db.transaction(['drafts','draftImages'],'readonly');
+            const drafts=tx.objectStore('drafts'),imageIndex=tx.objectStore('draftImages');
+            const result={};let pending=uniqueIds.length*2,transactionComplete=false,settled=false;
+            const finish=()=>{if(!settled&&transactionComplete&&pending===0){settled=true;resolve(result)}};
+            const fail=error=>{if(!settled){settled=true;reject(error)}};
+            uniqueIds.forEach(id=>{
+              result[id]={meta:null,images:[]};
+              const metaRequest=drafts.get(id),imagesRequest=imageIndex.index('draftId').getAll(IDBKeyRange.only(id));
+              metaRequest.onsuccess=()=>{result[id].meta=metaRequest.result||null;pending--;finish()};
+              imagesRequest.onsuccess=()=>{result[id].images=imagesRequest.result||[];pending--;finish()};
+              metaRequest.onerror=()=>fail(metaRequest.error||new Error('Không đọc được metadata của bản nháp '+id+'.'));
+              imagesRequest.onerror=()=>fail(imagesRequest.error||new Error('Không đọc được ảnh của bản nháp '+id+'.'));
+            });
+            tx.oncomplete=()=>{transactionComplete=true;finish()};
+            tx.onerror=()=>fail(tx.error||new Error('Lỗi giao dịch đọc nhiều bản nháp.'));
+            tx.onabort=()=>fail(tx.error||new Error('Giao dịch đọc nhiều bản nháp bị hủy.'));
+          });
+        }finally{db.close()}
+      }
+
       async function writeLocalDraftMetadata(meta){
         if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
         const db=await openLocalDraftDB();
@@ -124,7 +150,7 @@
           });
         }finally{db.close()}
       }
-      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle, writeLocalDraftBundle, writeLocalDraftMetadata, deleteLocalDraftBundle};
+      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle, getLocalDraftBundles, writeLocalDraftBundle, writeLocalDraftMetadata, deleteLocalDraftBundle};
     }
   };
 
@@ -132,11 +158,18 @@
   global.PTIDraftStorageContract = {
     install: function(options){
       const provider=options&&options.provider;
-      if(!provider||typeof provider.getLocalDraftBundle!=='function'||
+      if(!provider||typeof provider.getLocalDraftBundle!=='function'||typeof provider.getLocalDraftBundles!=='function'||
         typeof provider.writeLocalDraftBundle!=='function'||
         typeof provider.writeLocalDraftMetadata!=='function'||
         typeof provider.deleteLocalDraftBundle!=='function'){
-        throw new TypeError('Draft storage provider must implement getLocalDraftBundle(id), writeLocalDraftBundle(meta, images), writeLocalDraftMetadata(meta), and deleteLocalDraftBundle(id).');
+        throw new TypeError('Draft storage provider must implement getLocalDraftBundle(id), getLocalDraftBundles(ids), writeLocalDraftBundle(meta, images), writeLocalDraftMetadata(meta), and deleteLocalDraftBundle(id).');
+      }
+      async function readBundles(ids){
+        if(!Array.isArray(ids)||!ids.length||ids.some(id=>id===undefined||id===null||String(id)===''))throw new TypeError('A non-empty array of draft IDs is required.');
+        const result=await provider.getLocalDraftBundles(ids.map(String));
+        if(!result||typeof result!=='object')throw new Error('Draft storage returned an invalid bundle collection.');
+        for(const id of new Set(ids.map(String))){if(!result[id]||!Array.isArray(result[id].images))throw new Error('Draft storage returned an invalid bundle for '+id+'.')}
+        return result;
       }
       async function writeMetadata(meta){
         if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
@@ -161,7 +194,7 @@
         if(!result||!Array.isArray(result.images))throw new Error('Draft storage returned an invalid bundle.');
         return {meta:result.meta||null,images:result.images};
       }
-      return {readBundle,writeBundle,writeMetadata,deleteBundle};
+      return {readBundle,readBundles,writeBundle,writeMetadata,deleteBundle};
     }
   };
 })(window);
