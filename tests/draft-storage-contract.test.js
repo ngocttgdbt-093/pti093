@@ -155,5 +155,29 @@ const contract = global.PTIDraftStorageContract.install({
   assert.deepEqual(stored.images,writeImages);
   assert.equal(writeProgress,true,'write progress must fire after old images are removed and before replacement images are written');
 
-  console.log('Draft Storage Contract tests passed (atomic read/write, provider validation, app wiring, compatibility fallback).');
+  // Multi-ID restore must read active and legacy AUTO-DRAFT snapshots in one readonly transaction.
+  const multiMeta={'AUTO-A':{id:'AUTO-A',sessionId:'session-a'},'AUTO-DRAFT':{id:'AUTO-DRAFT',sessionId:'session-a'}};
+  const multiImages={'AUTO-A':[{draftId:'AUTO-A',file:{active:true}}],'AUTO-DRAFT':[{draftId:'AUTO-DRAFT',file:{legacy:true}}]};
+  let multiTransactions=0,multiClosed=0;
+  global.indexedDB={open(){const request={};queueMicrotask(()=>{request.result={
+    close(){multiClosed++},
+    transaction(names,mode){
+      multiTransactions++;assert.deepEqual(names,['drafts','draftImages']);assert.equal(mode,'readonly');
+      const tx={scheduled:0,completed:0,maybeComplete(){if(this.scheduled===4&&this.completed===4)queueMicrotask(()=>this.oncomplete&&this.oncomplete())},
+        objectStore(name){
+          if(name==='drafts')return {get(id){const req={};tx.scheduled++;queueMicrotask(()=>{req.result=multiMeta[id];req.onsuccess&&req.onsuccess();tx.completed++;tx.maybeComplete()});return req}};
+          if(name==='draftImages')return {index(name){assert.equal(name,'draftId');return {getAll(key){const req={};tx.scheduled++;queueMicrotask(()=>{req.result=multiImages[key]||[];req.onsuccess&&req.onsuccess();tx.completed++;tx.maybeComplete()});return req}}};
+          throw new Error('Unexpected multi-read store '+name);
+        }};
+      return tx;
+    }
+  };request.onsuccess&&request.onsuccess()});return request}};
+  const multiStore=global.PTILocalDraftStore.install({dbName:'test-multi-read'});
+  const multi=await multiStore.getLocalDraftBundles(['AUTO-A','AUTO-DRAFT']);
+  assert.equal(multiTransactions,1,'active and legacy draft snapshots must share one readonly transaction');
+  assert.equal(multiClosed,1,'multi-read must close its database connection');
+  assert.equal(multi['AUTO-A'].meta.sessionId,'session-a');
+  assert.equal(multi['AUTO-DRAFT'].images[0].file.legacy,true);
+
+  console.log('Draft Storage Contract tests passed (atomic single/multi read, write, provider validation, app wiring, compatibility fallback).');
 })().catch(error=>{console.error(error);process.exitCode=1});
