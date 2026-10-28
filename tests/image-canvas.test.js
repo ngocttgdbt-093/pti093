@@ -10,9 +10,9 @@ global.Image = class FakeImage {
 };
 require('../core/image-canvas.js');
 
-const calls = { drawImage: [], fillText: [], rotate: [], canvasSize: null };
+const calls = { drawImage: [], fillText: [], rotate: [], fillRect: [], canvasSize: null };
 const ctx = {
-  fillRect(){}, strokeRect(){}, beginPath(){}, arc(){}, fill(){}, save(){}, restore(){},
+  fillRect: (...args) => calls.fillRect.push(args), strokeRect(){}, beginPath(){}, arc(){}, fill(){}, save(){}, restore(){},
   translate(){}, rotate: value => calls.rotate.push(value),
   drawImage: (...args) => calls.drawImage.push(args),
   fillText: (text) => calls.fillText.push(text),
@@ -46,5 +46,20 @@ const api = global.PTI093ImageCanvasCore.install({
   assert.ok(calls.fillText.includes('GĐV: Nguyễn Minh Ngọc'));
   assert.ok(calls.rotate.some(value => Math.abs(value - Math.PI / 2) < 0.0001));
   assert.equal(revokedUrls.length,2,'PDF rendering should revoke each decoded image URL instead of leaking it');
-  console.log('Image Canvas Core tests passed (10 checks).');
+
+  // Project 5 regression: row/column gap settings must change the actual PDF canvas cell geometry.
+  state.rowGap=24;state.columnGap=30;
+  calls.fillRect.length=0;
+  await api.drawPage({title:'Spacing regression'},[
+    {file:{name:'a.jpg'},caption:'A',rotate:0},
+    {file:{name:'b.jpg'},caption:'B',rotate:0},
+    {file:{name:'c.jpg'},caption:'C',rotate:0}
+  ],1,1,1,0,'');
+  const cellA=calls.fillRect[2],cellB=calls.fillRect[3],cellC=calls.fillRect[4];
+  const expectedCellW=(1240-90-30)/2;
+  const expectedCellH=(1754-135-70-30-24*2)/3;
+  assert.equal(cellB[0]-cellA[0],expectedCellW+30,'PDF canvas must apply columnGap to cell placement');
+  assert.equal(cellC[1]-cellA[1],expectedCellH+24,'PDF canvas must apply rowGap to cell placement');
+  assert.equal(revokedUrls.length,5,'each additional decoded PDF image URL must also be revoked');
+  console.log('Image Canvas Core tests passed (12 checks including Project 5 spacing geometry).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
