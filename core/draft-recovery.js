@@ -137,14 +137,17 @@ function scheduleAutoDraftSave(imagesDirty=true){
         clearTimeout(autoDraftTimer);
         try{
           while(autoDraftSaving)await new Promise(resolve=>setTimeout(resolve,50));
-          const db=await openLocalDraftDB();
-          try{
-            const tx=db.transaction(['drafts','draftImages'],'readwrite');
-            tx.objectStore('drafts').delete(activeAutoDraftId);
-            const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(activeAutoDraftId));
-            req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
-            await localDraftTransactionDone(tx);
-          }finally{db.close()}
+          if(draftStorage)await draftStorage.deleteBundle(activeAutoDraftId);
+          else{
+            const db=await openLocalDraftDB();
+            try{
+              const tx=db.transaction(['drafts','draftImages'],'readwrite');
+              tx.objectStore('drafts').delete(activeAutoDraftId);
+              const idx=tx.objectStore('draftImages').index('draftId'),req=idx.openCursor(IDBKeyRange.only(activeAutoDraftId));
+              req.onsuccess=()=>{const cur=req.result;if(cur){cur.delete();cur.continue()}};
+              await localDraftTransactionDone(tx);
+            }finally{db.close()}
+          }
           autoDraftImagesDirty=true;
         }finally{
           // Never leave autosave permanently disabled if IndexedDB open/delete fails.
