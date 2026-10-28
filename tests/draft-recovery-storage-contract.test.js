@@ -6,7 +6,7 @@ require('../core/draft-recovery.js');
 
 const elements={};
 function $(id){
-  return elements[id]||(elements[id]={value:id==='gdv'?'GĐV test':id==='title'?'Thiệt hại':'',dataset:{custom:''},textContent:'',disabled:false,style:{},classList:{add(){},remove(){},toggle(){}}});
+  return elements[id]||(elements[id]={value:id==='gdv'?'GĐV test':id==='title'?'Thiệt hại':'',options:[],dataset:{custom:''},textContent:'',disabled:false,style:{},classList:{add(){},remove(){},toggle(){}}});
 }
 const file={name:'damage.jpg',type:'image/jpeg',lastModified:123,size:12};
 const item={file,key:'image-key',caption:'Mặt trước',rotate:0,addSeq:1,driveFileId:'DRIVE-1',driveFileName:'damage.jpg',driveUploadKey:'UPLOAD-1'};
