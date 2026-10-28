@@ -38,7 +38,28 @@
           });
         }finally{db.close()}
       }
-      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts};
+
+      // Read metadata and image blobs in one readonly transaction so opening a draft
+      // cannot combine metadata from one commit with images from another commit.
+      async function getLocalDraftBundle(id){
+        const db=await openLocalDraftDB();
+        try{
+          return await new Promise((resolve,reject)=>{
+            let metaReady=false,imagesReady=false,meta,images;
+            const tx=db.transaction(['drafts','draftImages'],'readonly');
+            const metaRequest=tx.objectStore('drafts').get(id);
+            const imageRequest=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(id));
+            const finish=()=>{if(metaReady&&imagesReady)resolve({meta:meta||null,images:images||[]})};
+            metaRequest.onsuccess=()=>{meta=metaRequest.result;metaReady=true;finish()};
+            imageRequest.onsuccess=()=>{images=imageRequest.result;imagesReady=true;finish()};
+            metaRequest.onerror=()=>reject(metaRequest.error||new Error('Không đọc được thông tin bản lưu tại máy.'));
+            imageRequest.onerror=()=>reject(imageRequest.error||new Error('Không đọc được ảnh của bản lưu tại máy.'));
+            tx.onerror=()=>reject(tx.error||new Error('Lỗi khi đọc bản lưu tại máy.'));
+            tx.onabort=()=>reject(tx.error||new Error('Giao dịch đọc bản lưu tại máy bị hủy.'));
+          });
+        }finally{db.close()}
+      }
+      return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle};
     }
   };
 })(window);
