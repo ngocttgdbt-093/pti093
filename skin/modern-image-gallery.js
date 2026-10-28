@@ -32,8 +32,37 @@
       if(it.file){var url=URL.createObjectURL(it.file);im.src=url;im.onload=function(){URL.revokeObjectURL(url)}}
       else if(it.previewUrl||it.dataUrl||it.src) im.src=it.previewUrl||it.dataUrl||it.src;
       var label=document.createElement('div');label.textContent='Ảnh '+(ii+1);label.style.cssText='font-size:12px;font-weight:700;margin:5px 0';
-      var caption=document.createElement('textarea');caption.value=it.caption||'';caption.placeholder='Thuyết minh ảnh…';caption.rows=2;caption.style.cssText='width:100%;box-sizing:border-box;resize:vertical;font-size:12px;border:1px solid #d6e2f5;border-radius:6px;padding:5px';
-      caption.addEventListener('change',function(){it.caption=caption.value;scheduleAutoDraftSave(false)});
+      var caption=document.createElement('textarea');caption.value=it.caption||'';caption.placeholder='Thuyết minh ảnh…';caption.rows=2;caption.style.cssText='width:100%;box-sizing:border-box;resize:vertical;font-size:12px;border:1px solid #d6e2f5;border-radius:6px';
+      // Keep saved-group captions on the same silent AutoCorrect path as the Classic grid.
+      // Preserve a trailing space while typing so the next word can be entered naturally.
+      caption.addEventListener('input',function(){
+        // Match the Classic editor's workspace-transition guard: do not mutate a workspace while another is opening.
+        if(state.workspaceOpenPending){caption.value=it.caption||'';return;}
+        var tools=window.PTI093CaptionTools;
+        if(tools){
+          var start=caption.selectionStart,end=caption.selectionEnd;
+          var normalized=tools.normalizeCaption(caption.value,{preserveTrailingWhitespace:true});
+          if(normalized!==caption.value){
+            var nextStart=tools.normalizeCaption(caption.value.slice(0,start),{preserveTrailingWhitespace:true}).length;
+            var nextEnd=tools.normalizeCaption(caption.value.slice(0,end),{preserveTrailingWhitespace:true}).length;
+            caption.value=normalized;
+            try{caption.setSelectionRange(nextStart,nextEnd)}catch(_){}
+          }
+        }
+        it.caption=caption.value;
+        scheduleAutoDraftSave(false);
+      });
+      caption.addEventListener('blur',function(){
+        if(state.workspaceOpenPending){caption.value=it.caption||'';return;}
+        var tools=window.PTI093CaptionTools;
+        if(!tools)return;
+        var normalized=tools.normalizeCaption(caption.value);
+        if(normalized!==caption.value){
+          caption.value=normalized;
+          it.caption=normalized;
+          scheduleAutoDraftSave(false);
+        }
+      });
       var actions=document.createElement('div');actions.style.cssText='display:flex;gap:4px;margin-top:5px';
       var rotate=document.createElement('button');rotate.className='btn light';rotate.textContent='↻';rotate.title='Xoay ảnh';rotate.style.cssText='padding:4px 8px';rotate.onclick=function(){if(typeof editGroup==='function'){editGroup(gi);state.current.items[ii].rotate=((state.current.items[ii].rotate||0)+90)%360;render();saved.style.display='none';}};
       var remove=document.createElement('button');remove.className='btn light';remove.textContent='🗑';remove.title='Xóa ảnh';remove.style.cssText='padding:4px 8px';remove.onclick=function(){if(confirm('Xóa ảnh '+(ii+1)+' khỏi nội dung này?')){items.splice(ii,1);renderSavedGroupsGallery();scheduleAutoDraftSave(true)}};
