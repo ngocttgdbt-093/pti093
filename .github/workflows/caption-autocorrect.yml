@@ -1,0 +1,41 @@
+name: Caption AutoCorrect regression
+
+on:
+  push:
+    branches: [fix/core-caption-autocorrect-modern-20261028]
+  pull_request:
+    branches: [integration/project5-caption-core-20261027]
+  workflow_dispatch:
+
+jobs:
+  caption-autocorrect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Check caption modules
+        run: |
+          node --check core/caption-tools.js
+          node --check skin/classic-image-grid.js
+          node --check skin/modern-image-gallery.js
+          node core/caption-tools.test.cjs
+      - name: Run Classic and modern caption browser regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 >/tmp/caption-test-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:4173/tests/modern-gallery-caption-autocorrect.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/modern-gallery-caption-autocorrect.test.cjs
+          node tests/project5-caption-tools-browser.test.cjs
+          node tests/classic-image-grid-skin.test.cjs
