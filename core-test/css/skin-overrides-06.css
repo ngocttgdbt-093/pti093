@@ -1,0 +1,5 @@
+
+.searchTable .recordOpenPrimary{display:block!important;visibility:visible!important;opacity:1!important;margin-top:10px!important;width:100%;min-width:0;white-space:normal!important;overflow-wrap:anywhere;position:static!important;transform:none!important}
+.searchTable td[data-label="Hồ sơ"]{min-width:150px}
+.searchTable td[data-label="Thao tác"] .recordOpenPrimary{display:none!important}
+@media(max-width:650px){.searchTable .recordOpenPrimary{display:block!important}.searchTable td[data-label="Thao tác"]{display:none!important}}
