@@ -166,7 +166,7 @@ const contract = global.PTIDraftStorageContract.install({
       const tx={scheduled:0,completed:0,maybeComplete(){if(this.scheduled===4&&this.completed===4)queueMicrotask(()=>this.oncomplete&&this.oncomplete())},
         objectStore(name){
           if(name==='drafts')return {get(id){const req={};tx.scheduled++;queueMicrotask(()=>{req.result=multiMeta[id];req.onsuccess&&req.onsuccess();tx.completed++;tx.maybeComplete()});return req}};
-          if(name==='draftImages')return {index(name){assert.equal(name,'draftId');return {getAll(key){const req={};tx.scheduled++;queueMicrotask(()=>{req.result=multiImages[key]||[];req.onsuccess&&req.onsuccess();tx.completed++;tx.maybeComplete()});return req}}};
+          if(name==='draftImages')return {index(name){assert.equal(name,'draftId');return {getAll(key){const req={};tx.scheduled++;queueMicrotask(()=>{req.result=multiImages[key]||[];req.onsuccess&&req.onsuccess();tx.completed++;tx.maybeComplete()});return req}}}};
           throw new Error('Unexpected multi-read store '+name);
         }};
       return tx;
