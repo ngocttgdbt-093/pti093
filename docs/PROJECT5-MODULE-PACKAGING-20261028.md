@@ -7,7 +7,7 @@ Gói này lưu ba module độc lập để tích hợp có kiểm soát. Việc
 - **Core dùng chung:** quy tắc nghiệp vụ, quản lý workspace, chọn/chú thích ảnh, bản nháp, preview/PDF và các API lõi dùng chung.
 - **093:** Core + Drive Storage/Fusion + giao diện 093.
 - **PTI:** Core + module quản trị danh sách GĐV PTI. Không bật Drive Storage/Fusion hoặc UI riêng của 093 trong PTI.
-- **Classic Skin:** giao diện thay thế được, không sở hữu nghiệp vụ lưu Drive hay quản trị danh sách GĐV.
+- **Classic Skin:** giao diện thay thế được, không sở hữu nghiệp vụ lưu Drive hay quản trị danh sách GĐV. Skin package bao gồm lịch chọn ngày dd/mm/yyyy và dùng chung Core date utils.
 
 ## 1. Drive Storage 093
 
@@ -33,6 +33,10 @@ Bao gồm template, manifest, adapter và kiểm thử ranh giới. Mục tiêu 
 - Không đưa Drive Storage/Fusion, UI mới riêng 093 hoặc UI quản trị GĐV vào template Classic.
 - Không thay đổi Core nghiệp vụ chỉ để phục vụ skin.
 - Giữ các ID/điểm móc DOM cần thiết cho Core, và bổ sung kiểm thử trước khi đổi host ứng dụng.
+
+### Phụ thuộc lịch chọn ngày
+
+Template Classic hiện đã đóng gói markup, CSS và controller lịch chọn ngày. Controller cần Core khởi tạo sau khi `PTI093DateUtils` sẵn sàng; wiring Core đang được kiểm thử riêng ở [PR #16](https://github.com/ngocttgdbt-093/pti093/pull/16). Không đánh dấu lịch hoạt động trong host mới cho đến khi wiring được tích hợp và bài kiểm thử trình duyệt chạy trên template skin.
 
 ## 3. PTI GĐV Admin
 
