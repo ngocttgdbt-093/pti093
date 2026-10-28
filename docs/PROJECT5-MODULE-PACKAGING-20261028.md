@@ -49,6 +49,12 @@ Nguồn: `admin-gdv/admin-gdv.js` từ repo PTI. Module dùng API quản trị P
 - Thao tác thêm/sửa/xóa trong giao diện chưa được xem là đã lưu cho đến khi API xác nhận.
 - Không coi kiểm thử nguồn tĩnh là xác minh bảo mật backend; cần kiểm tra cấu hình mật khẩu, quyền, CORS/origin và triển khai Apps Script trước phát hành.
 
+## Lưu ý về trạng thái tách runtime
+
+PR đóng gói này là **bước đóng gói module**, chưa phải bước hoàn tất tách runtime. Nhánh đích `integration/project5-caption-core-20261027` hiện vẫn là app shell 093 và còn nạp các phần Drive legacy của 093. PR này không xóa hay tắt các phần đó để tránh làm hỏng app 093. Vì vậy chưa được gọi đây là “Core trung lập đã loại bỏ Drive/UI 093”.
+
+Bước tích hợp riêng sau này phải tạo host/assembly rõ ràng: Core dùng chung không nạp Drive/UI 093; bản 093 lắp thêm Drive + UI 093; bản PTI lắp GĐV Admin PTI mà không nạp Drive 093. Chỉ nghiệm thu kiến trúc hoàn chỉnh sau khi chạy browser smoke test riêng cho cả hai biến thể.
+
 ## Kiểm thử và nghiệm thu
 
 CI kiểm tra ranh giới module, manifest, hợp đồng Drive (concurrency 5 / index commit / SHA-256) và bảo đảm các gói chưa bị nạp nhầm vào `index.html`. Bộ Core hồi quy chạy 10 vòng liên tiếp.
