@@ -58,7 +58,7 @@ const contract = global.PTIDraftStorageContract.install({
   const recovery=fs.readFileSync('core/draft-recovery.js','utf8');
   assert.ok(appCore.includes('localDraftTransactionDone,draftStorage,fileKey'),
     'App assembly must inject storage contract into autosave recovery');
-  assert.ok(recovery.includes('await draftStorage.readBundles([activeAutoDraftId,PTI093_AUTO_DRAFT_ID])'),
+  assert.ok(recovery.includes('await draftStorage.readBundles([activeId,legacyId])'),
     'Autosave restore must read active and legacy snapshots atomically');
   assert.ok(recovery.includes('await draftStorage.writeBundle(meta,imageRecords)'),
     'Autosave must use the contract when image data is dirty');
