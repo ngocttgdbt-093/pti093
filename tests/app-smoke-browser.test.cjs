@@ -66,7 +66,7 @@ const {chromium}=require('playwright');
     await page.waitForSelector('#dateCalendar.hidden');
     await page.locator('#datePickerBtn').click();
     await page.locator('#dateCalToday').click();
-    assert.match(await page.locator('#date').inputValue(),/^\\d{2}\\/\\d{2}\\/\\d{4}$/,'Today should set a formatted date');
+    assert.match(await page.locator('#date').inputValue(),/^\d{2}\/\d{2}\/\d{4}$/,'Today should set a formatted date');
     await page.waitForSelector('#dateCalendar.hidden');
     await page.locator('#date').fill('01012026');
     assert.equal(await page.locator('#date').inputValue(),'01/01/2026','real app date mask should insert separators');
