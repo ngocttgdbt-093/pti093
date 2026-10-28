@@ -67,13 +67,14 @@ function element(id) {
   return elements.get(id);
 }
 global.document = { querySelectorAll: () => [] };
-const calls = { progress: [], status: [], finished: 0, rendered: 0, layout: 0, messages: [], autosave: [] };
+const calls = { progress: [], status: [], finished: 0, rendered: 0, layout: 0, messages: [], autosave: [], storageReads: [] };
 const appState = { groups: [], current: { title: '', items: [] }, editing: -1, per: 6, orientation: 'portrait', driveRecordId: '', localDraftId: '', driveOpenIncomplete: true, driveOpenPending:false, workspaceOpenPending:false, addSeq: 0 };
 const api = global.PTI093LocalOpenCore.install({
   state: appState,
   $: element,
   msg: text => calls.messages.push(text),
   openLocalDraftDB: async () => db,
+  draftStorage: { readBundle: async id => { calls.storageReads.push(id); return {meta,images:storedImages}; } },
   setDateInput: value => { element('date').value = value; },
   render: () => { calls.rendered++; },
   renderLayout: () => { calls.layout++; },
@@ -114,7 +115,8 @@ const api = global.PTI093LocalOpenCore.install({
   assert.equal(calls.layout, 1);
   assert.deepEqual(calls.autosave,[true],'successful local open must replace stale AUTO-DRAFT for this session');
   assert.ok(calls.progress.length >= 2);
-  assert.equal(closed, 1);
+  assert.deepEqual(calls.storageReads,['LOCAL-TEST-1'],'local-open should use the injected draft storage contract');
+  assert.equal(closed, 0,'contract-backed reads must not open a second database connection in local-open');
 
   const failureCalls={progress:[],status:[]};
   const failureApi=global.PTI093LocalOpenCore.install({
