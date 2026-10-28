@@ -62,4 +62,21 @@
       return {openLocalDraftDB, localDraftTransactionDone, getLocalDrafts, getLocalDraftBundle};
     }
   };
+
+  // Stable Core-facing storage contract. App-specific persistence stays behind this adapter.
+  global.PTIDraftStorageContract = {
+    install: function(options){
+      const provider=options&&options.provider;
+      if(!provider||typeof provider.getLocalDraftBundle!=='function'){
+        throw new TypeError('Draft storage provider must implement getLocalDraftBundle(id).');
+      }
+      async function readBundle(id){
+        if(id===undefined||id===null||String(id)==='')throw new TypeError('A non-empty draft ID is required.');
+        const result=await provider.getLocalDraftBundle(String(id));
+        if(!result||!Array.isArray(result.images))throw new Error('Draft storage returned an invalid bundle.');
+        return {meta:result.meta||null,images:result.images};
+      }
+      return {readBundle};
+    }
+  };
 })(window);
