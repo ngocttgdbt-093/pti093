@@ -65,9 +65,23 @@
 .caption-tool-bar .btn.on{background:#075d39;color:#fff}
 .caption-tool-hint{font-size:12px;color:#65736b}
 .caption-selection-rect{position:fixed;border:2px solid #16834a;background:rgba(22,131,74,.12);pointer-events:none;z-index:30;display:none}
-.caption-context-menu{position:fixed;z-index:99999;min-width:205px;padding:5px;background:#fff;border:1px solid #ccd8d0;border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
-.caption-context-menu button{display:block;width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:6px;cursor:pointer;color:#20352a}
+.caption-context-menu{position:fixed;z-index:99999;min-width:132px;padding:4px;background:rgba(255,255,255,.98);border:1px solid #d6e5dc;border-radius:10px;box-shadow:0 8px 24px rgba(20,67,44,.16);backdrop-filter:blur(10px)}
+.caption-context-menu button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:8px 11px;border-radius:7px;cursor:pointer;color:#20352a;font-size:12px;font-weight:650;line-height:1.35;white-space:nowrap;transition:background .12s ease}
+.caption-context-menu button+button{margin-top:1px;border-top:1px solid #edf2ee;padding-top:9px}
 .caption-context-menu button:hover{background:#eaf6ef}
+.caption-context-menu .caption-context-delete{color:#b4232c}
+.caption-context-menu .caption-context-delete:hover{background:#fff0f0;color:#a31620}
+.caption-delete-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(17,35,26,.34);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px}
+.caption-delete-dialog{width:min(390px,100%);overflow:hidden;border:1px solid #d8e6dd;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(12,52,32,.24)}
+.caption-delete-head{padding:17px 20px 12px;background:linear-gradient(135deg,#fff9f8,#fff);border-bottom:1px solid #f0e2df}
+.caption-delete-icon{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#fff0ef;color:#b4232c;font-size:19px;margin-bottom:9px}
+.caption-delete-title{font-size:17px;font-weight:750;color:#17382b}
+.caption-delete-body{padding:15px 20px 18px;color:#526158;font-size:13px;line-height:1.6}
+.caption-delete-count{display:inline-flex;margin-top:9px;padding:5px 9px;border-radius:8px;background:#fff1f0;color:#b4232c;font-weight:750}
+.caption-delete-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 16px;background:#fbfdfc}
+.caption-delete-actions button{border-radius:9px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #d4dfd8}
+.caption-delete-cancel{background:#fff;color:#526158}
+.caption-delete-confirm{background:linear-gradient(135deg,#c43a3a,#a91f28);color:#fff;border-color:#b4232c!important;box-shadow:0 4px 12px rgba(180,35,44,.16)}
 
 </style><style id="uiRefreshV42">
 /* V42 UI redesign: visual shell only; preserve all business logic and controls */
@@ -392,7 +406,7 @@ body:not(.classic-ui) .appFooter{grid-column:1/-1;margin:0;padding:8px;color:#61
 <span id="captionToolHint" class="caption-tool-hint">Ctrl/Cmd + nhấp để chọn nhiều ảnh; Shift + nhấp để chọn dải ảnh; bật khoanh chọn để kéo vùng.</span>
 </div>
 <div id="captionSelectionRect" class="caption-selection-rect"></div>
-<div id="captionContextMenu" class="caption-context-menu" hidden><button type="button" id="captionContextBulk">✎ Chú thích gộp ảnh…</button></div>
+<div id="captionContextMenu" class="caption-context-menu" hidden><button type="button" id="captionContextBulk">✎ Chú thích</button><button type="button" id="captionContextDelete" class="caption-context-delete">⌫ Xoá</button></div>
 <div id="grid" class="filegrid"></div>
 <div class="actions"><button id="saveNext" class="btn green" disabled>✓ Lưu mục này & thêm nội dung tiếp theo</button><button id="finish" class="btn dark" disabled>👁 Kết thúc & xem Preview</button></div>
 <div id="groupsBox" style="margin-top:14px"></div>
@@ -496,6 +510,27 @@ body.classic-ui .filegrid{column-gap:14px!important;row-gap:16px!important}
   modeBtn.addEventListener('click',()=>{selectMode=!selectMode;hint.textContent=selectMode?'Đang bật khoanh chọn: giữ chuột trái, kéo qua các ảnh rồi thả.':'Nhấp vùng ảnh để chọn nhiều ảnh; nhấp vùng trắng để bỏ chọn. Có thể giữ Ctrl hoặc bật khoanh vùng.';updateSelectionUI()});
   bulkBtn.addEventListener('click',applyBulkCaption);
   document.getElementById('captionContextBulk').addEventListener('click',()=>{closeMenu();applyBulkCaption()});
+  document.getElementById('captionContextDelete').addEventListener('click',()=>{closeMenu();confirmBulkDelete()});
+  function confirmBulkDelete(){
+    const ids=new Set(selected),targets=cards().filter(card=>ids.has(keyFor(card)));
+    if(!targets.length)return;
+    const backdrop=document.createElement('div');backdrop.className='caption-delete-backdrop';
+    backdrop.innerHTML='<section class="caption-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="captionDeleteTitle"><header class="caption-delete-head"><div class="caption-delete-icon" aria-hidden="true">⌫</div><div class="caption-delete-title" id="captionDeleteTitle">Xác nhận xoá ảnh</div></header><div class="caption-delete-body">Bạn có chắc chắn muốn xoá các ảnh đã chọn khỏi nội dung hiện tại?<div class="caption-delete-count">'+targets.length+' ảnh được chọn</div></div><footer class="caption-delete-actions"><button type="button" class="caption-delete-cancel">Huỷ</button><button type="button" class="caption-delete-confirm">Xoá '+targets.length+' ảnh</button></footer></section>';
+    document.body.appendChild(backdrop);
+    const finish=()=>{backdrop.remove();document.removeEventListener('keydown',onKey)};
+    const onKey=e=>{if(e.key==='Escape')finish()};
+    backdrop.querySelector('.caption-delete-cancel').addEventListener('click',finish);
+    backdrop.addEventListener('click',e=>{if(e.target===backdrop)finish()});
+    backdrop.querySelector('.caption-delete-confirm').addEventListener('click',()=>{
+      const live=new Set(cards().map(keyFor)),valid=new Set([...ids].filter(id=>live.has(id)));
+      if(!valid.size){finish();clearSelection();return}
+      state.current.items=state.current.items.filter(item=>!valid.has(pti093EnsureDragId(item)));
+      finish();clearSelection();render();scheduleAutoDraftSave(true);
+      msg('Đã xoá '+valid.size+' ảnh.',true);
+    });
+    document.addEventListener('keydown',onKey);
+    backdrop.querySelector('.caption-delete-cancel').focus();
+  }
   document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target))closeMenu()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(dragging)endSelection()}});
   grid.addEventListener('click',e=>{
