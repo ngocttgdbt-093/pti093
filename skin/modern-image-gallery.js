@@ -36,6 +36,8 @@
       // Keep saved-group captions on the same silent AutoCorrect path as the Classic grid.
       // Preserve a trailing space while typing so the next word can be entered naturally.
       caption.addEventListener('input',function(){
+        // Match the Classic editor's workspace-transition guard: do not mutate a workspace while another is opening.
+        if(state.workspaceOpenPending){caption.value=it.caption||'';return;}
         var tools=window.PTI093CaptionTools;
         if(tools){
           var start=caption.selectionStart,end=caption.selectionEnd;
@@ -51,6 +53,7 @@
         scheduleAutoDraftSave(false);
       });
       caption.addEventListener('blur',function(){
+        if(state.workspaceOpenPending){caption.value=it.caption||'';return;}
         var tools=window.PTI093CaptionTools;
         if(!tools)return;
         var normalized=tools.normalizeCaption(caption.value);
