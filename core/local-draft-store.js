@@ -132,8 +132,11 @@
   global.PTIDraftStorageContract = {
     install: function(options){
       const provider=options&&options.provider;
-      if(!provider||typeof provider.getLocalDraftBundle!=='function'){
-        throw new TypeError('Draft storage provider must implement getLocalDraftBundle(id).');
+      if(!provider||typeof provider.getLocalDraftBundle!=='function'||
+        typeof provider.writeLocalDraftBundle!=='function'||
+        typeof provider.writeLocalDraftMetadata!=='function'||
+        typeof provider.deleteLocalDraftBundle!=='function'){
+        throw new TypeError('Draft storage provider must implement getLocalDraftBundle(id), writeLocalDraftBundle(meta, images), writeLocalDraftMetadata(meta), and deleteLocalDraftBundle(id).');
       }
       async function writeMetadata(meta){
         if(!meta||!meta.id)throw new TypeError('Draft metadata must include a non-empty id.');
