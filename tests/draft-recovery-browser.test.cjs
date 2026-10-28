@@ -17,6 +17,8 @@ const { chromium } = require('playwright');
     assert.equal(result.gdv,'GĐV kiểm thử');
     assert.equal(result.orientation,'landscape');
     assert.equal(result.per,4);
+    assert.equal(result.rowGap,27,'AUTO-DRAFT reload must restore row spacing');
+    assert.equal(result.columnGap,31,'AUTO-DRAFT reload must restore column spacing');
     assert.equal(result.groups[0].items[0].caption,'Ảnh trước xe');
     assert.equal(result.groups[0].items[0].rotate,90);
     assert.equal(result.groups[0].items[0].addSeq,1);
