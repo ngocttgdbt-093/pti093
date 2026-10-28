@@ -2,7 +2,7 @@ name: Validate GHÉP ẢNH 093 Core
 
 on:
   push:
-    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023]
+    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, feat/project5-module-packaging-20261028]
   pull_request:
     branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023]
   workflow_dispatch:
@@ -366,8 +366,15 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'integration/project5-caption-core-20261027'
         run: node --check core/app-core.js
 
+      - name: Check Module Packaging Boundaries
+        if: github.ref_name == 'feat/project5-module-packaging-20261028' || github.head_ref == 'feat/project5-module-packaging-20261028'
+        run: |
+          node --check modules/pti-gdv-admin/admin-gdv.js
+          node --check skins/classic/skin.js
+          node tests/module-packaging-boundaries.test.js
+
       - name: Run all Core regression tests 10 consecutive rounds
-        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'integration/project5-caption-core-20261027'
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.ref_name == 'feat/project5-module-packaging-20261028' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'feat/project5-module-packaging-20261028' || github.head_ref == 'integration/project5-caption-core-20261027'
         timeout-minutes: 30
         shell: bash
         run: |
