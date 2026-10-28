@@ -12,18 +12,18 @@
   function normalizeCaption(input, options = {}) {
     if (input == null) return "";
     const capitalizeAfterPunctuation = options.capitalizeAfterPunctuation !== false;
-    let value = String(input)
-      .replace(/[\t\u00a0]+/g, " ")
-      .replace(/ {2,}/g, " ")
-      .trim();
-    if (!value) return "";
+    const source = String(input).replace(/[\t\u00a0]+/g, " ");
+    const preserveTrailingWhitespace = options.preserveTrailingWhitespace === true;
+    const trailingWhitespace = preserveTrailingWhitespace && /\s$/.test(source) ? " " : "";
+    let value = source.replace(/ {2,}/g, " ").trim();
+    if (!value) return trailingWhitespace;
     value = value.replace(/^(\s*[^\p{L}\p{N}]*)([\p{Ll}])/u, (_, prefix, letter) =>
       prefix + letter.toLocaleUpperCase("vi-VN"));
     if (capitalizeAfterPunctuation) {
       value = value.replace(SENTENCE_START, (_, boundary, letter) =>
         boundary + letter.toLocaleUpperCase("vi-VN"));
     }
-    return value;
+    return value + trailingWhitespace;
   }
 
   function applyCaptionToItems(items, selectedIds, caption, options = {}) {

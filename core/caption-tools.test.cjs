@@ -4,6 +4,8 @@ const tools = require("./caption-tools.js");
 assert.equal(tools.normalizeCaption("  tổn   thất xe. hư hỏng  "), "Tổn thất xe. Hư hỏng");
 assert.equal(tools.normalizeCaption(""), "");
 assert.equal(tools.normalizeCaption("xe va chạm! kính vỡ"), "Xe va chạm! Kính vỡ");
+assert.equal(tools.normalizeCaption("  tổn   thất xe ", { preserveTrailingWhitespace: true }), "Tổn thất xe ");
+assert.equal(tools.normalizeCaption("  tổn   thất xe. hư hỏng  ", { preserveTrailingWhitespace: true }), "Tổn thất xe. Hư hỏng ");
 
 const items = [{ id: "a", caption: "cũ A" }, { id: "b", caption: "cũ B" }, { id: "c", caption: "giữ nguyên" }];
 const ok = tools.applyCaptionToItems(items, new Set(["a", "b"]), "  hiện   trường xe  ");

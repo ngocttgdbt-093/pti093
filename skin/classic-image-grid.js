@@ -113,7 +113,25 @@
           const remove=doc.createElement('button');remove.className='del2';remove.textContent='🗑️ Xóa';remove.title='Xóa ảnh';remove.onclick=()=>onDelete(index);
           actions.append(replace,rotate,insert,view,remove);
           const caption=doc.createElement('textarea');caption.placeholder='Thuyết minh ảnh (tùy chọn)…';caption.value=item.caption;
-          caption.oninput=()=>onCaptionChange(item,caption.value);
+          // Silent AutoCorrect applies to every individual caption, not only the bulk-caption dialog.
+          // Preserve a trailing space while typing so users can continue entering the next word.
+          caption.addEventListener('input',()=>{
+            if(!captionTools){onCaptionChange(item,caption.value);return;}
+            const start=caption.selectionStart,end=caption.selectionEnd;
+            const normalized=captionTools.normalizeCaption(caption.value,{preserveTrailingWhitespace:true});
+            if(normalized!==caption.value){
+              const nextStart=captionTools.normalizeCaption(caption.value.slice(0,start),{preserveTrailingWhitespace:true}).length;
+              const nextEnd=captionTools.normalizeCaption(caption.value.slice(0,end),{preserveTrailingWhitespace:true}).length;
+              caption.value=normalized;
+              try{caption.setSelectionRange(nextStart,nextEnd)}catch(_){}
+            }
+            onCaptionChange(item,caption.value);
+          });
+          caption.addEventListener('blur',()=>{
+            if(!captionTools)return;
+            const normalized=captionTools.normalizeCaption(caption.value);
+            if(normalized!==caption.value){caption.value=normalized;onCaptionChange(item,normalized);}
+          });
           caption.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const captions=[...grid.querySelectorAll('.thumb textarea')],currentIndex=captions.indexOf(caption),nextIndex=currentIndex+(event.shiftKey?-1:1);if(nextIndex>=0&&nextIndex<captions.length){event.preventDefault();captions[nextIndex].focus();}});
           imageBox.addEventListener('click',event=>{if(suppressClick)return;if(event.button!==0)return;event.preventDefault();selectByIndex(index,event);});
           imageBox.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectByIndex(index,event);}});
