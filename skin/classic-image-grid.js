@@ -65,7 +65,7 @@
         const items=getSelectedItems(),value=$('p5CaptionInput').value;
         if(!items.length){closeCaptionDialog();msg('Danh sách chọn đã thay đổi. Hãy chọn lại ảnh.',true);return;}
         if(!captionTools){msg('Không tải được module chuẩn hóa thuyết minh; chưa áp dụng dữ liệu.',true);return;}
-        const result=captionTools.applyCaptionToItems(items,new Set(items.map(idOf)),value,{getId:idOf});
+        const result=captionTools.applyCaptionToItems(state.current.items,new Set(selected),value,{getId:idOf});
         if(!result.ok){msg(result.reason==='empty-caption'?'Nội dung thuyết minh đang trống.':'Danh sách ảnh không còn hợp lệ; chưa có ảnh nào bị thay đổi.',true);return;}
         scheduleAutoDraftSave(false);
         closeCaptionDialog();render();updateSelectionUi();msg('Đã áp dụng thuyết minh cho '+result.applied+' ảnh.',true);
