@@ -1,0 +1,19 @@
+name: Classic skin module checks
+on:
+  push:
+    branches: ["refactor/classic-skin-module-20261028"]
+    paths: ["skins/classic/**", "core/skin-manager.js", "core/skin-manager.test.cjs", "docs/replaceable-skin-contract.md", ".github/workflows/classic-skin-module.yml"]
+  pull_request:
+    paths: ["skins/classic/**", "core/skin-manager.js", "core/skin-manager.test.cjs", "docs/replaceable-skin-contract.md", ".github/workflows/classic-skin-module.yml"]
+jobs:
+  module-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check skins/classic/skin.js
+      - run: node --check core/skin-manager.js
+      - run: node skins/classic/skin.test.cjs
+      - run: node core/skin-manager.test.cjs
