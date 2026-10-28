@@ -2,7 +2,7 @@
   'use strict';
   global.PTILocalSaveCore = {
     install: function(deps){
-      const {state, $, snapshotGroupsForProject, openLocalDraftDB, localDraftTransactionDone, getDateISO, selectedGdv, setDriveState, msg, renderLocalSaveFeedback, showLocalSaveConfirm, clearAutoDraft} = deps;
+      const {state, $, snapshotGroupsForProject, openLocalDraftDB, localDraftTransactionDone, draftStorage, getDateISO, selectedGdv, setDriveState, msg, renderLocalSaveFeedback, showLocalSaveConfirm, clearAutoDraft} = deps;
       async function saveLocalDraft(options={}){
         const ownsWorkspaceLock=options.workspaceLockHeld!==true;
         if(state.workspaceOpenPending&&ownsWorkspaceLock)throw new Error('Đang mở hồ sơ khác hoặc đang lưu hồ sơ tại máy. Hãy chờ thao tác đó hoàn tất trước khi lưu tại máy.');
@@ -45,8 +45,8 @@
         let db;
         if(ownsWorkspaceLock)state.workspaceOpenPending=true;
         try{
-          db=await openLocalDraftDB();
-          // IndexedDB open yields control: reject a stale snapshot if another case opened meanwhile.
+          if(!draftStorage)db=await openLocalDraftDB();
+          // Storage initialization yields control: reject a stale snapshot if another case opened meanwhile.
           if(workspaceChanged())throw new Error('Hồ sơ đã thay đổi trong lúc chuẩn bị lưu. Hãy lưu lại trên hồ sơ đang mở.');
           progress(15,'Đang chuẩn bị dữ liệu lưu…',total+' ảnh');
           const sections=groups.map((g,si)=>({
@@ -67,21 +67,31 @@
           editing:currentSectionIndex>=0&&Number.isInteger(state.editing)&&state.editing>=0?currentSectionIndex:-1,
           updatedAt:new Date().toISOString()};
           progress(25,'Đang ghi thông tin hồ sơ…','Chỉ lưu trong trình duyệt trên thiết bị này');
-          const tx=db.transaction(['drafts','draftImages'],'readwrite');
-          const drafts=tx.objectStore('drafts'),images=tx.objectStore('draftImages');
-          drafts.put(meta);
-          const idx=images.index('draftId'),cursorReq=idx.openCursor(IDBKeyRange.only(id));
-          cursorReq.onsuccess=()=>{
-            const cursor=cursorReq.result;
-            if(cursor){cursor.delete();cursor.continue();return}
-            progress(45,'Đang lưu ảnh vào bộ nhớ trình duyệt…',total+' ảnh');
+          if(draftStorage){
+            const imageRecords=[];
             sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
               const original=groups[si].items[ii];if(!original||!original.file)return;
-              images.put({id:id+'|'+si+'|'+ii,draftId:id,sectionIndex:si,itemIndex:ii,
+              imageRecords.push({id:id+'|'+si+'|'+ii,draftId:id,sectionIndex:si,itemIndex:ii,
                 file:original.file,fileName:item.fileName,type:item.type,lastModified:item.lastModified});
             }));
-          };
-          await localDraftTransactionDone(tx);
+            await draftStorage.writeBundle(meta,imageRecords,()=>progress(45,'Đang lưu ảnh vào bộ nhớ trình duyệt…',total+' ảnh'));
+          }else{
+            const tx=db.transaction(['drafts','draftImages'],'readwrite');
+            const drafts=tx.objectStore('drafts'),images=tx.objectStore('draftImages');
+            drafts.put(meta);
+            const idx=images.index('draftId'),cursorReq=idx.openCursor(IDBKeyRange.only(id));
+            cursorReq.onsuccess=()=>{
+              const cursor=cursorReq.result;
+              if(cursor){cursor.delete();cursor.continue();return}
+              progress(45,'Đang lưu ảnh vào bộ nhớ trình duyệt…',total+' ảnh');
+              sections.forEach((section,si)=>section.items.forEach((item,ii)=>{
+                const original=groups[si].items[ii];if(!original||!original.file)return;
+                images.put({id:id+'|'+si+'|'+ii,draftId:id,sectionIndex:si,itemIndex:ii,
+                  file:original.file,fileName:item.fileName,type:item.type,lastModified:item.lastModified});
+              }));
+            };
+            await localDraftTransactionDone(tx);
+          }
           // A transition can also begin while the write transaction is pending. The local copy
           // may exist, but never detach Drive/local references from the newly active workspace.
           if(workspaceChanged()){
