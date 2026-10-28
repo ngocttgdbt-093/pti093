@@ -15,9 +15,9 @@ const forbiddenCoreIntegrations = [
   ['093 GĐV Fusion global', /PTI093GdvFusion/],
   ['PTI GĐV Admin API', /PTI_GDV_ADMIN_API_URL/],
   ['Drive handoff frontend module', /DriveStorage093/],
-  ['Drive Fusion script path', /fusion\\/drive\\.js/],
-  ['093 GĐV Fusion script path', /fusion\\/gdv-093\\.js/],
-  ['hard-coded Apps Script endpoint', /https?:\\/\\/script\\.google\\.com\\/macros\\/s\\//]
+  ['Drive Fusion script path', /fusion\/drive\.js/],
+  ['093 GĐV Fusion script path', /fusion\/gdv-093\.js/],
+  ['hard-coded Apps Script endpoint', /https?:\/\/script\.google\.com\/macros\/s\//]
 ];
 
 const violations = [];
@@ -35,17 +35,17 @@ assert.deepEqual(
 // app-core.js is intentionally called out as the current 093 app assembly, not neutral Core.
 // This guard prevents future documentation from treating that legacy entry point as the reusable Core package.
 const assembly = read('core/app-core.js');
-assert.match(assembly, /PTI093GdvFusion\\.install/);
-assert.match(assembly, /PTI093DriveFusion\\.install/);
-assert.match(assembly, /PTI093ClassicImageGridSkin\\.install/);
+assert.match(assembly, /PTI093GdvFusion\.install/);
+assert.match(assembly, /PTI093DriveFusion\.install/);
+assert.match(assembly, /PTI093ClassicImageGridSkin\.install/);
 
 // The 093 shell is allowed to load 093 integrations, but the separately packaged PTI admin
 // and extracted Classic skin must not be silently activated by this legacy entry point.
 const html = read('index.html');
-assert.match(html, /fusion\\/drive\\.js/);
-assert.match(html, /fusion\\/gdv-093\\.js/);
-assert.doesNotMatch(html, /modules\\/pti-gdv-admin\\/admin-gdv\\.js/);
-assert.doesNotMatch(html, /skins\\/classic\\/skin\\.js/);
+assert.match(html, /fusion\/drive\.js/);
+assert.match(html, /fusion\/gdv-093\.js/);
+assert.doesNotMatch(html, /modules\/pti-gdv-admin\/admin-gdv\.js/);
+assert.doesNotMatch(html, /skins\/classic\/skin\.js/);
 
 const compatibilityMarkers = [
   ['Drive record state', /driveRecordId/g],
