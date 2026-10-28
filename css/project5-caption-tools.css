@@ -1,0 +1,25 @@
+.p5-selection-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;padding:10px;border:1px solid #cddbd3;border-radius:10px;background:#f7fbf8}
+.p5-selection-toolbar button,.p5-caption-actions button{border:1px solid #aebfb5;border-radius:7px;padding:8px 11px;background:#fff;color:#183b2a;font:inherit;cursor:pointer}
+.p5-selection-toolbar button.active,.p5-caption-actions #p5CaptionApply{background:#087d45;color:#fff;border-color:#087d45}
+.p5-selection-toolbar button:disabled{opacity:.45;cursor:not-allowed}
+#p5SelectionHelp{font-size:12px;color:#52665b;flex:1 1 260px}
+#grid{position:relative;row-gap:var(--p5-row-gap,12px);column-gap:var(--p5-column-gap,12px)}
+#grid .thumb.p5-selected{outline:3px solid #087d45;outline-offset:2px;background:#eaf7ef}
+#grid .imgBox[role=button]{cursor:pointer;touch-action:manipulation}
+#grid .imgBox[role=button]:focus-visible{outline:3px solid #087d45;outline-offset:2px}
+.p5-lasso-box{position:absolute;z-index:20;pointer-events:none;border:1px dashed #087d45;background:rgba(8,125,69,.13);border-radius:3px}
+.p5-caption-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(12,20,15,.52);display:flex;align-items:center;justify-content:center;padding:16px}
+.p5-caption-backdrop[hidden]{display:none!important}
+.p5-caption-dialog{box-sizing:border-box;width:min(540px,100%);max-height:90dvh;overflow:auto;background:#fff;color:#1b2a21;border-radius:14px;padding:20px;box-shadow:0 18px 55px rgba(0,0,0,.28)}
+.p5-caption-dialog h3{margin:0 0 8px;font-size:20px}
+.p5-caption-dialog p{margin:8px 0;color:#506158}
+.p5-caption-dialog label{display:block;font-weight:650;margin:14px 0 6px}
+.p5-caption-dialog textarea{box-sizing:border-box;width:100%;min-height:100px;resize:vertical;padding:10px;border:1px solid #aebfb5;border-radius:8px;font:inherit}
+.p5-caption-preview{padding:10px;border-radius:7px;background:#f2f6f3;overflow-wrap:anywhere}
+.p5-caption-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+@media(max-width:600px){.p5-selection-toolbar{gap:6px;padding:8px}.p5-selection-toolbar button{padding:9px 10px}.p5-caption-dialog{padding:16px}}
+
+.p5-gap-controls{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin-top:12px;padding:10px;border:1px solid #d7e3dc;border-radius:8px;background:#fbfdfb}
+.p5-gap-controls label{font-size:13px;color:#294b38;font-weight:600}
+.p5-gap-controls output{font-variant-numeric:tabular-nums;color:#087d45;font-weight:700}
+.p5-gap-controls input[type=range]{grid-column:1/-1;width:100%;accent-color:#087d45;margin:0 0 4px}

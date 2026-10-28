@@ -12,7 +12,7 @@
   <script src="../core/draft-recovery.js"></script>
   <script>
   (function(){
-    const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,localCopyFromIncompleteDrive:false,orientation:'portrait',per:6,addSeq:0};
+    const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,pages:[],pageDefs:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,localCopyFromIncompleteDrive:false,orientation:'portrait',per:6,rowGap:18,columnGap:18,addSeq:0};
     const $=id=>document.getElementById(id);
     const store=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
     const api=window.PTI093DraftRecovery.install({
@@ -29,7 +29,7 @@
       state,api,store,
       seed:async()=>{
         $('gdv').value='GĐV kiểm thử';$('bks').value='30A-12345';$('hoso').value='HS-TEST-01';$('garage').value='Garage thử';$('date').value='2026-10-23';$('title').value='Nhóm hiện trường';
-        state.orientation='landscape';state.per=4;state.addSeq=2;
+        state.orientation='landscape';state.per=4;state.rowGap=27;state.columnGap=31;state.addSeq=2;
         state.groups=[{title:'Nhóm trước',items:[{file:new File([new Uint8Array([255,216,255,217])],'front.jpg',{type:'image/jpeg',lastModified:1234}),key:'front.jpg|4|1234',caption:'Ảnh trước xe',rotate:90,addSeq:1}]}];
         state.current={title:'Nhóm hiện trường',items:[{file:new File([new Uint8Array([1,2,3,4,5])],'rear.jpg',{type:'image/jpeg',lastModified:5678}),key:'rear.jpg|5|5678',caption:'Ảnh sau xe',rotate:180,addSeq:2}]};
         await api.saveAutoDraft();
@@ -41,7 +41,7 @@
         return {
           sessionId:sessionStorage.getItem('pti093_work_session_id'),
           bks:$('bks').value,hoso:$('hoso').value,garage:$('garage').value,date:$('date').value,gdv:$('gdv').value,
-          orientation:state.orientation,per:state.per,
+          orientation:state.orientation,per:state.per,rowGap:state.rowGap,columnGap:state.columnGap,
           groups:state.groups.map(g=>({title:g.title,items:g.items.map(i=>({name:i.file.name,type:i.file.type,size:i.file.size,lastModified:i.file.lastModified,caption:i.caption,rotate:i.rotate,addSeq:i.addSeq}))})),
           current:{title:state.current.title,items:state.current.items.map(i=>({name:i.file.name,type:i.file.type,size:i.file.size,lastModified:i.file.lastModified,caption:i.caption,rotate:i.rotate,addSeq:i.addSeq}))},
           frontBytes:Array.from(new Uint8Array(await itemA.file.arrayBuffer())),

@@ -57,6 +57,7 @@
         d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('dragOver');finishDrag()});
         d.addEventListener('dragend',()=>finishDrag());
         d.addEventListener('pointerdown',e=>{
+          if(g&&g.dataset&&g.dataset.selectionMode==='true')return;
           if(e.pointerType!=='touch'||e.target.closest('button,textarea,input,select'))return;
           touchStartX=e.clientX;touchStartY=e.clientY;touchSource=d;dragId=d.dataset.dragId;dragMoved=false;
           clearTimeout(touchTimer);

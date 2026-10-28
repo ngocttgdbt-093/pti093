@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../css/project5-caption-tools.css"><style>
+body{font-family:Arial,sans-serif;padding:16px}.grid{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:12px}.thumb{border:1px solid #ddd;padding:6px;min-width:0}.imgBox{height:90px;background:#dbe7df;display:grid;place-items:center}.imgBox img{max-width:100%;max-height:100%}.n{display:block}.thumb textarea{width:100%;box-sizing:border-box}
+</style></head><body>
+<button id="clear">Clear</button><button id="saveNext">Save next</button><button id="finish">Finish</button><section class="layoutbox"><div id="counts"></div><div id="orient"><button class="opt" data-o="landscape">Landscape</button><button class="opt on" data-o="portrait">Portrait</button></div><div id="layoutPreview" class="layoutgrid"></div><span id="layoutText"></span></section><div id="grid" class="grid"></div>
+<script src="../core/caption-tools.js"></script><script src="../core/image-reorder.js"></script><script src="../skin/classic-layout.js"></script><script src="../skin/classic-image-grid.js"></script>
+<script>
+window.__draftSaves=0;window.__layoutSaves=0;
+const state=window.__state={groups:[],current:{title:'Test',items:Array.from({length:4},(_,i)=>({file:new File(['image'+i],'image'+i+'.png',{type:'image/png'}),caption:'old '+(i+1),rotate:0,addSeq:i+1}))},editing:-1,rowGap:18,columnGap:18,per:6,orientation:'portrait',workspaceOpenPending:false};
+const $=id=>document.getElementById(id);
+const layoutSkin=window.PTI093ClassicLayoutSkin.install({state,$,layoutDims:()=>({cols:2,rows:3}),document,scheduleAutoDraftSave:()=>{window.__layoutSaves++;}});layoutSkin.bindControls();layoutSkin.renderLayout();
+const imageReorder=window.PTI093ImageReorder.install({state,$,scheduleAutoDraftSave:()=>{},renderLayout:()=>{},render:()=>gridSkin.render()});
+const gridSkin=window.PTI093ClassicImageGridSkin.install({state,$,imageReorder,openImageViewer:()=>{},renderGroups:()=>{},onReplace:()=>{},onRotate:()=>{},onInsert:()=>{},onDelete:()=>{},onCaptionChange:(item,value)=>{item.caption=value;},scheduleAutoDraftSave:()=>{window.__draftSaves++;},msg:message=>{window.__lastMessage=message;}});
+gridSkin.render();
+</script></body></html>

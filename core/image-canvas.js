@@ -31,11 +31,11 @@
         // Bố cục luôn lấy theo state.per, không lấy theo số ảnh còn lại của trang cuối.
         // 6 ảnh: ngang 3x2, dọc 2x3. 8 ảnh: ngang 4x2, dọc 2x4.
         const layout=layoutDims();
-        const cols=layout.cols,rows=layout.rows,gap=18;
+        const cols=layout.cols,rows=layout.rows,gapX=Math.max(4,Math.min(36,Number(state.columnGap)||18)),gapY=Math.max(4,Math.min(36,Number(state.rowGap)||18));
         const areaX=m,areaY=header+22,areaW=W-2*m,areaH=H-header-footer-30;
-        const cellW=(areaW-gap*(cols-1))/cols,cellH=(areaH-gap*(rows-1))/rows;
+        const cellW=(areaW-gapX*(cols-1))/cols,cellH=(areaH-gapY*(rows-1))/rows;
         for(let i=0;i<pageItems.length;i++){
-          const it=pageItems[i],r=Math.floor(i/cols),col=i%cols,x=areaX+col*(cellW+gap),y=areaY+r*(cellH+gap);
+          const it=pageItems[i],r=Math.floor(i/cols),col=i%cols,x=areaX+col*(cellW+gapX),y=areaY+r*(cellH+gapY);
           const capH=it.caption?78:28,imgX=x+5,imgY=y+5,imgW=cellW-10,imgH=cellH-capH-10;
           ctx.fillStyle='#f8faf9';ctx.fillRect(x,y,cellW,cellH);ctx.strokeStyle='#cbd8d1';ctx.strokeRect(x,y,cellW,cellH);
           const img=await loadImage(it.file);

@@ -1,0 +1,49 @@
+name: Build isolated Project 5 preview package
+
+on:
+  push:
+    branches:
+      - integration/project5-caption-core-20261027
+  pull_request:
+    branches:
+      - test/core-093-20261023
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact tested commit
+        uses: actions/checkout@v4
+
+      - name: Verify required app entry and modules exist
+        run: |
+          test -s index.html
+          test -s core/app-core.js
+          test -s core/caption-tools.js
+          test -s css/project5-caption-tools.css
+          test -s skin/classic-image-grid.js
+          test -s skin/classic-layout.js
+
+      - name: Build preview package
+        run: |
+          mkdir -p dist/project5-preview
+          cp index.html dist/project5-preview/
+          cp -R core css skin fusion dist/project5-preview/
+          printf 'Project 5 integration preview package\nCommit: %s\nBranch: %s\n' "$GITHUB_SHA" "$GITHUB_REF_NAME" > dist/project5-preview/BUILD-INFO.txt
+          cd dist
+          zip -qr "project5-preview-${GITHUB_SHA::12}.zip" project5-preview
+          sha256sum "project5-preview-${GITHUB_SHA::12}.zip" > "project5-preview-${GITHUB_SHA::12}.sha256"
+
+      - name: Upload isolated preview package
+        uses: actions/upload-artifact@v4
+        with:
+          name: project5-preview-${{ github.sha }}
+          path: |
+            dist/project5-preview-*.zip
+            dist/project5-preview-*.sha256
+          if-no-files-found: error
+          retention-days: 14
