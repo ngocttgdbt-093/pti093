@@ -362,6 +362,12 @@ jobs:
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'integration/project5-caption-core-20261027'
         run: node tests/case-editor.test.js
 
+      - name: Check Date Calendar Skin
+        if: github.ref_name == 'feat/core-date-calendar-ddmmyyyy-20261028' || github.head_ref == 'feat/core-date-calendar-ddmmyyyy-20261028' || github.head_ref == 'integration/project5-caption-core-20261027'
+        run: |
+          node --check skin/date-calendar.js
+          node tests/date-calendar.test.js
+
       - name: Check extracted application Core script
         if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'integration/project5-caption-core-20261027'
         run: node --check core/app-core.js
