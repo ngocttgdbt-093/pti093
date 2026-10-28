@@ -12,6 +12,7 @@
       const getSelectedItems=()=>state.current.items.filter(item=>selected.has(idOf(item)));
       function ensureSelectionUi(){
         const grid=$('grid');if(!grid||$('p5SelectionToolbar'))return;
+        if(!grid.dataset.p5LassoBound){grid.dataset.p5LassoBound='1';grid.addEventListener('pointerdown',startLasso);grid.addEventListener('pointermove',moveLasso);grid.addEventListener('pointerup',endLasso);grid.addEventListener('pointercancel',endLasso);}
         const toolbar=doc.createElement('div');toolbar.id='p5SelectionToolbar';toolbar.className='p5-selection-toolbar';
         const mode=doc.createElement('button');mode.type='button';mode.id='p5SelectionMode';mode.textContent='☑ Chọn nhiều';mode.setAttribute('aria-pressed','false');
         const bulk=doc.createElement('button');bulk.type='button';bulk.textContent='✎ Thuyết minh nhóm';bulk.id='p5BulkCaption';
@@ -117,7 +118,6 @@
           imageBox.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectByIndex(index,event);}});
           thumb.append(imageBox,number,actions,caption);grid.appendChild(thumb);
         });
-        grid.addEventListener('pointerdown',startLasso);grid.addEventListener('pointermove',moveLasso);grid.addEventListener('pointerup',endLasso);grid.addEventListener('pointercancel',endLasso);
         const validIds=new Set(state.current.items.map(idOf));[...selected].forEach(id=>{if(!validIds.has(id))selected.delete(id);});
         const hasItems=state.current.items.length>0;
         $('clear').disabled=!hasItems;$('saveNext').disabled=!hasItems;$('finish').disabled=!hasItems&&!state.groups.length;
