@@ -108,5 +108,32 @@ const contract = global.PTIDraftStorageContract.install({
   assert.equal(actual.meta,metaRecord);
   assert.deepEqual(actual.images,imageRecords);
 
-  console.log('Draft Storage Contract tests passed (provider validation, atomic bundle read, app wiring, compatibility fallback).');
+  // Exercise the actual provider write path and ensure it commits metadata + replacement images atomically.
+  const stored={meta:null,images:[]};let writeTransactionCount=0,writeDbClosed=0;
+  global.indexedDB={open(){const request={};queueMicrotask(()=>{request.result={
+    close(){writeDbClosed++},
+    transaction(names,mode){
+      writeTransactionCount++;assert.deepEqual(names,['drafts','draftImages']);assert.equal(mode,'readwrite');
+      const tx={objectStore(name){
+        if(name==='drafts')return {put(value){stored.meta=value}};
+        if(name==='draftImages')return {index(name){assert.equal(name,'draftId');return {openCursor(key){
+          assert.equal(key,'LOCAL-WRITE');const req={};queueMicrotask(()=>{req.result=null;req.onsuccess&&req.onsuccess();queueMicrotask(()=>tx.oncomplete&&tx.oncomplete())});return req;
+        }}}};
+        throw new Error('Unexpected write store '+name);
+      }};
+      return tx;
+    }
+  };request.onsuccess&&request.onsuccess()});return request}};
+  const writeStore=global.PTILocalDraftStore.install({dbName:'test-draft-write'});
+  const writeMeta={id:'LOCAL-WRITE',sections:[]};
+  const writeImages=[{id:'LOCAL-WRITE|0|0',draftId:'LOCAL-WRITE',file:{blob:true}}];
+  let writeProgress=false;
+  await writeStore.writeLocalDraftBundle(writeMeta,writeImages,()=>{writeProgress=true;stored.images=writeImages.slice()});
+  assert.equal(writeTransactionCount,1,'metadata and images must use one readwrite transaction');
+  assert.equal(writeDbClosed,1,'database connection must close after the write');
+  assert.equal(stored.meta,writeMeta);
+  assert.deepEqual(stored.images,writeImages);
+  assert.equal(writeProgress,true,'write progress must fire after old images are removed and before replacement images are written');
+
+  console.log('Draft Storage Contract tests passed (atomic read/write, provider validation, app wiring, compatibility fallback).');
 })().catch(error=>{console.error(error);process.exitCode=1});
