@@ -19,11 +19,11 @@ Trạng thái: **đã tích hợp trên nhánh thử nghiệm; CI và browser te
 - Nhánh tích hợp được tạo từ `test/core-093-20261023`; PR vẫn ở trạng thái Draft, không merge production.
 
 ## Kết quả kiểm thử đã xác minh
-- GitHub Actions run **1680**: PASS — [mở kết quả CI](https://github.com/ngocttgdbt-093/pti093/actions/runs/40629884983). Sau đó, bổ sung kiểm thử AUTO-DRAFT khôi phục rowGap/columnGap và GitHub Actions run **1682** PASS — [mở kết quả CI mới nhất](https://github.com/ngocttgdbt-093/pti093/actions/runs/40630423089).
+- GitHub Actions run **1680**: PASS — [mở kết quả CI](https://github.com/ngocttgdbt-093/pti093/actions/runs/40629884983). Sau đó, bổ sung kiểm thử AUTO-DRAFT khôi phục rowGap/columnGap và GitHub Actions run **1684** PASS — [mở kết quả CI mới nhất](https://github.com/ngocttgdbt-093/pti093/actions/runs/40630588931).
 - Kiểm tra cú pháp các module Core/Skin được sửa: PASS.
 - Unit test caption core: PASS — chuẩn hóa tiếng Việt, áp dụng nhiều ảnh, ID thiếu/trùng không gây cập nhật một phần, toggle selection.
-- Browser test bằng Chromium: PASS — click chọn đơn, Ctrl-click, Shift-click, preview chuẩn hóa, áp dụng caption cho đúng tập ảnh, ảnh không chọn giữ nguyên caption, autosave chỉ được gọi một lần, khoanh vùng PC, mobile emulation tap chọn nhiều và điều khiển rowGap/columnGap. Bổ sung bài test Chromium dùng IndexedDB thật để lưu AUTO-DRAFT, reload trang và xác nhận rowGap=27, columnGap=31 được khôi phục đúng; cùng bài test kiểm tra các trường hồ sơ, caption, xoay ảnh và blob ảnh.
-- Bộ regression Core hiện có: **PASS 10 vòng liên tiếp** trên GitHub Actions run 1682, gồm kiểm tra lưu nháp, Drive Fusion, PDF và các module Core/Skin hiện có.
+- Browser test bằng Chromium: PASS — click chọn đơn, Ctrl-click, Shift-click, preview chuẩn hóa, áp dụng caption cho đúng tập ảnh, ảnh không chọn giữ nguyên caption, autosave chỉ được gọi một lần, khoanh vùng PC, mobile emulation tap chọn nhiều và điều khiển rowGap/columnGap. Bổ sung bài test Chromium dùng IndexedDB thật để lưu AUTO-DRAFT, reload trang và xác nhận rowGap=27, columnGap=31 được khôi phục đúng; cùng bài test kiểm tra các trường hồ sơ, caption, xoay ảnh và blob ảnh. Unit test canvas PDF cũng xác nhận rowGap=24/columnGap=30 tác động đúng tới tọa độ ô ảnh thực tế.
+- Bộ regression Core hiện có: **PASS 10 vòng liên tiếp** trên GitHub Actions run 1684, gồm kiểm tra lưu nháp, Drive Fusion, PDF và các module Core/Skin hiện có.
 
 ## Chưa nghiệm thu
 - Chưa kiểm thử trực tiếp trên iPhone/Android vật lý; mobile hiện được kiểm thử bằng Chromium mobile emulation.
