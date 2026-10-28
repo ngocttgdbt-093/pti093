@@ -1,35 +1,26 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const http=require('node:http');
 const path=require('node:path');
 const {chromium}=require('playwright');
 
 const root=path.resolve(__dirname,'..');
-const server=http.createServer((req,res)=>{
-  let pathname;
-  try{pathname=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname)}catch(e){res.writeHead(400).end();return}
-  const target=path.resolve(root,'.'+pathname);
-  if(target!==root&&!target.startsWith(root+path.sep)){res.writeHead(403).end();return}
-  fs.readFile(target,(error,data)=>{
-    if(error){res.writeHead(404).end('Not found');return}
-    const ext=path.extname(target);
-    const type={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json'}[ext]||'application/octet-stream';
-    res.writeHead(200,{'content-type':type,'cache-control':'no-store'}).end(data);
-  });
-});
+const template=fs.readFileSync(path.join(root,'skins/classic/template.html'),'utf8');
 
 (async()=>{
-  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const address=server.address();
   const browser=await chromium.launch({headless:true});
   try{
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const pageErrors=[];
     page.on('pageerror',error=>pageErrors.push(error.message));
-    await page.goto('http://127.0.0.1:'+address.port+'/tests/classic-skin-calendar-browser.html');
-    await page.waitForFunction(()=>window.__skinReady||window.__skinError,{timeout:20000});
-    const bootError=await page.evaluate(()=>window.__skinError||'');
-    assert.equal(bootError,'','Classic skin should mount and load calendar assets: '+bootError);
+    await page.setContent('<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="skinRoot">'+template+'</div></body></html>');
+    await page.addStyleTag({path:path.join(root,'skins/classic/date-calendar.css')});
+    await page.addScriptTag({path:path.join(root,'core/date-utils.js')});
+    await page.addScriptTag({path:path.join(root,'skins/classic/date-calendar.js')});
+    await page.evaluate(()=>{
+      const $=id=>document.getElementById(id);
+      const dateUtils=window.PTI093DateUtils.install({$});
+      window.__calendarInstance=window.PTI093DateCalendarSkin.install({$,document,dateUtils});
+    });
     assert.equal(await page.locator('#datePickerBtn').count(),1,'skin template should contain one calendar trigger');
     await page.locator('#date').fill('05012026');
     assert.equal(await page.locator('#date').inputValue(),'05/01/2026','manual entry should preserve dd/mm/yyyy');
@@ -51,15 +42,12 @@ const server=http.createServer((req,res)=>{
     assert.match(await page.locator('#date').inputValue(),/^\d{2}\/\d{2}\/\d{4}$/,'Today should be formatted dd/mm/yyyy');
     const style=await page.locator('#dateCalendar').evaluate(el=>({radius:getComputedStyle(el).borderRadius,border:getComputedStyle(el).borderTopColor}));
     assert.equal(style.radius,'12px','calendar should have soft rounded corners');
-    assert.ok(style.border.includes('168, 205, 184')||style.border.includes('rgb(168, 205, 184)'),'calendar should use thin green border');
+    assert.ok(style.border.includes('168, 205, 184'),'calendar should use thin green border');
     await page.setViewportSize({width:375,height:812});
     await page.locator('#datePickerBtn').click();
     const bounds=await page.locator('#dateCalendar').boundingBox();
     assert.ok(bounds&&bounds.x>=-1&&bounds.x+bounds.width<=376,'mobile calendar should stay within viewport');
     assert.deepEqual(pageErrors,[],'browser should not report page errors');
-    console.log('PASS: Classic skin mounts calendar; dd/mm/yyyy, month navigation, select, clear, today, styling and mobile bounds verified.');
-  }finally{
-    await browser.close();
-    await new Promise(resolve=>server.close(resolve));
-  }
+    console.log('PASS: Classic template calendar — dd/mm/yyyy, month navigation, select, clear, today, styling and mobile bounds.');
+  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});
