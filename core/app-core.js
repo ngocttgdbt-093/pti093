@@ -11,7 +11,7 @@ const safeLocalStorage={
   setItem(key,value){try{window.localStorage.setItem(key,value)}catch(e){}},
   removeItem(key){try{window.localStorage.removeItem(key)}catch(e){}}
 };
-const gdvFusion=window.PTI093GdvFusion.install({$,prompt,storage:safeLocalStorage,state});
+const gdvFusion=window.PTI093HostAssembly.installGdv({window,$,prompt,storage:safeLocalStorage,state});
 const {names:PTI093_GDV_NAMES,selectedGdv}=gdvFusion;
 const classicStatusSkin=window.PTI093ClassicStatusSkin.install({$});
 const {msg,setDriveState}=classicStatusSkin;
@@ -103,8 +103,7 @@ localSaveCore.bindControls();
 const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad,scheduleAutoDraftSave,fileKey});
 const {openLocalDraft}=localOpenCore;
 
-const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
-driveSaveFusion.bindControls();
+const driveSaveFusion=window.PTI093HostAssembly.installDrive({window,state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 
 // Session lifecycle and autosave recovery are owned by core/draft-recovery.js.
 
