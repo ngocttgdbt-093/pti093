@@ -13,6 +13,20 @@
       state:deps.state
     });
   }
+  function bindGdvSelectionPersistence(deps){
+    if(!deps || !deps.gdvFusion || typeof deps.gdvFusion.bindSelectionPersistence!=='function') throw new Error('093 host requires a GĐV Fusion instance');
+    return deps.gdvFusion.bindSelectionPersistence(deps.scheduleAutoDraftSave);
+  }
+  function createDriveSearchBindings(deps){
+    if(!deps || !deps.window || !deps.window.PTISharedCore) throw new Error('093 host requires PTISharedCore search helpers');
+    var shared=deps.window.PTISharedCore;
+    return {
+      normalizeRecordSearch:shared.normalizeRecordSearch,
+      gdvInitials:shared.gdvInitials,
+      gdvSearchMatches:shared.gdvSearchMatches,
+      searchQueryVariants:function(query){ return shared.searchQueryVariants(query,deps.gdvNames); }
+    };
+  }
   function installDrive(deps){
     if(!deps || !deps.window || !deps.window.PTI093DriveFusion) throw new Error('093 host requires PTI093DriveFusion');
     var fusion=deps.window.PTI093DriveFusion.install({
@@ -43,5 +57,5 @@
     fusion.bindControls();
     return fusion;
   }
-  root.PTI093HostAssembly={installGdv:installGdv,installDrive:installDrive};
+  root.PTI093HostAssembly={installGdv:installGdv,bindGdvSelectionPersistence:bindGdvSelectionPersistence,createDriveSearchBindings:createDriveSearchBindings,installDrive:installDrive};
 })(typeof window!=='undefined'?window:this);
