@@ -15,6 +15,7 @@ jobs:
       - name: Check Project 5 caption core and integration modules
         run: |
           node --check core/caption-tools.js
+          node --check core/host-093-assembly.js
           node --check core/app-core.js
           node --check core/image-canvas.js
           node --check skin/classic-image-grid.js
