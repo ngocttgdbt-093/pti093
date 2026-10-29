@@ -14,11 +14,13 @@ const position=src=>scripts.indexOf(src);
 assert.ok(position('./core/local-draft-store.js')>=0,'IndexedDB store adapter must be loaded');
 assert.ok(position('./core/draft-recovery.js')>position('./core/local-draft-store.js'),
   'Draft Recovery must load after the IndexedDB store adapter');
+assert.ok(position('./core/project5-core-preview.js')<position('./core/app-core.js'),
+  'Core Preview mode must be defined before the App Core composition root runs');
 assert.ok(position('./fusion/drive.js')<position('./core/app-core.js'),
   'Drive Fusion must be defined before the App Core composition root runs');
 for(const module of [
   './core/gdv-search.js','./core/workspace.js','./core/group-workflow.js',
-  './core/file-delivery.js','./core/pdf-builder.js','./core/image-canvas.js',
+  './core/file-delivery.js','./core/project5-core-preview.js','./core/pdf-builder.js','./core/image-canvas.js',
   './core/preview-builder.js','./core/session-actions.js','./core/device-context.js',
   './core/local-save.js','./core/local-open.js','./fusion/gdv-093.js',
   './core/date-utils.js','./core/file-naming.js','./core/image-ingest.js',
