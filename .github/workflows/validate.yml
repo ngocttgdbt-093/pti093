@@ -205,7 +205,10 @@ jobs:
           node tests/draft-recovery-browser.test.cjs
           node tests/image-reorder-browser.test.cjs
           node tests/app-smoke-browser.test.cjs
-          node tests/project5-core-preview-browser.test.cjs
+          for round in 1 2 3 4 5; do
+            echo "Core Preview real-browser regression round ${round}/5"
+            node tests/project5-core-preview-browser.test.cjs
+          done
           node tests/classic-local-save-skin.test.cjs
           node tests/classic-load-progress-skin.test.cjs
           node tests/classic-image-viewer-skin.test.cjs
