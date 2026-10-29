@@ -2,15 +2,18 @@
   const style=document.getElementById('uiRefreshV42');
   const button=document.getElementById('uiModeToggle');
   if(!style||!button)return;
-  let modern=false;
+  const corePreview=typeof window!=='undefined'&&window.PROJECT5_CORE_PREVIEW===true;
+  let modern=corePreview;
   try{
-    // Chuyển mặc định sang Classic một lần cho người dùng hiện hữu; sau đó tôn trọng lựa chọn nút đổi giao diện.
-    if(localStorage.getItem('pti093_ui_default_classic_v2')!=='1'){
-      localStorage.setItem('pti093_ui_mode','classic');
-      localStorage.setItem('pti093_ui_default_classic_v2','1');
+    if(!corePreview){
+      // Normal 093 app: keep the established Classic default and respect the user's saved toggle choice.
+      if(localStorage.getItem('pti093_ui_default_classic_v2')!=='1'){
+        localStorage.setItem('pti093_ui_mode','classic');
+        localStorage.setItem('pti093_ui_default_classic_v2','1');
+      }
+      modern=localStorage.getItem('pti093_ui_mode')==='modern';
     }
-    modern=localStorage.getItem('pti093_ui_mode')==='modern';
-  }catch(e){}
+  }catch(e){ /* Core Preview must still use the new skin when storage is blocked. */ }
   function apply(){
     style.disabled=!modern;
     document.body.classList.toggle('classic-ui',!modern);

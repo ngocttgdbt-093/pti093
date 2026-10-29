@@ -33,7 +33,17 @@
       else if(it.previewUrl||it.dataUrl||it.src) im.src=it.previewUrl||it.dataUrl||it.src;
       var label=document.createElement('div');label.textContent='Ảnh '+(ii+1);label.style.cssText='font-size:12px;font-weight:700;margin:5px 0';
       var caption=document.createElement('textarea');caption.value=it.caption||'';caption.placeholder='Thuyết minh ảnh…';caption.rows=2;caption.style.cssText='width:100%;box-sizing:border-box;resize:vertical;font-size:12px;border:1px solid #d6e2f5;border-radius:6px;padding:5px';
-      caption.addEventListener('change',function(){it.caption=caption.value;scheduleAutoDraftSave(false)});
+      function normalizeCaption(preserveTrailingWhitespace){
+       var tools=window.PTI093CaptionTools;
+       var value=tools&&typeof tools.normalizeCaption==='function'
+        ?tools.normalizeCaption(caption.value,{preserveTrailingWhitespace:!!preserveTrailingWhitespace})
+        :caption.value;
+       if(caption.value!==value){var before=caption.value,pos=caption.selectionStart,prefix=0;while(prefix<before.length&&prefix<value.length&&before.charAt(prefix)===value.charAt(prefix))prefix++;caption.value=value;var nextPos=pos<=prefix?pos:Math.max(prefix,Math.min(value.length,pos+value.length-before.length));try{caption.setSelectionRange(nextPos,nextPos)}catch(e){}}
+       it.caption=value;
+      }
+      caption.addEventListener('input',function(){normalizeCaption(true);scheduleAutoDraftSave(false)});
+      caption.addEventListener('change',function(){normalizeCaption(false);scheduleAutoDraftSave(false)});
+      caption.addEventListener('blur',function(){normalizeCaption(false);scheduleAutoDraftSave(false)});
       var actions=document.createElement('div');actions.style.cssText='display:flex;gap:4px;margin-top:5px';
       var rotate=document.createElement('button');rotate.className='btn light';rotate.textContent='↻';rotate.title='Xoay ảnh';rotate.style.cssText='padding:4px 8px';rotate.onclick=function(){if(typeof editGroup==='function'){editGroup(gi);state.current.items[ii].rotate=((state.current.items[ii].rotate||0)+90)%360;render();saved.style.display='none';}};
       var remove=document.createElement('button');remove.className='btn light';remove.textContent='🗑';remove.title='Xóa ảnh';remove.style.cssText='padding:4px 8px';remove.onclick=function(){if(confirm('Xóa ảnh '+(ii+1)+' khỏi nội dung này?')){items.splice(ii,1);renderSavedGroupsGallery();scheduleAutoDraftSave(true)}};

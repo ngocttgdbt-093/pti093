@@ -1,0 +1,9 @@
+/* Enabled only when index.html is opened with ?corePreview=1. */
+.project5-core-preview .driveBox,
+.project5-core-preview #driveCreate,
+.project5-core-preview #driveSaveProject,
+.project5-core-preview #driveSaveDraft,
+.project5-core-preview #driveState,
+.project5-core-preview #driveId,
+.project5-core-preview #driveProgress { display: none !important; }
+.project5-core-preview .appFooter .version-footer::after { content: ' · CORE PREVIEW'; font-weight: 700; }

@@ -74,11 +74,11 @@ const moduleScripts = [
   './core/draft-recovery.js',
   './core/local-save.js',
   './core/local-open.js',
-  './fusion/drive.js'
+  './core/drive-loader.js'
 ];
 const scriptPositions = moduleScripts.map(src => html.indexOf('src="' + src + '"'));
 assert.ok(scriptPositions.every(pos => pos >= 0), 'index.html should load every extracted storage/Core/Fusion module');
-assert.ok(scriptPositions.every((pos, i) => i === 0 || pos > scriptPositions[i - 1]), 'Store, recovery, local save/open, and Drive Fusion scripts must load in dependency order');
+assert.ok(scriptPositions.every((pos, i) => i === 0 || pos > scriptPositions[i - 1]), 'Store, recovery, local save/open, and conditional Drive loader must load in dependency order');
 const builderScripts = [
   './core/workspace.js',
   './core/group-workflow.js',
@@ -95,6 +95,7 @@ const builderScripts = [
   './core/pdf-export.js',
   './core/pdf-export-controller.js',
   './skin/classic-preview.js',
+  './core/host-093-assembly.js',
   './core/app-core.js'
 ];
 const builderPositions = builderScripts.map(src => html.indexOf('src="' + src + '"'));
@@ -105,7 +106,8 @@ for (const contract of [
   'window.PTI093DraftRecovery.install(',
   'window.PTILocalSaveCore.install(',
   'window.PTI093LocalOpenCore.install(',
-  'window.PTI093DriveFusion.install(',
+  'window.PTI093HostAssembly.installDrive(',
+  'window.PTI093HostAssembly.installGdv(',
   'const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery'
 ]) {
   assert.ok(appCore.includes(contract), 'App integration contract should remain: ' + contract);
