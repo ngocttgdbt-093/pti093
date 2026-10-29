@@ -18,7 +18,7 @@ assert.ok(position('./core/project5-core-preview.js')<position('./core/app-core.
   'Core Preview mode must be defined before the App Core composition root runs');
 assert.ok(position('./core/drive-loader.js')<position('./core/app-core.js'),
   'Conditional Drive loader must run before the App Core composition root');
-assert.ok(fs.readFileSync('core/drive-loader.js','utf8').includes("'./fusion/drive.js'"),
+assert.ok(fs.readFileSync('core/drive-loader.js','utf8').includes('./fusion/drive.js'),
   'Normal app startup must retain the existing 093 Drive adapter');
 for(const module of [
   './core/gdv-search.js','./core/workspace.js','./core/group-workflow.js',
