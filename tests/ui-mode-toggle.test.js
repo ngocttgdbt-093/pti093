@@ -45,5 +45,12 @@ function run({initial={},throwStorage=false,missing=false}={}){
 {
   run({missing:true});
 }
+{
+  global.window={PROJECT5_CORE_PREVIEW:true};
+  const x=run({throwStorage:true});
+  assert.equal(x.style.disabled,false,'Core Preview must default to Modern even when storage is blocked');
+  assert.equal(x.button.textContent,'Giao diện Classic');
+  delete global.window;
+}
 delete global.document;delete global.localStorage;
 console.log('UI Mode Toggle Skin tests passed (Classic default, persisted preference, toggle, and blocked storage).');
