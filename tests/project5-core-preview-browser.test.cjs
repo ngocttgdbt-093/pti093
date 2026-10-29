@@ -15,23 +15,31 @@ const {chromium}=require('playwright');
     const boot=await page.evaluate(()=>({
       previewMode:window.PROJECT5_CORE_PREVIEW===true,
       title:document.title,
+      modernSkinEnabled:!document.getElementById('uiRefreshV42').disabled,
+      modernGallery:!!document.querySelector('.pcImageGallery'),
+      uiModeLabel:document.getElementById('uiModeToggle').textContent,
       classicGrid:!!window.PTI093ClassicImageGridSkin,
       imageIngest:!!window.PTI093ImageIngest,
       captionCore:!!window.PTI093CaptionTools,
       driveFusion:!!window.PTI093DriveFusion,
       driveUpload:typeof window.pti093UploadAll,
       driveBoxDisplay:getComputedStyle(document.querySelector('.driveBox')).display,
+      driveButtonsVisible:['driveCreate','driveSaveProject','driveSaveDraft'].some(id=>{const e=document.getElementById(id);return e&&getComputedStyle(e).display!=='none';}),
       slots:document.querySelectorAll('#layoutPreview .layoutcell').length,
       datePlaceholder:document.getElementById('date').placeholder
     }));
     assert.equal(boot.previewMode,true,'Core Preview flag should be enabled from query string');
     assert.match(boot.title,/Core Preview/);
+    assert.equal(boot.modernSkinEnabled,true,'Core Preview should default to the new UI skin');
+    assert.equal(boot.modernGallery,true,'modern image gallery should mount in the acceptance preview');
+    assert.equal(boot.uiModeLabel,'Giao diện Classic','new UI is active and the toggle should offer switching back');
     assert.equal(boot.classicGrid,true,'Classic image grid must initialize');
     assert.equal(boot.imageIngest,true,'image ingest core must initialize');
     assert.equal(boot.captionCore,true,'caption core must initialize');
     assert.equal(boot.driveFusion,false,'Drive Fusion script must not load in Core Preview');
     assert.equal(boot.driveUpload,'undefined','Drive upload entry must not be installed');
     assert.equal(boot.driveBoxDisplay,'none','Drive controls must be hidden in Core Preview');
+    assert.equal(boot.driveButtonsVisible,false,'Drive action buttons must remain hidden in Core Preview');
     assert.equal(boot.slots,6,'default layout must retain six image slots');
     assert.equal(boot.datePlaceholder,'dd/mm/yyyy','date format must remain dd/mm/yyyy');
     assert.equal(requested.some(p=>p.endsWith('/fusion/drive.js')),false,'Drive module network request must not occur');
@@ -56,7 +64,7 @@ const {chromium}=require('playwright');
     const download=await downloadPromise;
     assert.ok(download.suggestedFilename().toLowerCase().endsWith('.pdf'),'PDF export should produce a PDF download');
     assert.deepEqual(pageErrors,[],'Core Preview must start and process an image without uncaught browser errors');
-    console.log('Core Preview browser smoke PASS: Classic UI, six-slot layout, image ingest, preview/PDF export, and no Drive module loaded.');
+    console.log('Core Preview browser smoke PASS: Modern UI skin, six-slot layout, image ingest, preview/PDF export, Drive controls hidden, and no Drive module loaded.');
   }finally{
     await browser.close();
   }
