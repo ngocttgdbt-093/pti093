@@ -23,6 +23,9 @@ jobs:
           node --check core/host-093-assembly.js
           node --check core/caption-tools.js
           node --check core/image-canvas.js
+          node --check core/group-workflow.js
+          node --check skin/ui-mode-toggle.js
+          node --check skin/modern-image-gallery.js
           node --check skin/classic-image-grid.js
           node --check skin/classic-layout.js
       - name: Run existing core tests
@@ -30,6 +33,7 @@ jobs:
           node core/caption-tools.test.cjs
           node tests/host-093-assembly.test.cjs
           node tests/local-references.test.js
+          node tests/ui-mode-toggle.test.js
       - name: Verify immutable live preview assets on jsDelivr
         run: |
           base="https://cdn.jsdelivr.net/gh/${GITHUB_REPOSITORY}@${GITHUB_SHA}"
