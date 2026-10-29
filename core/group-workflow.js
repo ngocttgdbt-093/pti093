@@ -7,6 +7,7 @@
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi sửa nhóm ảnh.',true);return;}
         if((state.current.items.length||state.editing>=0)&&!confirm('Mục hiện tại chưa lưu. Bỏ mục hiện tại để sửa mục đã lưu?'))return;
         if(!workspaceCore.beginEditGroup(state,index))return;
+        refreshModernGallery();
         $('filenameCaption').checked=false;
         $('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');
         $('preview').innerHTML='';
@@ -19,6 +20,7 @@
         render();
         window.scrollTo({top:$('drop').getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'});
       }
+      function refreshModernGallery(){if(typeof window.pti093RenderSavedGroupsGallery==='function')window.pti093RenderSavedGroupsGallery();}
       function commitCurrent(){if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi lưu nhóm ảnh.',true);return null;}return workspaceCore.commitCurrent(state)}
       function saveNext(){
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ thao tác đó hoàn tất trước khi lưu nhóm ảnh.',true);return;}
@@ -29,7 +31,7 @@
         state.filenameCaption=false;
         $('filenameCaption').checked=false;
         $('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');
-        render();scheduleAutoDraftSave(true);
+        render();refreshModernGallery();scheduleAutoDraftSave(true);
         msg('Đã lưu “'+group.title+'”. Hãy chọn nội dung tiếp theo.',true);
         window.scrollTo({top:$('drop').getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'});
       }
@@ -42,7 +44,7 @@
         state.filenameCaption=false;
         $('filenameCaption').checked=false;
         $('filenameCaption').closest('.filenameCaptionBox').classList.remove('on');
-        render();scheduleAutoDraftSave(true);
+        render();refreshModernGallery();scheduleAutoDraftSave(true);
         makePreview();
       }
       $('saveNext').onclick=saveNext;
