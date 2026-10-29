@@ -1,0 +1,3 @@
+/* Only enabled when index.html is opened with ?corePreview=1. */
+.project5-core-preview .driveBox { display: none !important; }
+.project5-core-preview .appFooter .version-footer::after { content: ' · CORE PREVIEW'; font-weight: 700; }
