@@ -95,12 +95,13 @@ const searchQueryVariants=query=>window.PTISharedCore.searchQueryVariants(query,
 
 const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
 const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
-const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone,fileKey});
+const draftStorage=window.PTIDraftStorageContract.install({provider:localDraftStore});
+const draftRecovery=window.PTI093DraftRecovery.install({state,$,getDateISO,setDateInput,render,renderLayout,setDriveState,msg,openLocalDraftDB,localDraftTransactionDone,draftStorage,fileKey});
 const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery;
 window.PTI093SessionActions.install({$,clearAutoDraft,localStorage:safeLocalStorage,location,console,msg});
-const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
+const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForProject,openLocalDraftDB,localDraftTransactionDone,draftStorage,getDateISO,selectedGdv,setDriveState,msg,renderLocalSaveFeedback,showLocalSaveConfirm,clearAutoDraft});
 localSaveCore.bindControls();
-const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad,scheduleAutoDraftSave,fileKey});
+const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,draftStorage,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad,scheduleAutoDraftSave,fileKey});
 const {openLocalDraft}=localOpenCore;
 
 const driveSaveFusion=window.PTI093DriveFusion.install({state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});

@@ -1,0 +1,38 @@
+name: Project 5 Core Runtime Boundary Audit
+
+on:
+  push:
+    branches:
+      - audit/core-runtime-boundaries-20261028
+  pull_request:
+    branches:
+      - feat/project5-module-packaging-20261028
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-runtime-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check tests/core-runtime-boundaries.test.js
+      - name: Verify Core integration boundaries
+        run: node tests/core-runtime-boundaries.test.js
+      - name: Run Core regression suite 10 consecutive rounds
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          for round in $(seq 1 10); do
+            echo "=== Core regression round $round/10 ==="
+            for test_file in tests/*.test.js; do
+              count=$((count + 1))
+              echo "[$round/10] $test_file"
+              node "$test_file"
+            done
+          done
+          echo "PASS: $count Core regression executions completed across 10/10 rounds."

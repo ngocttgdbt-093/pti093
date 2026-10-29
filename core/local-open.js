@@ -2,7 +2,7 @@
   'use strict';
   global.PTI093LocalOpenCore = {
     install: function(deps){
-      const {state, $, msg, openLocalDraftDB, setDateInput, render, renderLayout, setDriveState, deviceStorageLabel, setOpenLoad, finishOpenLoad, scheduleAutoDraftSave, fileKey:makeFileKey} = deps;
+      const {state, $, msg, openLocalDraftDB, draftStorage, setDateInput, render, renderLayout, setDriveState, deviceStorageLabel, setOpenLoad, finishOpenLoad, scheduleAutoDraftSave, fileKey:makeFileKey} = deps;
       const fileKey=makeFileKey||function(file){
         const base=[file.name||'',file.size||0,file.lastModified||0].join('|');
         const relative=String(file.webkitRelativePath||'').trim();
@@ -14,11 +14,17 @@
         setDriveState('Đang tải ảnh từ '+source+'...');
         let db,meta,images;
         try{
-          db=await openLocalDraftDB();
-          [meta,images]=await Promise.all([
-            new Promise((resolve,reject)=>{const r=db.transaction('drafts','readonly').objectStore('drafts').get(id);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}),
-            new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),r=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(id));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})
-          ]);
+          if(draftStorage){
+            const bundle=await draftStorage.readBundle(id);
+            meta=bundle.meta;images=bundle.images;
+          }else{
+            // Compatibility fallback for older integrations/tests; app assembly injects the contract.
+            db=await openLocalDraftDB();
+            [meta,images]=await Promise.all([
+              new Promise((resolve,reject)=>{const r=db.transaction('drafts','readonly').objectStore('drafts').get(id);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}),
+              new Promise((resolve,reject)=>{const tx=db.transaction('draftImages','readonly'),r=tx.objectStore('draftImages').index('draftId').getAll(IDBKeyRange.only(id));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})
+            ]);
+          }
         }catch(error){
           const detail='Không thể đọc bản lưu tại máy: '+(error&&error.message?error.message:String(error));
           setOpenLoad(source,0,0,detail);

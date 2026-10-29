@@ -29,6 +29,12 @@ assert.match(map, /uploadIndexVersion/);
 assert.ok(manifest && typeof manifest === 'object' && Object.keys(manifest).length > 0);
 assert.match(skin, /mount/);
 assert.match(skin, /unmount/);
+assert.doesNotMatch(skin, /PTI093DriveFusion|DriveStorage093|PTI_GDV_ADMIN_API_URL|ptiGdvAdmin/,
+  'Classic Skin must not activate Drive or PTI GĐV administration integrations');
+assert.doesNotMatch(template, /id=["']drive(?:Create|SaveProject|Search|Progress|State|Id)/i,
+  'Classic Skin template must not contain Drive storage controls');
+assert.doesNotMatch(template, /ptiGdvAdmin|Quản trị danh sách GĐV/i,
+  'Classic Skin template must not contain PTI GĐV admin controls');
 assert.ok(skinTest.length > 0 && template.length > 1000);
 assert.match(template, /id="datePickerBtn"/);
 assert.match(template, /id="dateCalToday"/);
@@ -45,6 +51,8 @@ assert.match(gdv, /call\('save'/);
 assert.match(gdv, /call\('logout'/);
 assert.match(gdvReadme, /dedicated PTI admin Apps Script API/i);
 assert.match(gdvReadme, /Server-side authorization/i);
+assert.doesNotMatch(gdv, /PTI093DriveFusion|DriveStorage093|driveSaveProject|uploadImage/,
+  'PTI GĐV Admin must not depend on the 093 Drive module');
 assert.doesNotMatch(gdv, /AKfycbwmydXC8QZEKDBoRvJOGZSfQjdYSWzteyAMIYjr7RfoEIiHFetnGUj8A0FlB0hjJcB2kw/);
 assert.doesNotMatch(html, /modules\/drive-storage-093\/DriveStorage093\.frontend\.js/);
 assert.doesNotMatch(html, /skins\/classic\/skin\.js/);
