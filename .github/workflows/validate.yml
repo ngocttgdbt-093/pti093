@@ -2,7 +2,7 @@ name: Validate GHÉP ẢNH 093 Core
 
 on:
   push:
-    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, feat/project5-module-packaging-20261028, refactor/project5-host-assembly-slice-20261029]
+    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, feat/project5-module-packaging-20261028, refactor/project5-host-assembly-slice-20261029, build/project5-core-preview-20261030]
   pull_request:
     branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, integration/project5-caption-core-20261027, feat/project5-module-packaging-20261028]
   workflow_dispatch:
@@ -58,7 +58,7 @@ jobs:
           NODE
 
       - name: Audit local asset references and zero-inline-script boundary
-        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'integration/project5-caption-core-20261027' || github.ref_name == 'feat/project5-module-packaging-20261028' || github.head_ref == 'feat/project5-module-packaging-20261028' || github.ref_name == 'refactor/project5-host-assembly-slice-20261029' || github.head_ref == 'refactor/project5-host-assembly-slice-20261029'
+        if: github.ref_name == 'refactor/core-modules-test-20261022' || github.ref_name == 'refactor/core-modules-review-20261023' || github.ref_name == 'test/core-093-20261023' || github.head_ref == 'refactor/core-modules-test-20261022' || github.head_ref == 'refactor/core-modules-review-20261023' || github.head_ref == 'test/core-093-20261023' || github.head_ref == 'integration/project5-caption-core-20261027' || github.ref_name == 'feat/project5-module-packaging-20261028' || github.head_ref == 'feat/project5-module-packaging-20261028' || github.ref_name == 'refactor/project5-host-assembly-slice-20261029' || github.ref_name == 'build/project5-core-preview-20261030' || github.head_ref == 'refactor/project5-host-assembly-slice-20261029' || github.head_ref == 'build/project5-core-preview-20261030'
         run: node tests/local-references.test.js
 
       - name: Check Preview Modal Skin
