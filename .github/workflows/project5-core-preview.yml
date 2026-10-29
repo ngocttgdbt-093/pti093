@@ -30,6 +30,16 @@ jobs:
           node core/caption-tools.test.cjs
           node tests/host-093-assembly.test.cjs
           node tests/local-references.test.js
+      - name: Verify immutable live preview assets on jsDelivr
+        run: |
+          base="https://cdn.jsdelivr.net/gh/${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+          curl -fsSL "${base}/index.html?corePreview=1" -o /tmp/core-preview.html
+          grep -q './core/project5-core-preview.js' /tmp/core-preview.html
+          grep -q './core/drive-loader.js' /tmp/core-preview.html
+          curl -fsSL "${base}/core/project5-core-preview.js" | grep -q 'PROJECT5_CORE_PREVIEW'
+          curl -fsSL "${base}/core/drive-loader.js" | grep -q 'PROJECT5_CORE_PREVIEW'
+          curl -fsSL "${base}/css/project5-core-preview.css" | grep -q 'project5-core-preview .driveBox'
+          echo "Immutable Core Preview assets are reachable from jsDelivr."
       - name: Assert Core Preview excludes Drive installation
         run: |
           node <<'NODE'
