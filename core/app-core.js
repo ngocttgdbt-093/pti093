@@ -1,7 +1,7 @@
 
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',rowGap:18,columnGap:18,pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,workspaceOpenPending:false,workspaceRevision:0,localCopyFromIncompleteDrive:false};
 const PDF_SAFE_LIMIT=9.5*1048576;
-const CORE_PREVIEW_MODE = new URLSearchParams(window.location.search).get('corePreview') === '1';
+const CORE_PREVIEW_MODE = window.PROJECT5_CORE_PREVIEW === true;
 // Core Preview intentionally excludes the Drive record/upload adapter; local image processing remains enabled.
 const fileDelivery=window.PTI093FileDelivery.install({navigator,window,document,URL,File,location,setTimeout});
 const {exportPdfFile}=fileDelivery;
