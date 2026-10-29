@@ -1,6 +1,8 @@
 
 const state={groups:[],current:{title:'Bản ảnh chi tiết thiệt hại',items:[]},editing:-1,per:6,orientation:'portrait',rowGap:18,columnGap:18,pages:[],pageDefs:[],addSeq:0,replaceIndex:-1,insertIndex:-1,filenameCaption:false,driveUploadFailures:[],driveRecordId:'',localDraftId:'',driveOpenIncomplete:false,driveOpenPending:false,workspaceOpenPending:false,workspaceRevision:0,localCopyFromIncompleteDrive:false};
 const PDF_SAFE_LIMIT=9.5*1048576;
+const CORE_PREVIEW_MODE = new URLSearchParams(window.location.search).get('corePreview') === '1';
+// Core Preview intentionally excludes the Drive record/upload adapter; local image processing remains enabled.
 const fileDelivery=window.PTI093FileDelivery.install({navigator,window,document,URL,File,location,setTimeout});
 const {exportPdfFile}=fileDelivery;
 const $=id=>document.getElementById(id);
@@ -100,7 +102,7 @@ localSaveCore.bindControls();
 const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad,scheduleAutoDraftSave,fileKey});
 const {openLocalDraft}=localOpenCore;
 
-const driveSaveFusion=window.PTI093HostAssembly.installDrive({window,state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
+const driveSaveFusion=CORE_PREVIEW_MODE ? null : window.PTI093HostAssembly.installDrive({window,state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 
 // Session lifecycle and autosave recovery are owned by core/draft-recovery.js.
 
