@@ -74,11 +74,11 @@ const moduleScripts = [
   './core/draft-recovery.js',
   './core/local-save.js',
   './core/local-open.js',
-  './fusion/drive.js'
+  './core/drive-loader.js'
 ];
 const scriptPositions = moduleScripts.map(src => html.indexOf('src="' + src + '"'));
 assert.ok(scriptPositions.every(pos => pos >= 0), 'index.html should load every extracted storage/Core/Fusion module');
-assert.ok(scriptPositions.every((pos, i) => i === 0 || pos > scriptPositions[i - 1]), 'Store, recovery, local save/open, and Drive Fusion scripts must load in dependency order');
+assert.ok(scriptPositions.every((pos, i) => i === 0 || pos > scriptPositions[i - 1]), 'Store, recovery, local save/open, and conditional Drive loader must load in dependency order');
 const builderScripts = [
   './core/workspace.js',
   './core/group-workflow.js',
