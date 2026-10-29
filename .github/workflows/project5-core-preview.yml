@@ -36,7 +36,8 @@ jobs:
           const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
           const app = fs.readFileSync('core/app-core.js', 'utf8');
-          if (!html.includes("corePreview") || !html.includes(".project5-core-preview .driveBox{display:none!important}")) throw new Error('Core Preview UI guard missing');
+          const css = fs.readFileSync('css/project5-core-preview.css', 'utf8');
+          if (!html.includes('./css/project5-core-preview.css') || !css.includes('.project5-core-preview .driveBox')) throw new Error('Core Preview UI guard missing');
           if (!app.includes("CORE_PREVIEW_MODE ? null : window.PTI093HostAssembly.installDrive(")) throw new Error('Drive adapter is not excluded in Core Preview mode');
           const mode = fs.readFileSync('core/project5-core-preview.js', 'utf8');
           if (!mode.includes("new URLSearchParams(root.location.search).get('corePreview') === '1'")) throw new Error('Core Preview mode flag missing');
