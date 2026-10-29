@@ -38,7 +38,7 @@
        var value=tools&&typeof tools.normalizeCaption==='function'
         ?tools.normalizeCaption(caption.value,{preserveTrailingWhitespace:!!preserveTrailingWhitespace})
         :caption.value;
-       if(caption.value!==value){var pos=caption.selectionStart;caption.value=value;try{caption.setSelectionRange(value.length===caption.value.length?pos:value.length,value.length===caption.value.length?pos:value.length)}catch(e){}}
+       if(caption.value!==value){var before=caption.value,pos=caption.selectionStart,prefix=0;while(prefix<before.length&&prefix<value.length&&before.charAt(prefix)===value.charAt(prefix))prefix++;caption.value=value;var nextPos=pos<=prefix?pos:Math.max(prefix,Math.min(value.length,pos+value.length-before.length));try{caption.setSelectionRange(nextPos,nextPos)}catch(e){}}
        it.caption=value;
       }
       caption.addEventListener('input',function(){normalizeCaption(true);scheduleAutoDraftSave(false)});
