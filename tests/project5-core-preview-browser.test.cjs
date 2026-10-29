@@ -63,8 +63,16 @@ const {chromium}=require('playwright');
     await page.locator('#pdf').click();
     const download=await downloadPromise;
     assert.ok(download.suggestedFilename().toLowerCase().endsWith('.pdf'),'PDF export should produce a PDF download');
+    const closePreview=page.locator('#ptiPreviewClose');
+    if(await closePreview.isVisible().catch(()=>false)) await closePreview.click();
+    await page.waitForSelector('#pcSavedGroupsGallery textarea');
+    const savedCaption=page.locator('#pcSavedGroupsGallery textarea').first();
+    await savedCaption.fill('  kính   chắn gió. vỡ  ');
+    assert.equal(await savedCaption.inputValue(),'Kính chắn gió. Vỡ ','modern saved-group caption auto-corrects silently during typing');
+    await savedCaption.blur();
+    assert.equal(await savedCaption.inputValue(),'Kính chắn gió. Vỡ','modern saved-group caption trims trailing whitespace on blur');
     assert.deepEqual(pageErrors,[],'Core Preview must start and process an image without uncaught browser errors');
-    console.log('Core Preview browser smoke PASS: Modern UI skin, six-slot layout, image ingest, preview/PDF export, Drive controls hidden, and no Drive module loaded.');
+    console.log('Core Preview browser smoke PASS: Modern UI skin, six-slot layout, image ingest, saved-group caption autocorrect, preview/PDF export, Drive controls hidden, and no Drive module loaded.');
   }finally{
     await browser.close();
   }
