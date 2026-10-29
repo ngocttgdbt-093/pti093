@@ -2,9 +2,9 @@ name: Validate GHÉP ẢNH 093 Core
 
 on:
   push:
-    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, feat/project5-module-packaging-20261028]
+    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, feat/project5-module-packaging-20261028, refactor/project5-host-assembly-slice-20261029]
   pull_request:
-    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, integration/project5-caption-core-20261027]
+    branches: [main, refactor/core-modules-test-20261022, refactor/core-modules-review-20261023, test/core-093-20261023, integration/project5-caption-core-20261027, feat/project5-module-packaging-20261028]
   workflow_dispatch:
 
 jobs:
