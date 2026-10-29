@@ -17,6 +17,7 @@ jobs:
           node --check core/caption-tools.js
           node --check core/host-093-assembly.js
           node --check core/app-core.js
+          node tests/host-093-assembly.test.cjs
           node --check core/image-canvas.js
           node --check skin/classic-image-grid.js
           node --check skin/classic-layout.js
