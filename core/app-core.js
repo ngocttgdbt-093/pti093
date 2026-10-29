@@ -84,14 +84,11 @@ let selectedGdvCache='';
 
 pdfExportController.bindControls();
 // Ghi nhớ GĐV/thụ lý để nút 'Làm tiếp bản ảnh khác' tải lại trang nhưng vẫn giữ gợi ý.
-gdvFusion.bindSelectionPersistence((...args)=>scheduleAutoDraftSave(...args));
+window.PTI093HostAssembly.bindGdvSelectionPersistence({gdvFusion,scheduleAutoDraftSave:(...args)=>scheduleAutoDraftSave(...args)});
 
 /* Drive record/search/upload behavior is installed from fusion/drive.js below. */
 
-const normalizeRecordSearch=window.PTISharedCore.normalizeRecordSearch;
-const gdvInitials=window.PTISharedCore.gdvInitials;
-const gdvSearchMatches=window.PTISharedCore.gdvSearchMatches;
-const searchQueryVariants=query=>window.PTISharedCore.searchQueryVariants(query,PTI093_GDV_NAMES);
+const {normalizeRecordSearch,gdvInitials,gdvSearchMatches,searchQueryVariants}=window.PTI093HostAssembly.createDriveSearchBindings({window,gdvNames:PTI093_GDV_NAMES});
 
 const localDraftStore=window.PTILocalDraftStore.install({dbName:'pti093_local_drafts_v1'});
 const {openLocalDraftDB,localDraftTransactionDone,getLocalDrafts}=localDraftStore;
