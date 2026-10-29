@@ -53,6 +53,7 @@ assert.equal(api.getDrivePendingUploadKey('case-1','img-a'), '');
 const fs = require('node:fs');
 const html = fs.readFileSync('index.html', 'utf8');
 const appCore = fs.readFileSync('core/app-core.js', 'utf8');
+const hostAssembly = fs.readFileSync('core/host-093-assembly.js', 'utf8');
 assert.ok(html.includes('<link rel="stylesheet" href="./css/skin-classic.css">'), 'Classic skin should be external');
 assert.ok(html.includes('<link rel="stylesheet" id="uiRefreshV42" href="./css/skin-modern.css">'), 'Modern skin toggle target should remain addressable');
 assert.equal((html.match(/<style\b/gi) || []).length, 0, 'All static skin/style blocks should be externalized');
@@ -63,8 +64,9 @@ for (const file of ['skin-classic.css','skin-modern.css', ...Array.from({length:
 }
 
 assert.ok(html.indexOf('src="./core/gdv-search.js"') < html.indexOf('src="./fusion/drive.js"'), 'Shared Core should load before app-specific Drive Fusion');
-assert.ok(appCore.indexOf('window.PTI093DriveFusion.install(') >= 0, 'App Core should install Drive Fusion');
-assert.ok(appCore.includes('driveSaveFusion.bindControls();'), 'App Core should delegate Drive button bindings to Drive Fusion');
+assert.ok(appCore.includes('window.PTI093HostAssembly.installDrive('), 'App Core should delegate Drive Fusion composition to the 093 host assembly');
+assert.ok(hostAssembly.includes('deps.window.PTI093DriveFusion.install('), '093 host assembly should install the existing Drive Fusion adapter');
+assert.ok(hostAssembly.includes('fusion.bindControls();'), '093 host assembly should bind Drive controls exactly once');
 assert.ok(driveModule.includes("$('driveSaveProject').onclick=async()=>{"), 'Drive Fusion should own the save-project handler');
 assert.ok(driveModule.includes("$('driveCreate').onclick=createDriveRecord;"), 'Drive Fusion should own the create-record handler');
 const draftSource = fs.readFileSync('core/draft-recovery.js', 'utf8');

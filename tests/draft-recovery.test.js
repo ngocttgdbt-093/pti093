@@ -95,6 +95,7 @@ const builderScripts = [
   './core/pdf-export.js',
   './core/pdf-export-controller.js',
   './skin/classic-preview.js',
+  './core/host-093-assembly.js',
   './core/app-core.js'
 ];
 const builderPositions = builderScripts.map(src => html.indexOf('src="' + src + '"'));
@@ -105,7 +106,8 @@ for (const contract of [
   'window.PTI093DraftRecovery.install(',
   'window.PTILocalSaveCore.install(',
   'window.PTI093LocalOpenCore.install(',
-  'window.PTI093DriveFusion.install(',
+  'window.PTI093HostAssembly.installDrive(',
+  'window.PTI093HostAssembly.installGdv(',
   'const {scheduleAutoDraftSave,finalizeCompletedSession,clearAutoDraft,bindLifecycle}=draftRecovery'
 ]) {
   assert.ok(appCore.includes(contract), 'App integration contract should remain: ' + contract);
