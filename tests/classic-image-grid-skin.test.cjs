@@ -69,7 +69,7 @@ const {chromium}=require('playwright');
     await page.locator('#p5CaptionInput').press('Enter');
     assert.equal(await page.locator('#grid .thumb.p5-selected').count(),1,'invalid/stale selection must remain selected');
     assert.equal(await page.locator('#p5CaptionDialog').isVisible(),true,'failed apply must leave dialog open');
-    await page.evaluate(()=>window.gridState.current.items.unshift({file:new File([new Uint8Array([1,2,3])],'a.jpg',{type:'image/jpeg'}),caption:'Damage. Left door',rotate:90,id:document.querySelector('#grid .thumb').dataset.dragId}));
+    await page.evaluate(()=>window.gridState.current.items.unshift({file:new File([new Uint8Array([1,2,3])],'a.jpg',{type:'image/jpeg'}),caption:'Damage. Left door',rotate:90,__pti093DragId:document.querySelector('#grid .thumb').dataset.dragId}));
     await page.evaluate(()=>window.gridSkin.render());
     assert.equal(await page.locator('#grid .thumb.p5-selected').count(),1,'restoring the item must not implicitly clear selection');
     await page.locator('#p5CaptionCancel').click();
