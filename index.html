@@ -496,7 +496,9 @@ body.classic-ui .filegrid{column-gap:14px!important;row-gap:16px!important}
     const ids=new Set(targets.map(keyFor));
     const result=window.CaptionTools093.applyCaptionToItems(state.current.items,ids,normalized,{getId:item=>pti093EnsureDragId(item)});
     if(!result.ok){d.querySelector('#captionDialogSub').textContent='Không thể cập nhật an toàn. Hãy bỏ chọn và chọn lại ảnh.';return}
-    closeDialog();render();scheduleAutoDraftSave(true);msg('Đã áp dụng chú thích chung cho '+result.applied+' ảnh.',true);updateSelectionUI();
+    // Chỉ xóa trạng thái chọn sau khi toàn bộ ảnh đã được cập nhật thành công.
+    clearSelection();
+    closeDialog();render();scheduleAutoDraftSave(true);msg('Đã áp dụng chú thích chung cho '+result.applied+' ảnh. Đã bỏ chọn nhóm ảnh.',true);updateSelectionUI();
   }
   function applyBulkCaption(){
     closeMenu();
