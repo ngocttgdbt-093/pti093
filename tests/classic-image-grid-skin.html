@@ -3,13 +3,13 @@
 <div id="grid"></div><div id="groupsBox"></div>
 <button id="clear"></button><button id="saveNext"></button><button id="finish"></button>
 <input id="replaceFile" type="file"><input id="insertFile" type="file">
-<script src="../core/image-reorder.js"></script><script src="../skin/classic-group-list.js"></script><script src="../skin/classic-image-grid.js"></script>
+<script src="../core/caption-tools.js"></script><script src="../core/image-reorder.js"></script><script src="../skin/classic-group-list.js"></script><script src="../skin/classic-image-grid.js"></script>
 <script>
 window.gridState={current:{items:[
  {file:new File([new Uint8Array([1,2,3])],'a.jpg',{type:'image/jpeg'}),caption:'Caption A',rotate:90},
  {file:new File([new Uint8Array([4,5,6])],'b.jpg',{type:'image/jpeg'}),caption:'Caption B',rotate:0}
 ]},groups:[]};
-window.gridCalls=[];window.gridSaves=[];let gridSkin;
+window.gridCalls=[];window.gridSaves=[];window.gridMessages=[];let gridSkin;
 const $=id=>document.getElementById(id);
 const groupSkin=window.PTI093ClassicGroupListSkin.install({state:window.gridState,$,document,onEditGroup:i=>gridCalls.push(['editGroup',i])});
 const reorder=window.PTI093ImageReorder.install({state:window.gridState,$,scheduleAutoDraftSave:v=>gridSaves.push(v),renderLayout:()=>{},render:()=>gridSkin.render()});
@@ -20,7 +20,8 @@ gridSkin=window.PTI093ClassicImageGridSkin.install({
  onRotate:(item,i)=>{item.rotate=(item.rotate+90)%360;gridCalls.push(['rotate',i]);gridSkin.render();gridSaves.push(true);},
  onInsert:i=>gridCalls.push(['insert',i]),
  onDelete:i=>{gridCalls.push(['delete',i]);gridState.current.items.splice(i,1);gridSkin.render();gridSaves.push(true);},
- onCaptionChange:(item,value)=>{item.caption=value;gridSaves.push(false);}
+ onCaptionChange:(item,value)=>{item.caption=value;gridSaves.push(false);},
+ msg:(...args)=>gridMessages.push(args)
 });
 window.gridSkin=gridSkin;window.gridSkin.render();
 </script></body></html>
