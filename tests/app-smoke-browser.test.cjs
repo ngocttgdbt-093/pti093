@@ -95,6 +95,20 @@ const {chromium}=require('playwright');
     assert.equal(modernGallery.gridInsideGallery,true,'the image grid should be placed inside the gallery');
     assert.equal(modernGallery.countLabel,'Chưa có ảnh');
     assert.equal(modernGallery.renderer,'function','gallery renderer should remain available to Preview Skin');
+    await modernPage.locator('#files').setInputFiles({
+      name:'modern-selection-smoke.svg',
+      mimeType:'image/svg+xml',
+      buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="24"><rect width="32" height="24" fill="#087f45"/></svg>')
+    });
+    await modernPage.waitForSelector('.pcImageGallery #grid .thumb');
+    await modernPage.locator('.pcImageGallery #grid .thumb .imgBox').first().click();
+    await modernPage.locator('#p5BulkCaption').click();
+    await modernPage.locator('#p5CaptionInput').fill('modern skin caption');
+    await modernPage.locator('#p5CaptionApply').click();
+    assert.equal(await modernPage.locator('.pcImageGallery #grid .thumb.p5-selected').count(),0,
+      'Modern skin must use the shared successful-apply auto-clear adapter');
+    assert.equal(await modernPage.evaluate(()=>state.current.items[0].caption),'Modern skin caption');
+
     assert.deepEqual(modernErrors,[],'Modern skin should mount without uncaught JavaScript errors');
     await modernPage.close();
 
