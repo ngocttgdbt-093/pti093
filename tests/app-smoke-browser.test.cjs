@@ -110,6 +110,34 @@ const {chromium}=require('playwright');
     assert.equal(await modernPage.evaluate(()=>state.current.items[0].caption),'Modern skin caption');
 
     assert.deepEqual(modernErrors,[],'Modern skin should mount without uncaught JavaScript errors');
+
+    const mobilePage=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
+    const mobileErrors=[];
+    mobilePage.on('pageerror',e=>mobileErrors.push(e.message));
+    await mobilePage.addInitScript(()=>{
+      localStorage.setItem('pti093_ui_default_classic_v2','1');
+      localStorage.setItem('pti093_ui_mode','modern');
+    });
+    await mobilePage.goto('http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded'});
+    await mobilePage.waitForSelector('.pcImageGallery');
+    await mobilePage.locator('#files').setInputFiles({
+      name:'mobile-selection-smoke.svg',
+      mimeType:'image/svg+xml',
+      buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="24"><rect width="32" height="24" fill="#087f45"/></svg>')
+    });
+    await mobilePage.waitForSelector('.pcImageGallery #grid .thumb');
+    await mobilePage.locator('#p5SelectionMode').tap();
+    await mobilePage.locator('.pcImageGallery #grid .thumb .imgBox').first().tap();
+    assert.equal(await mobilePage.locator('.pcImageGallery #grid .thumb.p5-selected').count(),1,
+      'mobile tap in multi-select mode should select the image');
+    await mobilePage.locator('#p5BulkCaption').tap();
+    await mobilePage.locator('#p5CaptionInput').fill('mobile caption');
+    await mobilePage.locator('#p5CaptionApply').tap();
+    assert.equal(await mobilePage.locator('.pcImageGallery #grid .thumb.p5-selected').count(),0,
+      'mobile successful group apply should clear selection');
+    assert.equal(await mobilePage.evaluate(()=>state.current.items[0].caption),'Mobile caption');
+    assert.deepEqual(mobileErrors,[],'mobile Modern skin flow should not produce uncaught errors');
+    await mobilePage.close();
     await modernPage.close();
 
     const blockedStoragePage=await browser.newPage();
