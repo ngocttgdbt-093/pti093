@@ -26,6 +26,7 @@
         bulk.addEventListener('click',openCaptionDialog);
         const input=$('p5CaptionInput');
         input.addEventListener('input',()=>{$('p5CaptionPreview').textContent=captionTools?captionTools.normalizeCaption(input.value)||'(Chưa có nội dung)':input.value.trim()||'(Chưa có nội dung)';});
+        input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();applyBulkCaption();}});
         $('p5CaptionCancel').addEventListener('click',closeCaptionDialog);
         dialog.addEventListener('click',e=>{if(e.target===dialog)closeCaptionDialog();});
         $('p5CaptionApply').addEventListener('click',applyBulkCaption);
@@ -60,15 +61,20 @@
         $('p5CaptionDialog').hidden=false;$('p5CaptionInput').focus();
       }
       function closeCaptionDialog(){$('p5CaptionDialog').hidden=true;}
+      function clearSelection(){selected.clear();lastIndex=-1;updateSelectionUi();}
       function applyBulkCaption(){
         if(state.workspaceOpenPending){msg('Đang mở hồ sơ khác. Hãy chờ hoàn tất trước khi sửa thuyết minh.',true);return;}
-        const items=getSelectedItems(),value=$('p5CaptionInput').value;
-        if(!items.length){closeCaptionDialog();msg('Danh sách chọn đã thay đổi. Hãy chọn lại ảnh.',true);return;}
+        const selectedIds=new Set(selected),items=getSelectedItems(),value=$('p5CaptionInput').value;
+        if(!items.length){msg('Danh sách chọn đã thay đổi. Hãy chọn lại ảnh.',true);return;}
         if(!captionTools){msg('Không tải được module chuẩn hóa thuyết minh; chưa áp dụng dữ liệu.',true);return;}
-        const result=captionTools.applyCaptionToItems(state.current.items,new Set(selected),value,{getId:idOf});
+        const result=captionTools.applyCaptionToItems(state.current.items,selectedIds,value,{getId:idOf});
         if(!result.ok){msg(result.reason==='empty-caption'?'Nội dung thuyết minh đang trống.':'Danh sách ảnh không còn hợp lệ; chưa có ảnh nào bị thay đổi.',true);return;}
-        scheduleAutoDraftSave(false);
-        closeCaptionDialog();render();updateSelectionUi();msg('Đã áp dụng thuyết minh cho '+result.applied+' ảnh.',true);
+        // Commit succeeded and every selected image was validated: only now clear UI selection.
+        clearSelection();
+        closeCaptionDialog();
+        render();
+        scheduleAutoDraftSave(true);
+        msg('Đã áp dụng thuyết minh cho '+result.applied+' ảnh và tự động bỏ chọn nhóm ảnh.',true);
       }
       function startLasso(e){
         if(!selectionMode||e.pointerType!=='mouse'||e.button!==0||e.target.closest('button,textarea,input,select'))return;
