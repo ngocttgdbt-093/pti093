@@ -36,6 +36,45 @@ const {chromium}=require('playwright');
     assert.equal(await page.evaluate(()=>document.activeElement===document.querySelectorAll('#grid textarea')[1]),true,'Tab should move to the next caption field');
     assert.equal(await page.evaluate(()=>window.gridState.current.items[0].caption),'Caption A updated');
     assert.equal(await page.evaluate(()=>window.gridSaves[0]),false,'caption edits should schedule a metadata-only draft save');
+    // Group caption success via Enter clears the complete selection only after apply succeeds.
+    await page.locator('#grid .thumb').nth(0).locator('.imgBox').click();
+    await page.locator('#grid .thumb').nth(1).locator('.imgBox').click({modifiers:['Control']});
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),2);
+    await page.locator('#p5BulkCaption').click();
+    await page.locator('#p5CaptionInput').press('Enter');
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),2,'empty caption must preserve selection');
+    assert.equal(await page.locator('#p5CaptionDialog').isVisible(),true,'validation failure must keep the dialog open');
+    await page.locator('#p5CaptionCancel').click();
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),2,'cancel must preserve selection');
+    await page.locator('#p5BulkCaption').click();
+    await page.locator('#p5CaptionInput').fill('damage. left door');
+    await page.locator('#p5CaptionInput').press('Enter');
+    assert.deepEqual(await page.evaluate(()=>window.gridState.current.items.map(x=>x.caption)),['Damage. Left door','Damage. Left door']);
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),0,'successful group apply must clear all selected images');
+    assert.equal(await page.locator('#p5CaptionDialog').isVisible(),false,'successful Enter apply must close the dialog');
+    assert.equal(await page.evaluate(()=>window.gridSaves.at(-1)),true,'successful group apply must request an immediate draft save');
+    // Select a different image group immediately, then verify the Apply button uses the same success path.
+    await page.locator('#grid .thumb').nth(1).locator('.imgBox').click();
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),1,'a new group can be selected without clicking blank space');
+    await page.locator('#p5BulkCaption').click();
+    await page.locator('#p5CaptionInput').fill('second group');
+    await page.locator('#p5CaptionApply').click();
+    assert.deepEqual(await page.evaluate(()=>window.gridState.current.items.map(x=>x.caption)),['Damage. Left door','Second group']);
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),0,'Apply button must clear the new group too');
+    // A stale selected item is an apply failure: preserve the selection and keep the dialog open.
+    await page.locator('#grid .thumb').nth(0).locator('.imgBox').click();
+    await page.locator('#p5BulkCaption').click();
+    await page.locator('#p5CaptionInput').fill('must not commit');
+    await page.evaluate(()=>window.gridState.current.items.shift());
+    await page.locator('#p5CaptionInput').press('Enter');
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),1,'invalid/stale selection must remain selected');
+    assert.equal(await page.locator('#p5CaptionDialog').isVisible(),true,'failed apply must leave dialog open');
+    await page.evaluate(()=>window.gridState.current.items.unshift({file:new File([new Uint8Array([1,2,3])],'a.jpg',{type:'image/jpeg'}),caption:'Damage. Left door',rotate:90,__pti093DragId:document.querySelector('#grid .thumb').dataset.dragId}));
+    await page.evaluate(()=>window.gridSkin.render());
+    assert.equal(await page.locator('#grid .thumb.p5-selected').count(),1,'restoring the item must not implicitly clear selection');
+    await page.locator('#p5CaptionCancel').click();
+    await page.locator('#p5ClearSelection').click();
+
     await page.locator('#grid .thumb').nth(1).locator('button.rotate').click();
     assert.equal(await page.evaluate(()=>window.gridState.current.items[1].rotate),90);
     assert.ok(await page.evaluate(()=>window.gridSaves.includes(true)),'rotation should schedule an image-dirty save');
