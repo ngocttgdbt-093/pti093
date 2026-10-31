@@ -133,7 +133,7 @@ jobs:
           curl -fsSL "${base}/skin/classic-image-grid.js" -o /tmp/core-classic-grid.js
           curl -fsSL "${base}/skins/classic/date-calendar.js" -o /tmp/core-classic-calendar.js
           curl -fsSL "${base}/skins/classic/date-calendar.css" -o /tmp/core-classic-calendar.css
-          grep -q 'Project 5 – Core Preview (Classic Skin)' /tmp/core-classic-preview.html
+          grep -q 'Project 5 – Core Preview (Classic)' /tmp/core-classic-preview.html
           grep -q "pti093_ui_mode', 'classic'" /tmp/core-classic-mode.js
           grep -q 'selected.clear();lastIndex=-1' /tmp/core-classic-grid.js
           grep -q 'PTI093DateCalendarSkin' /tmp/core-classic-calendar.js
