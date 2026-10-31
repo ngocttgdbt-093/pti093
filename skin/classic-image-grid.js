@@ -26,6 +26,7 @@
         bulk.addEventListener('click',openCaptionDialog);
         const input=$('p5CaptionInput');
         input.addEventListener('input',()=>{$('p5CaptionPreview').textContent=captionTools?captionTools.normalizeCaption(input.value)||'(Chưa có nội dung)':input.value.trim()||'(Chưa có nội dung)';});
+        input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();applyBulkCaption();}else if(event.key==='Escape'){event.preventDefault();closeCaptionDialog();}});
         $('p5CaptionCancel').addEventListener('click',closeCaptionDialog);
         dialog.addEventListener('click',e=>{if(e.target===dialog)closeCaptionDialog();});
         $('p5CaptionApply').addEventListener('click',applyBulkCaption);
@@ -34,7 +35,7 @@
       function ensureContextMenu(){
         let menu=$('p5ContextMenu');if(menu)return menu;
         menu=doc.createElement('div');menu.id='p5ContextMenu';menu.className='p5-context-menu';menu.hidden=true;
-        menu.innerHTML='<button type="button" data-action="caption">✎ Thuyết minh nhóm</button><button type="button" data-action="delete">🗑 Xóa ảnh đã chọn</button>';
+        menu.innerHTML='<button type="button" data-action="caption">✎ Chú thích</button><button type="button" data-action="delete">🗑 Xoá ảnh đã chọn</button>';
         doc.body.appendChild(menu);
         menu.querySelector('[data-action="caption"]').addEventListener('click',()=>{menu.hidden=true;openCaptionDialog();});
         menu.querySelector('[data-action="delete"]').addEventListener('click',()=>{menu.hidden=true;confirmBulkDelete();});
@@ -57,7 +58,7 @@
         const targets=state.current.items.filter(item=>snapshot.has(idOf(item)));
         if(!targets.length)return;
         const backdrop=doc.createElement('div');backdrop.className='p5-delete-backdrop';
-        backdrop.innerHTML='<section class="p5-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="p5DeleteTitle"><h3 id="p5DeleteTitle">Xác nhận xóa ảnh</h3><p>Bạn có chắc chắn muốn xóa các ảnh đã chọn?</p><strong>'+targets.length+' ảnh được chọn</strong><div class="p5-delete-actions"><button type="button" data-action="cancel">Hủy</button><button type="button" data-action="confirm">Xóa ảnh</button></div></section>';
+        backdrop.innerHTML='<section class="p5-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="p5DeleteTitle"><h3 id="p5DeleteTitle">Xác nhận xoá ảnh</h3><p>Bạn có chắc chắn muốn xóa các ảnh đã chọn?</p><strong>'+targets.length+' ảnh được chọn</strong><div class="p5-delete-actions"><button type="button" data-action="cancel">Hủy</button><button type="button" data-action="confirm">Xóa ảnh</button></div></section>';
         doc.body.appendChild(backdrop);
         const finish=()=>{backdrop.remove();doc.removeEventListener('keydown',onKey);};
         const onKey=event=>{if(event.key==='Escape')finish();};
