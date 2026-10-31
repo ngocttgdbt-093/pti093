@@ -41,6 +41,18 @@ const assert = require('node:assert/strict');
   assert.equal(await individual.inputValue(),'Tổn thất riêng. Kính vỡ','individual caption trims on blur');
   assert.equal(await page.evaluate(()=>window.__state.current.items[0].caption),'Tổn thất riêng. Kính vỡ','normalized individual caption is saved to shared Core state');
   assert.equal(await page.evaluate(()=>window.__lastMessage),'Đã áp dụng thuyết minh cho 2 ảnh. Đã bỏ chọn nhóm ảnh.','individual AutoCorrect does not add a notification');
+  // Enter applies the next selected group and clears only after success.
+  await thumbs().nth(0).locator('.imgBox').click();
+  await thumbs().nth(1).locator('.imgBox').click({modifiers:['Control']});
+  await page.locator('#p5BulkCaption').click();
+  await page.locator('#p5CaptionInput').fill('kiem tra enter. bo chon nhom');
+  await page.locator('#p5CaptionInput').press('Enter');
+  assert.equal(await page.evaluate(()=>window.__state.current.items[0].caption),'Kiem tra enter. Bo chon nhom');
+  assert.equal(await page.evaluate(()=>window.__state.current.items[1].caption),'Kiem tra enter. Bo chon nhom');
+  assert.equal(await thumbs().nth(0).getAttribute('aria-selected'),'false','Enter success clears the first selected image');
+  assert.equal(await thumbs().nth(1).getAttribute('aria-selected'),'false','Enter success clears the second selected image');
+  assert.equal(await page.evaluate(()=>window.__draftSaves),2,'Enter applies and saves the group exactly once');
+
   await page.locator('#p5SelectionMode').click();
   const box0=await thumbs().nth(0).locator('.imgBox').boundingBox();
   const box1=await thumbs().nth(1).locator('.imgBox').boundingBox();
@@ -79,7 +91,7 @@ const assert = require('node:assert/strict');
   await page.locator('.p5-delete-actions [data-action="confirm"]').click();
   assert.equal(await thumbs().count(),2,'confirm removes exactly the two selected images');
   assert.equal(await thumbs().nth(0).getAttribute('aria-selected'),'false','successful delete clears selection');
-  assert.equal(await page.evaluate(()=>window.__draftSaves),2,'bulk delete schedules one additional draft save');
+  assert.equal(await page.evaluate(()=>window.__draftSaves),3,'bulk delete schedules one additional draft save');
 
   await mobile.close();
   console.log('PASS: Project 5 selection, lasso, bulk caption and mobile tap browser tests');
