@@ -1,6 +1,7 @@
 (function(root, doc){
   'use strict';
-  const enabled = new URLSearchParams(root.location.search).get('corePreview') === '1';
+  // This file is served only from the isolated Project 5 preview directory; enable its Core-only guards on every visit.
+  const enabled = true;
   root.PROJECT5_CORE_PREVIEW = enabled;
   if (!enabled || !doc || !doc.documentElement) return;
   doc.documentElement.classList.add('project5-core-preview');
