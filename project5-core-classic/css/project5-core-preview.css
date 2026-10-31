@@ -7,3 +7,6 @@
 .project5-core-preview #driveId,
 .project5-core-preview #driveProgress { display: none !important; }
 .project5-core-preview .appFooter .version-footer::after { content: ' · CORE PREVIEW'; font-weight: 700; }
+
+/* Project 05 neutral identity for the isolated Classic preview. */
+.core05-logo{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 118px;height:50px;background:#fff;color:#176b4b;border:1px solid #d8e7df;border-radius:8px;font-size:15px;font-weight:800;line-height:1.05;letter-spacing:.8px;object-fit:initial;padding:4px;text-align:center}
