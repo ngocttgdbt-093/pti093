@@ -1,0 +1,33 @@
+
+/* Preserve the original circular icon-only buttons; only refine tooltip labels and stacking. */
+#grid{overflow:visible!important}
+#grid .thumb{overflow:visible!important;position:relative!important}
+#grid .thumb:has(.thumbActions button:hover),
+#grid .thumb:has(.thumbActions button:focus-visible){z-index:1000!important}
+#grid .thumbActions{position:relative!important;z-index:20!important;overflow:visible!important}
+#grid .thumbActions button{z-index:21!important}
+#grid .thumbActions button:hover,
+#grid .thumbActions button:focus-visible{z-index:1002!important}
+#grid .thumbActions button::after{
+  position:absolute!important;
+  top:auto!important;
+  bottom:calc(100% + 8px)!important;
+  left:50%!important;
+  right:auto!important;
+  width:max-content!important;
+  max-width:none!important;
+  white-space:nowrap!important;
+  overflow-wrap:normal!important;
+  word-break:keep-all!important;
+  text-align:center!important;
+  padding:6px 9px!important;
+  line-height:1.25!important;
+  font-size:11px!important;
+  transform:translate(-50%,4px)!important;
+  z-index:1003!important;
+}
+#grid .thumbActions button:hover::after,
+#grid .thumbActions button:focus-visible::after{transform:translate(-50%,0)!important}
+@media(max-width:540px){
+ #grid .thumbActions button::after{font-size:10px!important;padding:5px 7px!important}
+}
