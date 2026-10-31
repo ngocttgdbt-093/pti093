@@ -49,7 +49,7 @@ const {chromium}=require('playwright');
 
     await page.locator('#datePickerBtn').click();
     await page.locator('#dateCalToday').click();
-    assert.match(await page.locator('#date').inputValue(),/^\\d{2}\\/\\d{2}\\/\\d{4}$/,'Classic calendar should write dd/mm/yyyy');
+    assert.match(await page.locator('#date').inputValue(),/^\d{2}\/\d{2}\/\d{4}$/,'Classic calendar should write dd/mm/yyyy');
 
     const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC','base64');
     await page.locator('#files').setInputFiles({name:'core-preview-smoke.png',mimeType:'image/png',buffer:png});
