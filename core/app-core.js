@@ -25,6 +25,7 @@ const classicImageViewerSkin=window.PTI093ClassicImageViewerSkin.install({docume
 const {openImageViewer}=classicImageViewerSkin;
 const dateUtils=window.PTI093DateUtils.install({$});
 const {formatDateDMY,getDateISO,setDateInput}=dateUtils;
+window.PTI093DateAPI={formatDateDMY,getDateISO,setDateInput};
 const deviceContext=window.PTI093DeviceContext.install({navigator});
 const {deviceStorageLabel}=deviceContext;
 const workspaceCore=window.PTIWorkspaceCore;
