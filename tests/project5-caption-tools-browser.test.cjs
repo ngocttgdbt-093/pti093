@@ -30,14 +30,17 @@ const assert = require('node:assert/strict');
   assert.equal(captions[2],'Tổn thất xe. Hư hỏng');
   assert.equal(captions[3],'Tổn thất xe. Hư hỏng');
   assert.equal(captions[0],'old 1','unselected image caption remains unchanged');
+  assert.equal(await thumbs().nth(2).getAttribute('aria-selected'),'false','successful group caption must clear selection from the first image');
+  assert.equal(await thumbs().nth(3).getAttribute('aria-selected'),'false','successful group caption must clear selection from every image in the group');
   assert.equal(await page.evaluate(()=>window.__draftSaves),1,'bulk caption schedules exactly one draft save');
+  assert.equal(await page.evaluate(()=>window.__lastMessage),'Đã áp dụng thuyết minh cho 2 ảnh. Đã bỏ chọn nhóm ảnh.','success message confirms that the group selection was cleared');
   const individual=thumbs().nth(0).locator('textarea');
   await individual.fill('  tổn   thất riêng. kính vỡ  ');
   assert.equal(await individual.inputValue(),'Tổn thất riêng. Kính vỡ ','individual caption auto-corrects silently while typing and preserves trailing space');
   await individual.blur();
   assert.equal(await individual.inputValue(),'Tổn thất riêng. Kính vỡ','individual caption trims on blur');
   assert.equal(await page.evaluate(()=>window.__state.current.items[0].caption),'Tổn thất riêng. Kính vỡ','normalized individual caption is saved to shared Core state');
-  assert.equal(await page.evaluate(()=>window.__lastMessage),'Đã áp dụng thuyết minh cho 2 ảnh.','AutoCorrect does not add a notification');
+  assert.equal(await page.evaluate(()=>window.__lastMessage),'Đã áp dụng thuyết minh cho 2 ảnh. Đã bỏ chọn nhóm ảnh.','individual AutoCorrect does not add a notification');
   await page.locator('#p5SelectionMode').click();
   const box0=await thumbs().nth(0).locator('.imgBox').boundingBox();
   const box1=await thumbs().nth(1).locator('.imgBox').boundingBox();
@@ -52,6 +55,32 @@ const assert = require('node:assert/strict');
   await mobile.locator('#grid .thumb').nth(1).locator('.imgBox').tap();
   assert.equal(await mobile.locator('#grid .thumb').nth(0).getAttribute('aria-selected'),'true','mobile tap selects first image');
   assert.equal(await mobile.locator('#grid .thumb').nth(1).getAttribute('aria-selected'),'true','mobile tap can select multiple images');
+  // Failed/empty group-caption application must preserve the current selection.
+  await thumbs().nth(0).locator('.imgBox').click();
+  await page.locator('#p5BulkCaption').click();
+  await page.locator('#p5CaptionApply').click();
+  assert.equal(await thumbs().nth(0).getAttribute('aria-selected'),'true','empty caption must not clear the selection');
+  await page.locator('#p5CaptionCancel').click();
+
+  // Right-click context menu must preserve an existing multi-selection and delete only confirmed IDs.
+  await thumbs().nth(0).locator('.imgBox').click();
+  await thumbs().nth(1).locator('.imgBox').click({modifiers:['Control']});
+  await thumbs().nth(0).locator('.imgBox').click({button:'right'});
+  await page.waitForSelector('#p5ContextMenu:not([hidden])');
+  assert.equal(await thumbs().nth(0).getAttribute('aria-selected'),'true');
+  assert.equal(await thumbs().nth(1).getAttribute('aria-selected'),'true','context menu keeps the selected group');
+  await page.locator('#p5ContextMenu [data-action="delete"]').click();
+  await page.waitForSelector('.p5-delete-backdrop');
+  await page.locator('.p5-delete-actions [data-action="cancel"]').click();
+  assert.equal(await thumbs().count(),4,'cancel must not delete images');
+  assert.equal(await thumbs().nth(0).getAttribute('aria-selected'),'true','cancel must preserve selection');
+  await thumbs().nth(0).locator('.imgBox').click({button:'right'});
+  await page.locator('#p5ContextMenu [data-action="delete"]').click();
+  await page.locator('.p5-delete-actions [data-action="confirm"]').click();
+  assert.equal(await thumbs().count(),2,'confirm removes exactly the two selected images');
+  assert.equal(await thumbs().nth(0).getAttribute('aria-selected'),'false','successful delete clears selection');
+  assert.equal(await page.evaluate(()=>window.__draftSaves),2,'bulk delete schedules one additional draft save');
+
   await mobile.close();
   console.log('PASS: Project 5 selection, lasso, bulk caption and mobile tap browser tests');
  }finally{await browser.close();}
