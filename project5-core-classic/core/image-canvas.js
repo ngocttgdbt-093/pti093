@@ -22,11 +22,11 @@
         const c=makeCanvas(W,H),ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
         const m=45,footer=70,showHeader=(groupPageNo===1),header=showHeader?135:0;
         if(showHeader){
-          ctx.fillStyle='#00854a';ctx.fillRect(0,0,W,header);
+          ctx.fillStyle='#176b4b';ctx.fillRect(0,0,W,header);
           const logo=await loadLogo();const logoW=125,logoH=53;ctx.drawImage(logo,m,18,logoW,logoH);
           ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 34px Arial';ctx.fillText(group.title,W/2,55);if(partLabel){ctx.font='700 18px Arial';ctx.fillText('Bản ảnh '+partLabel,W/2,77);}
           ctx.font='400 19px Arial';let sub=[$('bks').value.trim(),$('hoso').value.trim(),formatDateDMY(getDateISO()),$('garage').value.trim()].filter(Boolean).join(' · ');ctx.fillText(sub,W/2,88);
-          ctx.font='400 16px Arial';ctx.fillText('TT CH&GĐ MB tại Hải Phòng (093)',W/2,116);
+          ctx.font='400 16px Arial';ctx.fillText('Project 05 · Core Classic',W/2,116);
         }
         // Bố cục luôn lấy theo state.per, không lấy theo số ảnh còn lại của trang cuối.
         // 6 ảnh: ngang 3x2, dọc 2x3. 8 ảnh: ngang 4x2, dọc 2x4.
@@ -43,7 +43,7 @@
           ctx.fillStyle='#00854a';ctx.beginPath();ctx.arc(x+22,y+22,14,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 15px Arial';ctx.fillText(numberBase+i+1,x+22,y+27);
           ctx.textAlign='center';ctx.fillStyle='#222';ctx.font='400 19px Arial';const lines=wrap(ctx,it.caption,cellW-24,19),lineH=23,startY=y+cellH-capH+22;lines.slice(0,3).forEach((ln,k)=>ctx.fillText(ln,x+cellW/2,startY+k*lineH));ctx.textAlign='left';
         }
-        ctx.fillStyle='#777';ctx.font='400 15px Arial';ctx.textAlign='left';ctx.fillText('PTI',m,H-25);ctx.textAlign='center';ctx.fillText(`GĐV: ${getSelectedGdvCache()}`,W/2,H-25);ctx.textAlign='right';ctx.fillText(`${partLabel?'Bản ảnh '+partLabel+' · ':''}Trang ${pageNo} · ${groupPageNo}/${groupPages}`,W-m,H-25);
+        ctx.fillStyle='#777';ctx.font='400 15px Arial';ctx.textAlign='left';ctx.fillText('CORE 05',m,H-25);ctx.textAlign='center';ctx.fillText(`GĐV: ${getSelectedGdvCache()}`,W/2,H-25);ctx.textAlign='right';ctx.fillText(`${partLabel?'Bản ảnh '+partLabel+' · ':''}Trang ${pageNo} · ${groupPageNo}/${groupPages}`,W-m,H-25);
         return c;
       }
       return {layoutDims,loadImage,loadLogo,wrap,drawContainRotated,drawPage};
