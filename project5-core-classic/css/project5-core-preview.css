@@ -10,3 +10,8 @@
 
 /* Project 05 neutral identity for the isolated Classic preview. */
 .core05-logo{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 118px;height:50px;background:#fff;color:#176b4b;border:1px solid #d8e7df;border-radius:8px;font-size:15px;font-weight:800;line-height:1.05;letter-spacing:.8px;object-fit:initial;padding:4px;text-align:center}
+
+/* Restore the live A4 layout diagram proportions on mobile and desktop. */
+.project5-core-preview .layoutgrid{min-height:180px;aspect-ratio:1/1.414;grid-auto-rows:minmax(0,1fr)}
+.project5-core-preview .layoutcell{min-height:35px}
+.project5-core-preview #counts .opt{min-width:42px;font-weight:700}
