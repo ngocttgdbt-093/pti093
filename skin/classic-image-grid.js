@@ -31,6 +31,49 @@
         $('p5CaptionApply').addEventListener('click',applyBulkCaption);
         doc.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.hidden)closeCaptionDialog();});
       }
+      function ensureContextMenu(){
+        let menu=$('p5ContextMenu');if(menu)return menu;
+        menu=doc.createElement('div');menu.id='p5ContextMenu';menu.className='p5-context-menu';menu.hidden=true;
+        menu.innerHTML='<button type="button" data-action="caption">✎ Thuyết minh nhóm</button><button type="button" data-action="delete">🗑 Xóa ảnh đã chọn</button>';
+        doc.body.appendChild(menu);
+        menu.querySelector('[data-action="caption"]').addEventListener('click',()=>{menu.hidden=true;openCaptionDialog();});
+        menu.querySelector('[data-action="delete"]').addEventListener('click',()=>{menu.hidden=true;confirmBulkDelete();});
+        doc.addEventListener('pointerdown',event=>{if(!menu.contains(event.target))menu.hidden=true;});
+        return menu;
+      }
+      function openContextMenu(event,index){
+        if(event.target.closest('textarea,input,button,select'))return;
+        event.preventDefault();
+        const item=state.current.items[index];if(!item)return;
+        const id=idOf(item);
+        if(!selected.has(id)){selected.clear();selected.add(id);lastIndex=index;updateSelectionUi();}
+        const menu=ensureContextMenu();menu.hidden=false;
+        const width=menu.offsetWidth||210,height=menu.offsetHeight||88;
+        menu.style.left=Math.max(8,Math.min(event.clientX,window.innerWidth-width-8))+'px';
+        menu.style.top=Math.max(8,Math.min(event.clientY,window.innerHeight-height-8))+'px';
+      }
+      function confirmBulkDelete(){
+        const snapshot=new Set(selected);
+        const targets=state.current.items.filter(item=>snapshot.has(idOf(item)));
+        if(!targets.length)return;
+        const backdrop=doc.createElement('div');backdrop.className='p5-delete-backdrop';
+        backdrop.innerHTML='<section class="p5-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="p5DeleteTitle"><h3 id="p5DeleteTitle">Xác nhận xóa ảnh</h3><p>Bạn có chắc chắn muốn xóa các ảnh đã chọn?</p><strong>'+targets.length+' ảnh được chọn</strong><div class="p5-delete-actions"><button type="button" data-action="cancel">Hủy</button><button type="button" data-action="confirm">Xóa ảnh</button></div></section>';
+        doc.body.appendChild(backdrop);
+        const finish=()=>{backdrop.remove();doc.removeEventListener('keydown',onKey);};
+        const onKey=event=>{if(event.key==='Escape')finish();};
+        backdrop.querySelector('[data-action="cancel"]').addEventListener('click',finish);
+        backdrop.addEventListener('click',event=>{if(event.target===backdrop)finish();});
+        doc.addEventListener('keydown',onKey);
+        backdrop.querySelector('[data-action="confirm"]').addEventListener('click',()=>{
+          const before=state.current.items.length;
+          state.current.items=state.current.items.filter(item=>!snapshot.has(idOf(item)));
+          const removed=before-state.current.items.length;
+          finish();
+          if(!removed)return;
+          selected.clear();lastIndex=-1;render();scheduleAutoDraftSave(true);
+          msg('Đã xóa '+removed+' ảnh khỏi nội dung hiện tại.',true);
+        });
+      }
       function updateSelectionUi(){
         const grid=$('grid');if(!grid)return;
         getThumbs().forEach(thumb=>{const yes=selected.has(thumb.dataset.dragId);thumb.classList.toggle('p5-selected',yes);thumb.setAttribute('aria-selected',String(yes));});
@@ -101,6 +144,7 @@
         state.current.items.forEach((item,index)=>{
           item.rotate=((item.rotate||0)%360+360)%360;
           const thumb=doc.createElement('div');thumb.className='thumb';
+          thumb.addEventListener('contextmenu',event=>openContextMenu(event,index));
           thumb.dataset.dragId=idOf(item);thumb.title=selectionMode?'Chạm/click để chọn; kéo chuột để khoanh vùng':'Kéo ảnh để đổi thứ tự';thumb.draggable=!selectionMode;
           imageReorder.bindThumb(thumb,grid);
           const imageBox=doc.createElement('div');imageBox.className='imgBox';imageBox.tabIndex=0;imageBox.setAttribute('role','button');imageBox.setAttribute('aria-label','Chọn ảnh '+(index+1));
