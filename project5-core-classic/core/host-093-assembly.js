@@ -5,7 +5,16 @@
 (function(root){
   'use strict';
   function installGdv(deps){
-    if(!deps || !deps.window || !deps.window.PTI093GdvFusion) throw new Error('093 host requires PTI093GdvFusion');
+    // Project 5 Core Classic deliberately has no GĐV administration Fusion.
+    // Keep the ordinary optional selector without making the shared Core depend on the PTI host module.
+    if(!deps || !deps.window) throw new Error('Core host requires window');
+    if(!deps.window.PTI093GdvFusion) {
+      return {
+        names:[],
+        selectedGdv:function(){ return deps.$('gdv') ? deps.$('gdv').value : ''; },
+        bindSelectionPersistence:function(){ return function(){}; }
+      };
+    }
     return deps.window.PTI093GdvFusion.install({
       $:deps.$,
       prompt:deps.prompt,
