@@ -118,9 +118,9 @@
       }
       function startLasso(e){
         if(!selectionMode||e.pointerType!=='mouse'||e.button!==0||e.target.closest('button,textarea,input,select'))return;
-        const grid=$('grid'),thumb=e.target.closest('.thumb');
+        const grid=$('grid'),thumb=e.target.closest('.thumb'),r=grid.getBoundingClientRect();
         if(!thumb&&e.target!==grid)return;
-        const grid=$('grid'),r=grid.getBoundingClientRect();lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r,startedOnBlank:!thumb};
+        lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r,startedOnBlank:!thumb};
         lassoMoved=false;
         const box=doc.createElement('div');box.className='p5-lasso-box';box.id='p5LassoBox';grid.appendChild(box);
         try{grid.setPointerCapture(e.pointerId)}catch(_){}
