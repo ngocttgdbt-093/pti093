@@ -120,7 +120,7 @@
         if(!selectionMode||e.pointerType!=='mouse'||e.button!==0||e.target.closest('button,textarea,input,select'))return;
         const grid=$('grid'),thumb=e.target.closest('.thumb');
         if(!thumb&&e.target!==grid)return;
-        const grid=$('grid'),r=grid.getBoundingClientRect();lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r};
+        const grid=$('grid'),r=grid.getBoundingClientRect();lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r,startedOnBlank:!thumb};
         lassoMoved=false;
         const box=doc.createElement('div');box.className='p5-lasso-box';box.id='p5LassoBox';grid.appendChild(box);
         try{grid.setPointerCapture(e.pointerId)}catch(_){}
@@ -137,8 +137,9 @@
       }
       function endLasso(e){
         if(!lasso)return;
-        const moved=lassoMoved,box=$('p5LassoBox');if(box)box.remove();lasso=null;lassoMoved=false;
+        const moved=lassoMoved,startedOnBlank=lasso.startedOnBlank,box=$('p5LassoBox');if(box)box.remove();lasso=null;lassoMoved=false;
         if(moved){suppressClick=true;setTimeout(()=>{suppressClick=false;},0);e.preventDefault();updateSelectionUi();}
+        else if(startedOnBlank){selected.clear();lastIndex=-1;updateSelectionUi();}
       }
       function render(){
         ensureSelectionUi();
@@ -147,6 +148,7 @@
           grid.dataset.p5BlankClearBound='1';
           doc.addEventListener('pointerdown',event=>{
             if(event.target.closest('.thumb,#p5SelectionToolbar,#p5CaptionDialog,#p5ContextMenu,.p5-delete-backdrop'))return;
+            if(lasso)return;
             if(!selected.size)return;
             selected.clear();lastIndex=-1;updateSelectionUi();
           });
