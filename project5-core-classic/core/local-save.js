@@ -183,7 +183,7 @@
         }finally{state.workspaceOpenPending=false;b.disabled=false}
       }
       function bindControls(){
-        const button=$('driveSaveDraft');
+        const button=$('p5SaveLocal')||$('driveSaveDraft');
         if(button)button.onclick=saveDraftWithoutPhotos;
       }
       return {saveLocalDraft,saveDraftWithoutPhotos,bindControls};
