@@ -1,0 +1,55 @@
+name: Project 05 Core Classic checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "project5-core-classic/**"
+      - ".github/workflows/project5-core-classic-tests.yml"
+
+jobs:
+  project5-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check Project 05 JavaScript syntax
+        run: |
+          find project5-core-classic/core project5-core-classic/skin project5-core-classic/skins -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Check Project 05 inline scripts
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('project5-core-classic/index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+          let checked = 0;
+          for (const [i, match] of scripts.entries()) {
+            if (/\\bsrc\\s*=/i.test(match[1]) || !match[2].trim()) continue;
+            new Function(match[2]);
+            checked++;
+          }
+          if (!checked) throw new Error('No inline scripts were checked');
+          console.log('Project 05 inline JavaScript syntax OK:', checked);
+          NODE
+      - name: Check requested fixes are present
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const grid = fs.readFileSync('project5-core-classic/skin/classic-image-grid.js', 'utf8');
+          const layout = fs.readFileSync('project5-core-classic/skin/classic-layout.js', 'utf8');
+          const html = fs.readFileSync('project5-core-classic/index.html', 'utf8');
+          const save = fs.readFileSync('project5-core-classic/core/local-save.js', 'utf8');
+          const checks = [
+            ['group caption on selected caption field', /caption\\.addEventListener\\('pointerdown'[\\s\\S]*?openCaptionDialog\\(\\)/.test(grid)],
+            ['clear selection on blank area', /p5BlankClearBound/.test(grid)],
+            ['lasso selection can start on grid background', /startedOnBlank/.test(grid)],
+            ['local save control', /id="p5SaveLocal"/.test(html) && /\\$\\('p5SaveLocal'\\)/.test(save)],
+            ['spacing sliders removed', !/p5GapControls|Khoảng cách dòng|Khoảng cách cột/.test(layout)]
+          ];
+          for (const [name, ok] of checks) {
+            console.log((ok ? 'PASS ' : 'FAIL ') + name);
+            if (!ok) process.exitCode = 1;
+          }
+          NODE
