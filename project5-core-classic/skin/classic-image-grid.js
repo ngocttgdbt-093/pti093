@@ -118,7 +118,8 @@
       }
       function startLasso(e){
         if(!selectionMode||e.pointerType!=='mouse'||e.button!==0||e.target.closest('button,textarea,input,select'))return;
-        const thumb=e.target.closest('.thumb');if(!thumb)return;
+        const grid=$('grid'),thumb=e.target.closest('.thumb');
+        if(!thumb&&e.target!==grid)return;
         const grid=$('grid'),r=grid.getBoundingClientRect();lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r};
         lassoMoved=false;
         const box=doc.createElement('div');box.className='p5-lasso-box';box.id='p5LassoBox';grid.appendChild(box);
@@ -141,7 +142,16 @@
       }
       function render(){
         ensureSelectionUi();
-        const grid=$('grid');grid.style.setProperty('--p5-row-gap',(state.rowGap||18)+'px');grid.style.setProperty('--p5-column-gap',(state.columnGap||18)+'px');grid.innerHTML='';
+        const grid=$('grid');
+        if(!grid.dataset.p5BlankClearBound){
+          grid.dataset.p5BlankClearBound='1';
+          doc.addEventListener('pointerdown',event=>{
+            if(event.target.closest('.thumb,#p5SelectionToolbar,#p5CaptionDialog,#p5ContextMenu,.p5-delete-backdrop'))return;
+            if(!selected.size)return;
+            selected.clear();lastIndex=-1;updateSelectionUi();
+          });
+        }
+        grid.style.setProperty('--p5-row-gap',(state.rowGap||18)+'px');grid.style.setProperty('--p5-column-gap',(state.columnGap||18)+'px');grid.innerHTML='';
         state.current.items.forEach((item,index)=>{
           item.rotate=((item.rotate||0)%360+360)%360;
           const thumb=doc.createElement('div');thumb.className='thumb';
@@ -173,6 +183,10 @@
               try{caption.setSelectionRange(nextStart,nextEnd)}catch(_){}
             }
             onCaptionChange(item,caption.value);
+          });
+          caption.addEventListener('pointerdown',event=>{
+            // Clicking the caption field of any selected image enters group-caption mode.
+            if(selected.size>1&&selected.has(idOf(item))){event.preventDefault();openCaptionDialog();}
           });
           caption.addEventListener('blur',()=>{
             if(!captionTools)return;
