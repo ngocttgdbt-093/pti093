@@ -23,10 +23,10 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('project5-core-classic/index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+          const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
           let checked = 0;
-          for (const [i, match] of scripts.entries()) {
-            if (/\\bsrc\\s*=/i.test(match[1]) || !match[2].trim()) continue;
+          for (const match of scripts) {
+            if (/\bsrc\s*=/i.test(match[1]) || !match[2].trim()) continue;
             new Function(match[2]);
             checked++;
           }
@@ -42,10 +42,10 @@ jobs:
           const html = fs.readFileSync('project5-core-classic/index.html', 'utf8');
           const save = fs.readFileSync('project5-core-classic/core/local-save.js', 'utf8');
           const checks = [
-            ['group caption on selected caption field', /caption\\.addEventListener\\('pointerdown'[\\s\\S]*?openCaptionDialog\\(\\)/.test(grid)],
+            ['group caption on selected caption field', /caption\.addEventListener\('pointerdown'[\s\S]*?openCaptionDialog\(\)/.test(grid)],
             ['clear selection on blank area', /p5BlankClearBound/.test(grid)],
             ['lasso selection can start on grid background', /startedOnBlank/.test(grid)],
-            ['local save control', /id="p5SaveLocal"/.test(html) && /\\$\\('p5SaveLocal'\\)/.test(save)],
+            ['local save control', /id="p5SaveLocal"/.test(html) && /\$\('p5SaveLocal'\)/.test(save)],
             ['spacing sliders removed', !/p5GapControls|Khoảng cách dòng|Khoảng cách cột/.test(layout)]
           ];
           for (const [name, ok] of checks) {
