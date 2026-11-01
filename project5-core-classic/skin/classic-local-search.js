@@ -3,7 +3,7 @@
   global.PTI093ClassicLocalSearchSkin={install:function(deps){
     const {document:doc,$,getLocalDrafts,openLocalDraft,msg}=deps;
     const input=$('p5LocalSearchQuery'),button=$('p5LocalSearch'),results=$('p5LocalSearchResults');
-    const normalize=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+    const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
     let renderRequest=0;
     async function render(){
       if(!results)return;
