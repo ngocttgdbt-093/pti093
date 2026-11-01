@@ -161,7 +161,7 @@
           thumb.dataset.dragId=idOf(item);thumb.title=selectionMode?'Chạm/click để chọn; kéo chuột để khoanh vùng':'Kéo ảnh để đổi thứ tự';thumb.draggable=!selectionMode;
           imageReorder.bindThumb(thumb,grid);
           const imageBox=doc.createElement('div');imageBox.className='imgBox';imageBox.tabIndex=0;imageBox.setAttribute('role','button');imageBox.setAttribute('aria-label','Chọn ảnh '+(index+1));
-          const image=doc.createElement('img'),imageUrl=urlApi.createObjectURL(item.file);image.src=imageUrl;
+          const image=doc.createElement('img'),imageUrl=urlApi.createObjectURL(item.file);image.draggable=false;image.style.userSelect='none';image.src=imageUrl;
           image.style.transform=`rotate(${item.rotate}deg)`;const releaseImageUrl=()=>{try{urlApi.revokeObjectURL(imageUrl)}catch(e){}};image.onload=releaseImageUrl;image.onerror=releaseImageUrl;imageBox.appendChild(image);
           const number=doc.createElement('span');number.className='n';number.textContent=index+1;
           const actions=doc.createElement('div');actions.className='thumbActions';
