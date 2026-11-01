@@ -17,11 +17,11 @@
         const mode=doc.createElement('button');mode.type='button';mode.id='p5SelectionMode';mode.textContent='☑ Chọn nhiều';mode.setAttribute('aria-pressed','false');
         const bulk=doc.createElement('button');bulk.type='button';bulk.textContent='✎ Thuyết minh nhóm';bulk.id='p5BulkCaption';
         const clearSel=doc.createElement('button');clearSel.type='button';clearSel.textContent='Bỏ chọn';clearSel.id='p5ClearSelection';
-        const help=doc.createElement('span');help.id='p5SelectionHelp';help.textContent='Ctrl/Cmd-click: chọn nhiều · Shift-click: chọn dải · bật Chọn nhiều để chạm trên mobile hoặc khoanh vùng bằng chuột.';
+        const help=doc.createElement('span');help.id='p5SelectionHelp';help.textContent='Bật “Chọn nhiều”, rồi giữ chuột trái và kéo qua ảnh cần chọn.';
         toolbar.append(mode,bulk,clearSel,help);grid.parentNode.insertBefore(toolbar,grid);
         const dialog=doc.createElement('div');dialog.id='p5CaptionDialog';dialog.className='p5-caption-backdrop';dialog.hidden=true;dialog.innerHTML='<section class="p5-caption-dialog" role="dialog" aria-modal="true" aria-labelledby="p5CaptionTitle"><h3 id="p5CaptionTitle">Thuyết minh nhóm ảnh</h3><p id="p5CaptionCount"></p><label for="p5CaptionInput">Nội dung áp dụng cho các ảnh đã chọn</label><textarea id="p5CaptionInput" rows="4" placeholder="Nhập thuyết minh chung…"></textarea><p class="p5-caption-preview"><strong>Xem trước:</strong> <span id="p5CaptionPreview">(Chưa có nội dung)</span></p><div class="p5-caption-actions"><button type="button" id="p5CaptionCancel">Hủy</button><button type="button" id="p5CaptionApply">Áp dụng</button></div></section>';
         doc.body.appendChild(dialog);
-        mode.addEventListener('click',()=>{selectionMode=!selectionMode;grid.dataset.selectionMode=String(selectionMode);mode.setAttribute('aria-pressed',String(selectionMode));mode.classList.toggle('active',selectionMode);mode.textContent=selectionMode?'☑ Đang chọn nhiều':'☑ Chọn nhiều';getThumbs().forEach(thumb=>{thumb.draggable=!selectionMode;thumb.title=selectionMode?'Chạm/click để chọn; kéo chuột để khoanh vùng':'Kéo ảnh để đổi thứ tự';});help.textContent=selectionMode?'Chạm/click ảnh để bật tắt chọn; kéo chuột trên ảnh để khoanh vùng.':'Ctrl/Cmd-click: chọn nhiều · Shift-click: chọn dải · bật Chọn nhiều để chạm trên mobile hoặc khoanh vùng bằng chuột.';});
+        mode.addEventListener('click',()=>{selectionMode=!selectionMode;grid.dataset.selectionMode=String(selectionMode);toolbar.classList.toggle('is-selection-mode',selectionMode);mode.setAttribute('aria-pressed',String(selectionMode));mode.classList.toggle('active',selectionMode);mode.textContent=selectionMode?'☑ Chọn nhiều đang bật':'☑ Chọn nhiều';getThumbs().forEach(thumb=>{thumb.draggable=!selectionMode;thumb.title=selectionMode?'Giữ chuột trái, kéo qua ảnh cần chọn rồi thả':'Kéo ảnh để đổi thứ tự';});help.textContent=selectionMode?'Giữ chuột trái, kéo qua ảnh cần chọn rồi thả; hoặc nhấp từng ảnh.':'Bật “Chọn nhiều”, rồi giữ chuột trái và kéo qua ảnh cần chọn.';});
         clearSel.addEventListener('click',()=>{selected.clear();lastIndex=-1;updateSelectionUi();});
         bulk.addEventListener('click',openCaptionDialog);
         const input=$('p5CaptionInput');
@@ -80,7 +80,7 @@
         getThumbs().forEach(thumb=>{const yes=selected.has(thumb.dataset.dragId);thumb.classList.toggle('p5-selected',yes);thumb.setAttribute('aria-selected',String(yes));});
         const count=selected.size;const bulk=$('p5BulkCaption');if(bulk)bulk.disabled=count===0;
         const clear=$('p5ClearSelection');if(clear)clear.disabled=count===0;
-        const help=$('p5SelectionHelp');if(help){help.textContent=count?count+' ảnh đang chọn.':(selectionMode?'Chạm/click ảnh để bật tắt chọn; kéo chuột trên ảnh để khoanh vùng.':'Ctrl/Cmd-click: chọn nhiều · Shift-click: chọn dải · bật Chọn nhiều để chạm trên mobile hoặc khoanh vùng bằng chuột.');}
+        const help=$('p5SelectionHelp');if(help){help.textContent=count?count+' ảnh đang chọn.':(selectionMode?'Giữ chuột trái, kéo qua ảnh cần chọn rồi thả; hoặc nhấp từng ảnh.':'Bật “Chọn nhiều”, rồi giữ chuột trái và kéo qua ảnh cần chọn.');}
       }
       function setItemSelected(item,yes){const id=idOf(item);if(yes)selected.add(id);else selected.delete(id);}
       function selectByIndex(index,event){

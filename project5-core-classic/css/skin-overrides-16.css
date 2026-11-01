@@ -1,0 +1,51 @@
+/* Clear, generous selection and local-search controls for Project 05 preview */
+.p5-local-search{margin:16px 0 6px;padding:16px;border:1px solid #cfe3d8;border-radius:14px;background:linear-gradient(145deg,#f7fcf9,#eef8f2);box-shadow:0 3px 12px rgba(20,70,45,.07)}
+.p5-local-search-heading{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.p5-local-search-heading strong{font-size:16px;color:#145b3d}
+.p5-local-search-heading span{font-size:13px;color:#5d6c64}
+.p5-local-search-controls{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:stretch}
+.p5-local-search-controls input{width:100%;min-width:0;min-height:46px;padding:10px 12px;border:1px solid #b8d2c3;border-radius:9px;background:#fff;font-size:15px}
+.p5-local-search-controls input:focus{outline:3px solid rgba(0,133,74,.18);border-color:#00854a}
+.p5-local-search-controls button{min-height:46px;padding:9px 15px;border:1px solid #00854a;border-radius:9px;background:#00854a;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.p5-local-search-controls #p5LocalSearchClear{background:#fff;color:#315b45;border-color:#c7d9cf}
+.p5-local-search-controls button:disabled{opacity:.55;cursor:not-allowed}
+.p5-local-search-results{display:grid;gap:8px;margin-top:12px}
+.p5-local-search-results[data-state="idle"],.p5-local-search-results[data-state="empty"],.p5-local-search-results[data-state="loading"],.p5-local-search-results[data-state="error"]{display:block;padding:12px 14px;border:1px solid #dbe8e0;border-radius:10px;background:#fff;color:#53635a;font-size:13px;line-height:1.45}
+.p5-local-search-results[data-state="empty"]{border-color:#f0d9a8;background:#fffaf0;color:#785511}
+.p5-local-search-results[data-state="error"]{border-color:#e9bdbd;background:#fff7f7;color:#922d2d}
+.p5-local-search-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 12px;border:1px solid #d6e4dc;border-radius:11px;background:#fff;box-shadow:0 2px 6px rgba(31,74,49,.05)}
+.p5-local-search-detail{min-width:0;color:#243b2f;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.p5-local-search-open{flex:0 0 auto;min-height:40px;padding:8px 13px;border:1px solid #b7d8c5;border-radius:8px;background:#eaf6ef;color:#08653c;font-size:13px;font-weight:700;cursor:pointer}
+.p5-local-search-open:hover{background:#d9f0e2;border-color:#8dc5a2}
+.p5-local-search-open:disabled{opacity:.6;cursor:wait}
+.filegrid{position:relative;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px;margin-top:16px}
+.thumb{border:2px solid #d6e1da;border-radius:12px;transition:border-color .12s,box-shadow .12s}
+.thumb .imgBox{height:170px!important;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+.thumb .imgBox img{height:170px!important;user-select:none;-webkit-user-select:none}
+#grid[data-selection-mode="true"] .thumb .imgBox{cursor:crosshair}
+#grid[data-selection-mode="true"] .thumb{user-select:none;-webkit-user-select:none}
+.thumb.p5-selected{border-color:#00854a!important;outline:3px solid rgba(0,133,74,.24);box-shadow:0 0 0 2px #cdebd9}
+.thumb.p5-selected .n{background:#005e35;box-shadow:0 0 0 2px #fff}
+.p5-lasso-box{position:absolute;z-index:40;border:2px solid #087744;border-radius:6px;background:rgba(29,153,88,.20);pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.75) inset}
+#p5SelectionToolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 10px;padding:12px;border:1px solid #d4e2d9;border-radius:12px;background:#f7faf8}
+#p5SelectionToolbar.is-selection-mode{border:2px solid #15915a;background:#eaf7ef;box-shadow:0 3px 12px rgba(0,112,62,.10)}
+#p5SelectionToolbar button{min-height:44px;padding:9px 14px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
+#p5SelectionMode{border:1px solid #a9cbb7;background:#fff;color:#176b4b}
+#p5SelectionMode.active{border-color:#087744;background:#00854a;color:#fff}
+#p5SelectionHelp{flex:1 1 280px;color:#355a45;font-size:14px;line-height:1.4;font-weight:600}
+#p5SelectionToolbar .btn:disabled,#p5SelectionToolbar button:disabled{opacity:.48;cursor:not-allowed}
+@media(max-width:600px){
+ .p5-local-search{padding:13px}
+ .p5-local-search-controls{grid-template-columns:minmax(0,1fr) auto}
+ .p5-local-search-controls input{grid-column:1/-1}
+ .p5-local-search-controls button{padding:8px 11px}
+ .p5-local-search-row{align-items:flex-start;flex-direction:column}
+ .p5-local-search-open{width:100%}
+ .filegrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .thumb .imgBox,.thumb .imgBox img{height:142px!important}
+ #p5SelectionToolbar button{font-size:14px}
+}
+@media(max-width:360px){
+ .filegrid{grid-template-columns:1fr}
+ .thumb .imgBox,.thumb .imgBox img{height:190px!important}
+}
