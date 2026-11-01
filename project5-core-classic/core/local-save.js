@@ -149,7 +149,7 @@
           const detail='Hồ sơ đã thay đổi trong lúc xác nhận lưu. Chưa lưu hồ sơ nào; hãy bấm Lưu tại máy lại trên hồ sơ đang mở.';
           setDriveState(detail,false);msg(detail,true);return;
         }
-        const b=$('driveSaveDraft');b.disabled=true;
+        const b=$('p5SaveLocal')||$('driveSaveDraft');if(b)b.disabled=true;
         const box=$('driveProgress');if(box)box.classList.remove('hidden');
         if($('driveProgressText'))$('driveProgressText').textContent='Đang bắt đầu lưu tại máy…';
         if($('driveProgressPct'))$('driveProgressPct').textContent='0%';
@@ -180,7 +180,7 @@
           }
           setDriveState('Chưa lưu được nháp tại máy: '+e.message,false);
           msg('❌ Lưu tại máy thất bại: '+e.message,true);
-        }finally{state.workspaceOpenPending=false;b.disabled=false}
+        }finally{state.workspaceOpenPending=false;if(b)b.disabled=false}
       }
       function bindControls(){
         const button=$('p5SaveLocal')||$('driveSaveDraft');
