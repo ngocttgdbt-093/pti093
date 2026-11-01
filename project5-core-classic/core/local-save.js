@@ -97,7 +97,7 @@
           try{sessionStorage.removeItem('pti093_driveRecordId')}catch(e){}
             const savedIdBox=$('driveId');if(savedIdBox){savedIdBox.textContent='💻 ID hồ sơ local: '+id;savedIdBox.classList.remove('hidden')}
           const successLabel=copiedFromIncompleteDrive?'⚠️ Đã lưu bản sao tại máy từ hồ sơ Drive chưa tải đủ ảnh':'✓ Đã lưu hồ sơ tại máy thành công';
-          progress(100,successLabel,total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');
+          progress(100,successLabel,total+' ảnh · ID: '+id+' · Không ghi dữ liệu lên Drive');const feedback=$('ptiLocalSaveFeedback');if(feedback)feedback.scrollIntoView({behavior:'smooth',block:'center'});
           if(copiedFromIncompleteDrive)setDriveState(successLabel,false);
           return id;
         }catch(e){

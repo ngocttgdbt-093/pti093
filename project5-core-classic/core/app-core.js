@@ -103,6 +103,8 @@ const localSaveCore=window.PTILocalSaveCore.install({state,$,snapshotGroupsForPr
 localSaveCore.bindControls();
 const localOpenCore=window.PTI093LocalOpenCore.install({state,$,msg,openLocalDraftDB,setDateInput,render,renderLayout,setDriveState,deviceStorageLabel,setOpenLoad,finishOpenLoad,scheduleAutoDraftSave,fileKey});
 const {openLocalDraft}=localOpenCore;
+const localSearchSkin=window.PTI093ClassicLocalSearchSkin.install({document,$,getLocalDrafts,openLocalDraft,msg});
+localSearchSkin.bindControls();
 
 const driveSaveFusion=CORE_PREVIEW_MODE ? null : window.PTI093HostAssembly.installDrive({window,state,$,msg,setDriveState,setOpenLoad,finishOpenLoad,getAllGroups,snapshotGroupsForProject,selectedGdv,scheduleAutoDraftSave,finalizeCompletedSession,getDateISO,setDateInput,render,renderLayout,deviceStorageLabel,searchQueryVariants,getLocalDrafts,openLocalDraft,normalizeRecordSearch,gdvSearchMatches,gdvInitials,wrap});
 
