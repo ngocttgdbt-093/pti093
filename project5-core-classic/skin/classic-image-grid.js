@@ -80,7 +80,7 @@
         getThumbs().forEach(thumb=>{const yes=selected.has(thumb.dataset.dragId);thumb.classList.toggle('p5-selected',yes);thumb.setAttribute('aria-selected',String(yes));});
         const count=selected.size;const bulk=$('p5BulkCaption');if(bulk)bulk.disabled=count===0;
         const clear=$('p5ClearSelection');if(clear)clear.disabled=count===0;
-        const help=$('p5SelectionHelp');if(help&&count)help.textContent=count+' ảnh đang chọn.';
+        const help=$('p5SelectionHelp');if(help){help.textContent=count?count+' ảnh đang chọn.':(selectionMode?'Chạm/click ảnh để bật tắt chọn; kéo chuột trên ảnh để khoanh vùng.':'Ctrl/Cmd-click: chọn nhiều · Shift-click: chọn dải · bật Chọn nhiều để chạm trên mobile hoặc khoanh vùng bằng chuột.');}
       }
       function setItemSelected(item,yes){const id=idOf(item);if(yes)selected.add(id);else selected.delete(id);}
       function selectByIndex(index,event){
