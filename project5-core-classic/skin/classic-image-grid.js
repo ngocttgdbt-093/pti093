@@ -12,16 +12,16 @@
       const getSelectedItems=()=>state.current.items.filter(item=>selected.has(idOf(item)));
       function ensureSelectionUi(){
         const grid=$('grid');if(!grid||$('p5SelectionToolbar'))return;
-        grid.dataset.selectionMode=String(selectionMode);if(!grid.dataset.p5LassoBound){grid.dataset.p5LassoBound='1';grid.addEventListener('pointerdown',startLasso);grid.addEventListener('pointermove',moveLasso);grid.addEventListener('pointerup',endLasso);grid.addEventListener('pointercancel',endLasso);}
+        grid.dataset.selectionMode=String(selectionMode);if(!grid.dataset.p5LassoBound){grid.dataset.p5LassoBound='1';const surface=grid.parentElement;if(surface){surface.classList.add('p5-lasso-surface');surface.dataset.p5LassoActive=String(selectionMode);surface.addEventListener('pointerdown',startLasso)}grid.addEventListener('pointermove',moveLasso);grid.addEventListener('pointerup',endLasso);grid.addEventListener('pointercancel',endLasso);}
         const toolbar=doc.createElement('div');toolbar.id='p5SelectionToolbar';toolbar.className='p5-selection-toolbar';
         const mode=doc.createElement('button');mode.type='button';mode.id='p5SelectionMode';mode.textContent='☑ Chọn nhiều';mode.setAttribute('aria-pressed','false');
         const bulk=doc.createElement('button');bulk.type='button';bulk.textContent='✎ Thuyết minh nhóm';bulk.id='p5BulkCaption';
         const clearSel=doc.createElement('button');clearSel.type='button';clearSel.textContent='Bỏ chọn';clearSel.id='p5ClearSelection';
-        const help=doc.createElement('span');help.id='p5SelectionHelp';help.textContent='Bật “Chọn nhiều”, rồi giữ chuột trái và kéo qua ảnh cần chọn.';
+        const help=doc.createElement('span');help.id='p5SelectionHelp';help.textContent='Bật “Chọn nhiều”, rồi kéo từ khoảng trắng quanh ảnh để khoanh vùng.';
         toolbar.append(mode,bulk,clearSel,help);grid.parentNode.insertBefore(toolbar,grid);
         const dialog=doc.createElement('div');dialog.id='p5CaptionDialog';dialog.className='p5-caption-backdrop';dialog.hidden=true;dialog.innerHTML='<section class="p5-caption-dialog" role="dialog" aria-modal="true" aria-labelledby="p5CaptionTitle"><h3 id="p5CaptionTitle">Thuyết minh nhóm ảnh</h3><p id="p5CaptionCount"></p><label for="p5CaptionInput">Nội dung áp dụng cho các ảnh đã chọn</label><textarea id="p5CaptionInput" rows="4" placeholder="Nhập thuyết minh chung…"></textarea><p class="p5-caption-preview"><strong>Xem trước:</strong> <span id="p5CaptionPreview">(Chưa có nội dung)</span></p><div class="p5-caption-actions"><button type="button" id="p5CaptionCancel">Hủy</button><button type="button" id="p5CaptionApply">Áp dụng</button></div></section>';
         doc.body.appendChild(dialog);
-        mode.addEventListener('click',()=>{selectionMode=!selectionMode;grid.dataset.selectionMode=String(selectionMode);toolbar.classList.toggle('is-selection-mode',selectionMode);mode.setAttribute('aria-pressed',String(selectionMode));mode.classList.toggle('active',selectionMode);mode.textContent=selectionMode?'☑ Chọn nhiều đang bật':'☑ Chọn nhiều';getThumbs().forEach(thumb=>{thumb.draggable=!selectionMode;thumb.title=selectionMode?'Giữ chuột trái, kéo qua ảnh cần chọn rồi thả':'Kéo ảnh để đổi thứ tự';});help.textContent=selectionMode?'Giữ chuột trái, kéo qua ảnh cần chọn rồi thả; hoặc nhấp từng ảnh.':'Bật “Chọn nhiều”, rồi giữ chuột trái và kéo qua ảnh cần chọn.';});
+        mode.addEventListener('click',()=>{selectionMode=!selectionMode;grid.dataset.selectionMode=String(selectionMode);const surface=grid.parentElement;if(surface)surface.dataset.p5LassoActive=String(selectionMode);toolbar.classList.toggle('is-selection-mode',selectionMode);mode.setAttribute('aria-pressed',String(selectionMode));mode.classList.toggle('active',selectionMode);mode.textContent=selectionMode?'☑ Chọn nhiều đang bật':'☑ Chọn nhiều';getThumbs().forEach(thumb=>{thumb.draggable=!selectionMode;thumb.title=selectionMode?'Giữ chuột trái, kéo khung bao các ảnh cần chọn rồi thả':'Kéo ảnh để đổi thứ tự';});help.textContent=selectionMode?'Giữ chuột trái từ khoảng trắng, kéo khung bao các ảnh rồi thả; cũng có thể nhấp từng ảnh.':'Bật “Chọn nhiều”, rồi kéo từ khoảng trắng quanh ảnh để khoanh vùng.';});
         clearSel.addEventListener('click',()=>{selected.clear();lastIndex=-1;updateSelectionUi();});
         bulk.addEventListener('click',openCaptionDialog);
         const input=$('p5CaptionInput');
@@ -80,7 +80,7 @@
         getThumbs().forEach(thumb=>{const yes=selected.has(thumb.dataset.dragId);thumb.classList.toggle('p5-selected',yes);thumb.setAttribute('aria-selected',String(yes));});
         const count=selected.size;const bulk=$('p5BulkCaption');if(bulk)bulk.disabled=count===0;
         const clear=$('p5ClearSelection');if(clear)clear.disabled=count===0;
-        const help=$('p5SelectionHelp');if(help){help.textContent=count?count+' ảnh đang chọn.':(selectionMode?'Giữ chuột trái, kéo qua ảnh cần chọn rồi thả; hoặc nhấp từng ảnh.':'Bật “Chọn nhiều”, rồi giữ chuột trái và kéo qua ảnh cần chọn.');}
+        const help=$('p5SelectionHelp');if(help){help.textContent=count?count+' ảnh đang chọn.':(selectionMode?'Giữ chuột trái từ khoảng trắng, kéo khung bao ảnh cần chọn rồi thả.':'Bật “Chọn nhiều”, rồi kéo từ khoảng trắng quanh ảnh để khoanh vùng.');}
       }
       function setItemSelected(item,yes){const id=idOf(item);if(yes)selected.add(id);else selected.delete(id);}
       function selectByIndex(index,event){
@@ -117,12 +117,14 @@
         closeCaptionDialog();render();updateSelectionUi();msg('Đã áp dụng thuyết minh cho '+result.applied+' ảnh. Đã bỏ chọn nhóm ảnh.',true);
       }
       function startLasso(e){
-        if(!selectionMode||e.pointerType!=='mouse'||e.button!==0||e.target.closest('button,textarea,input,select'))return;
-        const grid=$('grid'),thumb=e.target.closest('.thumb'),r=grid.getBoundingClientRect();
-        if(!thumb&&e.target!==grid)return;
+        if(!selectionMode||e.pointerType!=='mouse'||e.button!==0)return;
+        const target=e.target,grid=$('grid'),surface=grid.parentElement,thumb=target.closest('.thumb'),r=grid.getBoundingClientRect();
+        if(target.closest('button,textarea,input,select,label,a,.drop,.actions,.status,.field,.filenameCaptionBox,.p5-local-search,#groupsBox,#p5SelectionToolbar,.thumbActions,.p5-caption-backdrop,.p5-delete-backdrop'))return;
+        if(!thumb&&(!surface||!surface.contains(target)))return;
         lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r,startedOnBlank:!thumb};
         lassoMoved=false;
         const box=doc.createElement('div');box.className='p5-lasso-box';box.id='p5LassoBox';grid.appendChild(box);
+        if(!thumb)e.preventDefault();
         try{grid.setPointerCapture(e.pointerId)}catch(_){}
       }
       function moveLasso(e){

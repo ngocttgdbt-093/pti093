@@ -49,3 +49,19 @@
  .filegrid{grid-template-columns:1fr}
  .thumb .imgBox,.thumb .imgBox img{height:190px!important}
 }
+
+/* Start selection from the empty white gallery area without targeting a tiny point on a thumbnail. */
+.p5-lasso-surface[data-p5-lasso-active="true"]{cursor:crosshair}
+.p5-lasso-surface[data-p5-lasso-active="true"] .drop,
+.p5-lasso-surface[data-p5-lasso-active="true"] .actions,
+.p5-lasso-surface[data-p5-lasso-active="true"] .status,
+.p5-lasso-surface[data-p5-lasso-active="true"] .field,
+.p5-lasso-surface[data-p5-lasso-active="true"] .filenameCaptionBox,
+.p5-lasso-surface[data-p5-lasso-active="true"] .p5-local-search,
+.p5-lasso-surface[data-p5-lasso-active="true"] #groupsBox{cursor:default}
+.p5-lasso-surface[data-p5-lasso-active="true"] button,
+.p5-lasso-surface[data-p5-lasso-active="true"] input,
+.p5-lasso-surface[data-p5-lasso-active="true"] textarea,
+.p5-lasso-surface[data-p5-lasso-active="true"] select,
+.p5-lasso-surface[data-p5-lasso-active="true"] label,
+.p5-lasso-surface[data-p5-lasso-active="true"] a{cursor:auto}
