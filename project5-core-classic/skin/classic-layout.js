@@ -42,14 +42,7 @@
             counts.appendChild(button);
           });
         }
-        const layoutBox=doc.querySelector('.layoutbox');
-        if(layoutBox&&!$('p5GapControls')){
-          const controls=doc.createElement('div');controls.id='p5GapControls';controls.className='p5-gap-controls';
-          controls.innerHTML='<label for="p5RowGap">Khoảng cách dòng <output id="p5RowGapValue">18 px</output></label><input id="p5RowGap" type="range" min="4" max="36" step="2" value="18"><label for="p5ColumnGap">Khoảng cách cột <output id="p5ColumnGapValue">18 px</output></label><input id="p5ColumnGap" type="range" min="4" max="36" step="2" value="18">';
-          layoutBox.appendChild(controls);
-          $('p5RowGap').addEventListener('input',event=>{if(state.workspaceOpenPending)return;state.rowGap=Number(event.target.value);$('p5RowGapValue').textContent=state.rowGap+' px';renderLayout();doc.querySelector('#grid')?.style.setProperty('--p5-row-gap',state.rowGap+'px');scheduleAutoDraftSave(false);});
-          $('p5ColumnGap').addEventListener('input',event=>{if(state.workspaceOpenPending)return;state.columnGap=Number(event.target.value);$('p5ColumnGapValue').textContent=state.columnGap+' px';renderLayout();doc.querySelector('#grid')?.style.setProperty('--p5-column-gap',state.columnGap+'px');scheduleAutoDraftSave(false);});
-        }
+        // Keep the core's default row/column spacing; redundant user-facing sliders are omitted.
         doc.querySelectorAll('#orient .opt').forEach(button=>{
           button.onclick=()=>{
             if(state.workspaceOpenPending){syncControlSelections();return;}

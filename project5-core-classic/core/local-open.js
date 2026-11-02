@@ -87,7 +87,7 @@
         state.editing=markedCurrent&&Number.isInteger(meta.editing)&&meta.editing>=0?meta.editing:-1;
         state.addSeq=0;groups.forEach(g=>g.items.forEach(it=>state.addSeq=Math.max(state.addSeq,it.addSeq||0)));
         $('title').value=state.current.title;
-        $('driveId').textContent='💻 Bản lưu tại máy: '+id;$('driveId').classList.remove('hidden');
+        const localIdBox=$('driveId');if(localIdBox){localIdBox.textContent='💻 Bản lưu tại máy: '+id;localIdBox.classList.remove('hidden')}
         finishOpenLoad(source,groups.reduce((n,g)=>n+g.items.length,0));
         if(state.localCopyFromIncompleteDrive){
           const detail='⚠️ Bản lưu tại máy này được tạo từ hồ sơ Drive chưa tải đủ ảnh. Hãy kiểm tra số ảnh trước khi tạo hồ sơ Drive mới.';
