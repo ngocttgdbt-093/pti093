@@ -10,8 +10,13 @@
       }
       function moveThumbDom(source,target,e){
         if(!source||!target||source===target)return;
-        const r=target.getBoundingClientRect();
-        const before=(e&&e.clientY!==undefined?e.clientY:0)<r.top+r.height/2;
+        const r=target.getBoundingClientRect(),s=source.getBoundingClientRect();
+        // In a multi-column grid, use left/right when both cards share a row;
+        // use top/bottom when the drop target is on another row.
+        const sameRow=s.bottom>r.top&&s.top<r.bottom;
+        const before=sameRow
+          ? (e&&e.clientX!==undefined?e.clientX:0)<r.left+r.width/2
+          : (e&&e.clientY!==undefined?e.clientY:0)<r.top+r.height/2;
         target.parentNode.insertBefore(source,before?target:target.nextSibling);
         dragMoved=true;
       }
