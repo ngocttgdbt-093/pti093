@@ -24,7 +24,9 @@
       try{
         const drafts=await getLocalDrafts();
         if(request!==renderRequest)return;
-        const matches=(drafts||[]).filter(d=>normalize([d.caseNumber,d.bks].join(' ')).includes(query))
+        const matches=(drafts||[])
+          .filter(d=>!String(d.id||'').startsWith('AUTO-DRAFT'))
+          .filter(d=>normalize([d.caseNumber,d.bks].join(' ')).includes(query))
           .sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))).slice(0,30);
         if(!matches.length){message('Không tìm thấy hồ sơ khớp mã HS hoặc biển số.','empty');return;}
         results.textContent='';
@@ -34,7 +36,7 @@
           const detail=doc.createElement('span');detail.className='p5-local-search-detail';
           const images=(draft.sections||[]).reduce((n,s)=>n+((s.items||[]).length),0);
           const summary=doc.createElement('span');
-          summary.textContent='Mã HS: '+(draft.caseNumber||'—')+' · BKS: '+(draft.bks||'—')+' · '+images+' ảnh';
+          summary.textContent='Mã HS: '+(draft.caseNumber||'—')+' · BKS: '+(draft.bks||'—')+' · GĐV: '+(draft.gdv||'—')+' · '+images+' ảnh';
           const saved=doc.createElement('span');saved.className='p5-local-search-saved';
           saved.style.cssText='display:block;margin-top:3px;font-size:12px;color:#5b6870;line-height:1.45';
           const savedAt=new Date(draft.updatedAt||draft.createdAt||'');
