@@ -130,11 +130,13 @@
         if(!selectionMode||e.pointerType!=='mouse'||e.button!==0)return;
         const target=e.target,grid=$('grid'),surface=grid.parentElement,thumb=target.closest('.thumb'),r=grid.getBoundingClientRect();
         if(target.closest('button,textarea,input,select,label,a,.drop,.actions,.status,.field,.filenameCaptionBox,.p5-local-search,#groupsBox,#p5SelectionToolbar,.thumbActions,.p5-caption-backdrop,.p5-delete-backdrop'))return;
-        if(!thumb&&(!surface||!surface.contains(target)))return;
-        lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r,startedOnBlank:!thumb};
+        // Clicking an image must reach its own click handler; lasso selection starts only on blank space.
+        if(thumb)return;
+        if(!surface||!surface.contains(target))return;
+        lasso={x:e.clientX,y:e.clientY,baseX:e.clientX,baseY:e.clientY,ctrl:e.ctrlKey||e.metaKey,grid,rect:r,startedOnBlank:true};
         lassoMoved=false;
         const box=doc.createElement('div');box.className='p5-lasso-box';box.id='p5LassoBox';grid.appendChild(box);
-        if(!thumb)e.preventDefault();
+        e.preventDefault();
         try{grid.setPointerCapture(e.pointerId)}catch(_){}
       }
       function moveLasso(e){
