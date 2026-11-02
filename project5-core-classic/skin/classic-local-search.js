@@ -13,22 +13,22 @@
     function clear(){
       renderRequest++;
       if(input)input.value='';
-      message("Nhập mã HS hoặc biển số xe để tìm hồ sơ đã lưu tại máy.",'idle');
+      message("Nhập mã HS, biển số xe hoặc tên GĐV để tìm hồ sơ đã lưu tại máy.",'idle');
     }
     async function render(){
       if(!results)return;
       const request=++renderRequest;
       const query=normalize(input&&input.value);
-      if(!query){message("Nhập mã HS hoặc biển số xe để tìm hồ sơ đã lưu tại máy.",'idle');return;}
+      if(!query){message("Nhập mã HS, biển số xe hoặc tên GĐV để tìm hồ sơ đã lưu tại máy.",'idle');return;}
       message('Đang tìm hồ sơ đã lưu…','loading');
       try{
         const drafts=await getLocalDrafts();
         if(request!==renderRequest)return;
         const matches=(drafts||[])
           .filter(d=>!String(d.id||'').startsWith('AUTO-DRAFT'))
-          .filter(d=>normalize([d.caseNumber,d.bks].join(' ')).includes(query))
+          .filter(d=>normalize([d.caseNumber,d.bks,d.gdv].join(' ')).includes(query))
           .sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))).slice(0,30);
-        if(!matches.length){message('Không tìm thấy hồ sơ khớp mã HS hoặc biển số.','empty');return;}
+        if(!matches.length){message('Không tìm thấy hồ sơ khớp mã HS, biển số hoặc tên GĐV.','empty');return;}
         results.textContent='';
         results.dataset.state='results';
         matches.forEach(draft=>{
