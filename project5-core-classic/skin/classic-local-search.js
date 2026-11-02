@@ -33,7 +33,14 @@
           const row=doc.createElement('div');row.className='p5-local-search-row';
           const detail=doc.createElement('span');detail.className='p5-local-search-detail';
           const images=(draft.sections||[]).reduce((n,s)=>n+((s.items||[]).length),0);
-          detail.textContent='Mã HS: '+(draft.caseNumber||'—')+' · BKS: '+(draft.bks||'—')+' · '+images+' ảnh';
+          const summary=doc.createElement('span');
+          summary.textContent='Mã HS: '+(draft.caseNumber||'—')+' · BKS: '+(draft.bks||'—')+' · '+images+' ảnh';
+          const saved=doc.createElement('span');saved.className='p5-local-search-saved';
+          saved.style.cssText='display:block;margin-top:3px;font-size:12px;color:#5b6870;line-height:1.45';
+          const savedAt=new Date(draft.updatedAt||draft.createdAt||'');
+          const savedLabel=Number.isNaN(savedAt.getTime())?'Thời điểm lưu không có':new Intl.DateTimeFormat('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(savedAt);
+          saved.textContent='Lưu lúc: '+savedLabel+' · ID: '+(draft.id||'—');
+          detail.append(summary,saved);
           const open=doc.createElement('button');open.type='button';open.className='p5-local-search-open';open.textContent='Mở hồ sơ';
           open.addEventListener('click',async()=>{
             open.disabled=true;
