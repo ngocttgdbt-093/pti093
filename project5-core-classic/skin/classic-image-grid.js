@@ -82,6 +82,15 @@
         const clear=$('p5ClearSelection');if(clear)clear.disabled=count===0;
         const help=$('p5SelectionHelp');if(help){help.textContent=count?count+' ảnh đang chọn.':(selectionMode?'Giữ chuột trái từ khoảng trắng, kéo khung bao ảnh cần chọn rồi thả.':'Bật “Chọn nhiều”, rồi kéo từ khoảng trắng quanh ảnh để khoanh vùng.');}
       }
+      function disableSelectionMode(){
+        selectionMode=false;
+        const grid=$('grid'),surface=grid&&grid.parentElement,toolbar=$('p5SelectionToolbar'),mode=$('p5SelectionMode');
+        if(grid)grid.dataset.selectionMode='false';
+        if(surface)surface.dataset.p5LassoActive='false';
+        if(toolbar)toolbar.classList.remove('is-selection-mode');
+        if(mode){mode.setAttribute('aria-pressed','false');mode.classList.remove('active');mode.textContent='☑ Chọn nhiều';}
+        getThumbs().forEach(thumb=>{thumb.draggable=true;thumb.title='Kéo ảnh để đổi thứ tự';});
+      }
       function setItemSelected(item,yes){const id=idOf(item);if(yes)selected.add(id);else selected.delete(id);}
       function selectByIndex(index,event){
         if(index<0||index>=state.current.items.length)return;
@@ -113,8 +122,9 @@
         if(!result.ok){msg(result.reason==='empty-caption'?'Nội dung thuyết minh đang trống.':'Danh sách ảnh không còn hợp lệ; chưa có ảnh nào bị thay đổi.',true);return;}
         // Chỉ bỏ chọn sau khi toàn bộ ảnh được cập nhật thành công.
         selected.clear();lastIndex=-1;
+        disableSelectionMode();
         scheduleAutoDraftSave(true);
-        closeCaptionDialog();render();updateSelectionUi();msg('Đã áp dụng thuyết minh cho '+result.applied+' ảnh. Đã bỏ chọn nhóm ảnh.',true);
+        closeCaptionDialog();render();updateSelectionUi();msg('Đã áp dụng thuyết minh cho '+result.applied+' ảnh. Đã bỏ chọn nhóm ảnh và tắt chế độ chọn nhiều.',true);
       }
       function startLasso(e){
         if(!selectionMode||e.pointerType!=='mouse'||e.button!==0)return;
