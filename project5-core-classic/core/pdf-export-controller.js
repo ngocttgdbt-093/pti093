@@ -3,6 +3,33 @@
   global.PTI093PdfExportController = {
     install: function(deps){
       const {state,$,splitHighQualityPdf,exportPdfFile,msg,alert,setTimeout,buildAdaptivePdf,pdfPackSize,pdfFileName,getPdfWarningSkin,finalizeCompletedSession} = deps;
+let pdfDownloadUrls=[];
+function clearPdfDownloads(){
+  pdfDownloadUrls.forEach(url=>URL.revokeObjectURL(url));pdfDownloadUrls=[];
+  const old=document.getElementById('pdfDownloadList');if(old)old.remove();
+}
+async function showPdfDownloads(parts,filenameBase,host){
+  // Keep every part available until the next export or page unload. No automatic multi-downloads.
+  const box=document.createElement('div');box.id='pdfDownloadList';box.style.cssText='margin-top:12px;display:grid;gap:9px';
+  const note=document.createElement('div');note.textContent='Đã tạo '+parts.length+' file PDF. Bấm tải từng phần hoặc tải trọn bộ ZIP. Trình duyệt có thể chặn tải nhiều file tự động; danh sách này cho phép tải lại từng file.';box.appendChild(note);
+  function link(blob,name,text){const a=document.createElement('a');a.href=URL.createObjectURL(blob);pdfDownloadUrls.push(a.href);a.download=name;a.textContent=text;a.className='btn light';a.style.cssText='display:block;overflow-wrap:anywhere';box.appendChild(a);return a;}
+  clearPdfDownloads();host.appendChild(box);
+  parts.forEach((part,i)=>link(part.blob,part.filename,'Tải phần '+(i+1)+'/'+parts.length+' · '+part.filename+' ('+(part.blob.size/1048576).toFixed(2)+' MB)'));
+  // ZIP store: no JPEG recompression, Blob chunks avoid copying the full archive twice.
+  const enc=new TextEncoder(),body=[],central=[];let offset=0;
+  const word=(n,len)=>{const b=new Uint8Array(len);for(let i=0;i<len;i++)b[i]=(n>>>(8*i))&255;return b;};
+  const u16=n=>word(n,2),u32=n=>word(n,4);
+  for(const part of parts){
+    const data=new Uint8Array(await part.blob.arrayBuffer()),name=enc.encode(part.filename);let crc=0xffffffff;
+    for(const b of data){crc^=b;for(let k=0;k<8;k++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}crc=(crc^0xffffffff)>>>0;
+    const local=new Blob([u32(0x04034b50),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,part.blob]);body.push(local);
+    central.push(new Blob([u32(0x02014b50),u16(20),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]));offset+=local.size;
+  }
+  const directory=new Blob(central),zip=new Blob([...body,directory,u32(0x06054b50),u16(0),u16(0),u16(parts.length),u16(parts.length),u32(directory.size),u32(offset),u16(0)],{type:'application/zip'});
+  link(zip,filenameBase.replace(/\.pdf$/i,'')+'.zip','Tải trọn bộ '+parts.length+' PDF (.zip)');
+}
+window.addEventListener('pagehide',clearPdfDownloads);
+
       let pdfHighQualityRunning=false;
       async function finalizeAfterSuccessfulExport(){
         if(state.driveOpenIncomplete){
@@ -57,19 +84,10 @@
           const parts=await splitHighQualityPdf(filenameBase,update,{pages:exportPages,pageDefs:exportPageDefs});
           assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision,exportWorkspaceMutationRevision);
           if(!parts.length)throw new Error('Không tạo được tệp PDF nào.');
-          for(let i=0;i<parts.length;i++){
-            assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision,exportWorkspaceMutationRevision);
-            update(80+Math.round(i/parts.length*19),'Đang xuất tệp '+(i+1)+'/'+parts.length+' · '+parts[i].filename+' ('+mib(parts[i].blob.size).toFixed(2)+' MB)…');
-            await new Promise(resolve=>setTimeout(resolve,80));await exportPdfFile(parts[i].blob,parts[i].filename);
-            assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision,exportWorkspaceMutationRevision);
-            update(80+Math.round((i+1)/parts.length*19),'Đã gửi '+(i+1)+'/'+parts.length+' tệp PDF để lưu.');
-            await new Promise(resolve=>setTimeout(resolve,180));
-          }
-          // The final wait after the last file is also an async gap: edits there must
-          // keep the current AUTO-DRAFT instead of being cleared as a completed session.
-          assertExportSnapshot(exportPages,exportPageDefs,exportWorkspaceRevision,exportWorkspaceMutationRevision);
-          update(100,'Hoàn tất gửi '+parts.length+' tệp PDF. Kiểm tra thư mục Tải xuống hoặc hộp thoại Chia sẻ.');
-          await finalizeAfterSuccessfulExport();
+          await showPdfDownloads(parts,filenameBase,wrap||progress.parentNode);
+          update(100,'Đã tạo '+parts.length+' PDF. Chọn tải từng phần hoặc trọn bộ ZIP bên dưới.');
+          // Download requests cannot confirm files saved; retain the recovery draft.
+
         }catch(e){
           if(e&&e.code==='PDF_WORKSPACE_CHANGED'){
             update(lastProgress,'Đã phát hiện hồ sơ thay đổi trong lúc xuất. Không xóa bản nháp hiện tại; hãy tạo Preview lại rồi xuất PDF lần nữa.');
