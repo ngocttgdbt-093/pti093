@@ -9,7 +9,7 @@
       function showPdfWarning(message,baseName){
         const box=$('pdfWarn');if(!box)return;
         box.classList.remove('hidden');
-        box.innerHTML='<strong>⚠️ PDF phải nén ảnh để giữ dung lượng dưới 10 MB.</strong><div style="margin-top:5px">'+message+'</div><div style="margin-top:7px">Sau khi xuất, nên mở lại file PDF và kiểm tra độ rõ của ảnh, đặc biệt ảnh số khung, tem đăng kiểm và chi tiết thiệt hại.</div>';
+        box.innerHTML='<strong>PDF chất lượng cao · Chia tuần tự dưới 10 MB mỗi phần.</strong><div style="margin-top:5px">'+message+'</div><div style="margin-top:7px">Sau khi xuất, nên mở lại file PDF và kiểm tra độ rõ của ảnh, đặc biệt ảnh số khung, tem đăng kiểm và chi tiết thiệt hại.</div>';
         const label=doc.createElement('label');
         const cb=doc.createElement('input');cb.type='checkbox';cb.id='pdfHighQualityCheck';
         const span=doc.createElement('span');span.textContent='Tách PDF thành nhiều file để giữ chất lượng ảnh cao hơn (tự động xuất khi tick).';

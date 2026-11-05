@@ -33,7 +33,7 @@
 
       function makePdfAt(canvases,dpi,quality){return {bytes:pdfBytesFromCanvases(resamplePdfCanvases(canvases,dpi),quality),dpi,quality}}
 
-      async function buildAdaptivePdf(canvases){
+      async function buildAdaptivePdf(canvases,options={}){
         const tries=[
           {dpi:pagePixels().dpi,quality:jpegQuality()},
           {dpi:120,quality:.72},
@@ -47,6 +47,7 @@
         let last=null;
         for(const t of tries){
           const result=makePdfAt(canvases,t.dpi,t.quality);last=result;
+          if(options.probeOnly)return {...result,compressed:false,needsChoice:pdfPackSize(result.bytes)>PDF_SAFE_LIMIT};
           if(pdfPackSize(result.bytes)<=PDF_SAFE_LIMIT)return {...result,compressed:t.dpi!==pagePixels().dpi};
         }
         const error=new Error('PDF vẫn vượt giới hạn dung lượng sau khi nén tối đa. Không xuất tệp vượt giới hạn; hãy dùng chế độ PDF chất lượng cao để tự chia thành nhiều phần.');error.code='PDF_SIZE_LIMIT';throw error;
