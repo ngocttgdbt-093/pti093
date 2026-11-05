@@ -833,7 +833,8 @@ async function splitHighQualityPdf(filenameBase,onProgress=()=>{},snapshot=null)
   const defs=(snapshot&&snapshot.pageDefs)||state.pageDefs||[];
   const safe=9999999; // Strictly below 10 decimal MB, including PDF structure and labels.
   if(!pages.length)return [];
-  let totalHint=1;
+  let totalHint=1,reported=0;
+  const report=(value,text)=>{reported=Math.max(reported,value);onProgress(reported,text);};
   // Repack the entire remaining sequence after every boundary. Never insert an orphan part.
   // Rebuild when the denominator changes so all final labels and measured bytes agree.
   for(let pass=0;pass<12;pass++){
@@ -859,14 +860,14 @@ async function splitHighQualityPdf(filenameBase,onProgress=()=>{},snapshot=null)
           // Preserve the Preview canvases; release only the temporary rendered page.
           if(!pages.includes(canvas)){canvas.width=1;canvas.height=1;}
         }
-        onProgress(Math.min(90,5+Math.round(end/pages.length*80)),'Bước 2 · Đang chia PDF: '+end+'/'+pages.length+' trang · lượt '+(pass+1));
+        report(Math.min(93,(pass===0?5:pass===1?45:85)+Math.round(end/pages.length*(pass===0?35:pass===1?40:8))),'Bước 2 · Đang chia PDF: '+end+'/'+pages.length+' trang · lượt '+(pass+1));
         await new Promise(resolve=>setTimeout(resolve,0));
       }
       if(!best||end<=start)throw new Error('Không thể chia PDF trong giới hạn 10 MB.');
       parts.push({blob:new Blob([best.bytes],{type:'application/pdf'}),filename:filenameBase.replace(/\.pdf$/i,'')+' '+partNo+'.pdf',dpi:best.dpi,quality:best.quality});
       start=end;
     }
-    if(parts.length===totalHint){onProgress(95,'Đã chia đủ '+parts.length+' PDF; đang chuẩn bị tải…');return parts;}
+    if(parts.length===totalHint){report(95,'Đã chia đủ '+parts.length+' PDF; đang chuẩn bị tải…');return parts;}
     totalHint=parts.length;
     await new Promise(resolve=>setTimeout(resolve,0));
   }
