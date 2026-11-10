@@ -1,0 +1,101 @@
+name: Graphify source snapshot
+
+on:
+  push:
+    branches: [test/graphify-drive-20261111]
+  schedule:
+    - cron: '20 20 * * *' # 03:20 Asia/Ho_Chi_Minh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: graphify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  graphify:
+    if: github.event_name == 'push' || (github.ref == 'refs/heads/main' && vars.GRAPHIFY_SCHEDULE_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Stage only reviewed tracked source
+        run: |
+          set -euo pipefail
+          stage="$(mktemp -d "${RUNNER_TEMP}/graphify-pti093.XXXXXX")"
+          while IFS= read -r path; do
+            git ls-files --error-unmatch -- "$path" >/dev/null
+            test -f "$path" && test ! -L "$path"
+            if grep -Eiq -e '-----BEGIN [^-]+PRIVATE KEY-----|AIza[A-Za-z0-9_-]{30,}|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|https?://|@(pti\.com\.vn|gmail\.com)|\b(secret|password|api[_-]?key|access[_-]?token)\b' -- "$path"; then
+              printf 'Source requires review: %s\n' "$path" >&2
+              exit 1
+            fi
+            mkdir -p "$stage/$(dirname "$path")"
+            cp -- "$path" "$stage/$path"
+          done <<'SOURCE_FILES'
+          core/core/app-core.js
+          core/core/caption-tools.js
+          core/core/case-editor.js
+          core/core/date-utils.js
+          core/core/device-context.js
+          core/core/draft-recovery.js
+          core/core/file-delivery.js
+          core/core/file-naming.js
+          core/core/gdv-search.js
+          core/core/group-workflow.js
+          core/core/image-canvas.js
+          core/core/image-editing.js
+          core/core/image-ingest.js
+          core/core/image-reorder.js
+          core/core/local-draft-store.js
+          core/core/local-open.js
+          core/core/local-save.js
+          core/core/pdf-builder.js
+          core/core/pdf-export-controller.js
+          core/core/pdf-export.js
+          core/core/preview-builder.js
+          core/core/session-actions.js
+          core/core/workspace.js
+          core/skin/classic-file-intake.js
+          core/skin/classic-group-list.js
+          core/skin/classic-image-grid.js
+          core/skin/classic-image-viewer.js
+          core/skin/classic-layout.js
+          core/skin/classic-load-progress.js
+          core/skin/classic-local-save.js
+          core/skin/classic-pdf-warning.js
+          core/skin/classic-preview.js
+          core/skin/classic-status.js
+          core/skin/modern-image-gallery.js
+          core/skin/preview-modal.js
+          core/skin/ui-mode-toggle.js
+          SOURCE_FILES
+          printf 'GRAPHIFY_SOURCE=%s\n' "$stage" >> "$GITHUB_ENV"
+      - name: Install pinned Graphify CLI
+        run: |
+          python3 -m venv "$RUNNER_TEMP/graphify-venv"
+          "$RUNNER_TEMP/graphify-venv/bin/python" -m pip install graphifyy==0.9.105
+      - name: Generate and validate source graph
+        run: |
+          cd "$GRAPHIFY_SOURCE"
+          "$RUNNER_TEMP/graphify-venv/bin/graphify" update .
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          graph = json.loads(Path("graphify-out/graph.json").read_text())
+          if not graph.get("nodes"):
+              raise SystemExit("Graphify returned an empty graph")
+          PY
+      - name: Upload source graph artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: graphify-pti093-${{ github.sha }}
+          path: |
+            ${{ env.GRAPHIFY_SOURCE }}/graphify-out/graph.json
+            ${{ env.GRAPHIFY_SOURCE }}/graphify-out/GRAPH_REPORT.md
+            ${{ env.GRAPHIFY_SOURCE }}/graphify-out/graph.html
+          if-no-files-found: error
+          retention-days: 7
